@@ -1,7 +1,9 @@
 "use client";
 
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
+import { Building2 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { usePlatformAdminMe } from "@/hooks/queries/admin/admin.queries";
 import { SidebarFooter, SidebarSeparator, useSidebar } from "@/ui/sidebar";
 import { cn } from "@/lib/utils";
 
@@ -19,12 +21,21 @@ export const hideCreateOrganizationAppearance = {
 
 export function SidebarAccountFooter() {
   const { state, isMobile } = useSidebar();
+  const { data: adminMe } = usePlatformAdminMe();
+  const isSuperAdmin = Boolean(adminMe?.isPlatformAdmin);
   const collapsed = !isMobile && state === "collapsed";
 
   const appearance = {
     ...hideCreateOrganizationAppearance,
     elements: {
       ...hideCreateOrganizationAppearance.elements,
+      ...(isSuperAdmin
+        ? {}
+        : {
+            organizationSwitcherPopoverActionButton__manageOrganization: {
+              display: "none",
+            },
+          }),
       rootBox: collapsed ? "w-auto" : "w-full",
       organizationSwitcherTrigger: cn(
         "rounded-lg border border-sidebar-border/80 bg-sidebar-accent/50 text-sidebar-foreground transition-colors duration-150 hover:bg-sidebar-accent",
@@ -56,7 +67,15 @@ export function SidebarAccountFooter() {
           hidePersonal
           afterSelectOrganizationUrl="/"
           appearance={appearance}
-        />
+        >
+          {isSuperAdmin ? (
+            <OrganizationSwitcher.OrganizationProfileLink
+              label="Tenants"
+              url="/admin"
+              labelIcon={<Building2 className="size-4" />}
+            />
+          ) : null}
+        </OrganizationSwitcher>
         <div
           className={cn(
             "flex w-full items-center",

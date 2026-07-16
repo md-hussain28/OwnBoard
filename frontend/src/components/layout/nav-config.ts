@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BookOpen,
-  Building2,
   FolderGit2,
   LayoutDashboard,
   MessageSquare,
@@ -53,18 +52,12 @@ export const WORKSPACE_NAV: NavGroup = {
   ],
 };
 
-/** Platform nav — only when the caller is a platform superadmin. */
-export const PLATFORM_NAV: NavGroup = {
-  label: "Platform",
-  items: [
-    {
-      href: "/admin",
-      label: "Tenants",
-      icon: Building2,
-      matchPrefix: true,
-    },
-  ],
-};
+/**
+ * Platform / Tenants lives in the org switcher → Manage organization tabs
+ * for platform superadmins only (see SidebarAccountFooter). Kept here for
+ * shared active-route helpers if needed later.
+ */
+export const PLATFORM_ADMIN_HREF = "/admin";
 
 export function isNavItemActive(pathname: string, item: NavItem): boolean {
   if (item.href === "/") {

@@ -15,9 +15,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/ui/sidebar";
-import { usePlatformAdminMe } from "@/hooks/queries/admin/admin.queries";
 import {
-  PLATFORM_NAV,
   WORKSPACE_NAV,
   isNavItemActive,
   type NavGroup,
@@ -73,8 +71,6 @@ function NavGroupSection({ group }: { group: NavGroup }) {
 }
 
 export function AppSidebar() {
-  const { data: adminMe } = usePlatformAdminMe();
-
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
@@ -92,7 +88,6 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className="px-1 py-1">
         <NavGroupSection group={WORKSPACE_NAV} />
-        {adminMe?.isPlatformAdmin && <NavGroupSection group={PLATFORM_NAV} />}
       </SidebarContent>
       <SidebarAccountFooter />
       <SidebarRail />

@@ -18,9 +18,9 @@ class PackAssignmentDAO(BaseDAO[PackAssignment]):
 
     async def get_for_pack_and_employee(self, doc_pack_id: str, employee_id: str) -> PackAssignment | None:
         result = await self.session.execute(
-            select(PackAssignment).where(
-                PackAssignment.doc_pack_id == doc_pack_id, PackAssignment.employee_id == employee_id
-            )
+            select(PackAssignment)
+            .where(PackAssignment.doc_pack_id == doc_pack_id, PackAssignment.employee_id == employee_id)
+            .options(selectinload(PackAssignment.acks))
         )
         return result.scalar_one_or_none()
 

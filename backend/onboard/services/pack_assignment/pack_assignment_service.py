@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import set_committed_value
 
 from onboard.core.common.exceptions import ForbiddenError, NotFoundError, ValidationError
 from onboard.core.rag.extract import extract_document
@@ -102,6 +103,9 @@ class PackAssignmentService:
                 status=PackAssignmentStatus.assigned,
                 quiz_template_id=published.id,
             )
+            # New rows have no acks; mark loaded so response serialization doesn't
+            # lazy-load (async MissingGreenlet / 500).
+            set_committed_value(assignment, "acks", [])
             created.append(assignment)
         return created
 

@@ -59,7 +59,12 @@ make setup   # copy .env.local + npm install
 make dev     # npm run dev — :3000
 make build   # npm run build
 make lint    # next lint
+npm run storybook   # component workbench — :6006, no backend needed
 ```
+
+## Storybook
+
+`npm run storybook` (port 6006) renders every UI primitive and feature component without the backend or Clerk. Config lives in `.storybook/`; `*.stories.tsx` files sit next to their components. Data-driven components work because MSW (`.storybook/mocks/handlers.ts`) intercepts the axios calls to `/api/*` with mock payloads shaped like the real wire format (`.storybook/mocks/data.ts` — snake_case where the zod schema `.transform()`s, camelCase otherwise). Story-level `parameters.msw.handlers` overrides show loading / error / 501-"Incoming" states; `notImplemented()` and `loadingForever()` helpers cover the common cases. Components that require a live Clerk session (`workspace-switcher`, `sidebar-account-footer`, `app-shell`, `marketing-header`, `tenant-admin-panel`) intentionally have no stories. When a backend response shape changes, update the matching mock in `.storybook/mocks/data.ts` alongside the zod schema.
 
 ## Tech stack
 

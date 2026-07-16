@@ -1,14 +1,16 @@
+import asyncio
 from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from onboard.config.constants import QUIZ_LLM_CONCURRENCY
 from onboard.core.common.exceptions import NotFoundError, ValidationError
 from onboard.core.llm.llm_client import LLMClient, get_llm_client
-from onboard.dao.doc_chunk_dao import DocChunkDAO
+from onboard.dao.doc_chunk_dao import DocChunkContent, DocChunkDAO
 from onboard.dao.doc_pack_dao import DocPackDAO
 from onboard.dao.models.doc_pack import DocPackStatus, DocumentStatus, PackAssignmentStatus
 from onboard.dao.models.quiz_attempt import QuizAttempt
-from onboard.dao.models.quiz_question import QuestionFormat
+from onboard.dao.models.quiz_question import QuestionFormat, QuizQuestion
 from onboard.dao.models.quiz_template import QuizTemplate, QuizType
 from onboard.dao.pack_assignment_dao import PackAssignmentDAO
 from onboard.dao.quiz_attempt_dao import QuizAttemptDAO
@@ -18,6 +20,7 @@ from onboard.services.quiz.generation_graph import (
     ChunkForPlanning,
     DocumentForPlanning,
     RejectedSlot,
+    VerifiedQuestion,
     plan_coverage,
     run_generation_graph,
     run_regeneration_graph,
@@ -61,9 +64,7 @@ class QuizService:
         if not processed_docs:
             raise ValidationError("No processed documents in this pack yet — wait for ingestion to finish")
 
-        chunks_by_doc: dict[str, list] = {}
-        for chunk in await self.chunk_dao.list_for_pack(org_id, pack_id):
-            chunks_by_doc.setdefault(chunk.document_id, []).append(chunk)
+        chunks_by_doc = await self._chunks_by_document(org_id, pack_id)
 
         documents_for_planning = [
             DocumentForPlanning(
@@ -73,7 +74,7 @@ class QuizService:
                     ChunkForPlanning(
                         chunk_index=c.chunk_index, content=c.content, page_start=c.page_start, page_end=c.page_end
                     )
-                    for c in sorted(chunks_by_doc.get(doc.id, []), key=lambda c: c.chunk_index)
+                    for c in chunks_by_doc.get(doc.id, [])
                 ],
             )
             for doc in processed_docs
@@ -138,19 +139,15 @@ class QuizService:
                 raise NotFoundError(f"Question {question_id} not found in the current draft")
             targets.append(question)
 
-        chunks_by_doc: dict[str, list] = {}
-        for chunk in await self.chunk_dao.list_for_pack(org_id, pack_id):
-            chunks_by_doc.setdefault(chunk.document_id, []).append(chunk)
-
+        chunks_by_doc = await self._chunks_by_document(org_id, pack_id)
         avoid = [q.question_text for q in draft.questions if q.id not in question_ids]
         failures: list[str] = []
 
-        for question in targets:
+        async def regenerate_one(question: QuizQuestion) -> tuple[QuizQuestion, VerifiedQuestion | None, str | None]:
             document_id = question.source_document_id
             document = next((d for d in pack.documents if d.id == document_id), None)
             if document is None or not chunks_by_doc.get(document_id):
-                failures.append(f"{question.id}: source document no longer has ingested content")
-                continue
+                return question, None, f"{question.id}: source document no longer has ingested content"
 
             planning_doc = DocumentForPlanning(
                 document_id=document.id,
@@ -159,18 +156,30 @@ class QuizService:
                     ChunkForPlanning(
                         chunk_index=c.chunk_index, content=c.content, page_start=c.page_start, page_end=c.page_end
                     )
-                    for c in sorted(chunks_by_doc[document_id], key=lambda c: c.chunk_index)
+                    for c in chunks_by_doc[document_id]
                 ],
             )
             fmt = question.format or QuestionFormat.mcq_4
             slots = plan_coverage([planning_doc], 1, [fmt.value])
             if not slots:
-                failures.append(f"{question.id}: could not plan a replacement slot")
-                continue
+                return question, None, f"{question.id}: could not plan a replacement slot"
 
             replacement = await run_regeneration_graph(self.llm, slots[0], draft.custom_instructions, avoid)
             if replacement is None:
-                failures.append(f"{question.id}: could not draft a verifiable replacement")
+                return question, None, f"{question.id}: could not draft a verifiable replacement"
+            return question, replacement, None
+
+        sem = asyncio.Semaphore(max(1, QUIZ_LLM_CONCURRENCY))
+
+        async def guarded(question: QuizQuestion):
+            async with sem:
+                return await regenerate_one(question)
+
+        results = await asyncio.gather(*(guarded(q) for q in targets))
+
+        for question, replacement, failure in results:
+            if failure is not None or replacement is None:
+                failures.append(failure or f"{question.id}: could not draft a verifiable replacement")
                 continue
 
             await self.question_dao.delete_many([question.id])
@@ -195,6 +204,12 @@ class QuizService:
         refreshed = await self.template_dao.get_with_questions(draft.id)
         assert refreshed is not None
         return refreshed
+
+    async def _chunks_by_document(self, org_id: str, pack_id: str) -> dict[str, list[DocChunkContent]]:
+        chunks_by_doc: dict[str, list[DocChunkContent]] = {}
+        for chunk in await self.chunk_dao.list_content_for_pack(org_id, pack_id):
+            chunks_by_doc.setdefault(chunk.document_id, []).append(chunk)
+        return chunks_by_doc
 
     async def get_admin_quiz(self, org_id: str, pack_id: str) -> QuizTemplate:
         pack = await self.doc_pack_dao.get_by_id_for_org(org_id, pack_id)

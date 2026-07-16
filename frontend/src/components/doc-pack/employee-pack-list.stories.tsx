@@ -1,0 +1,52 @@
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { http, HttpResponse } from "msw";
+import { docPackHandlers, employeeHandlers } from "../../../.storybook/mocks/handlers";
+import { EmployeePackList } from "@/components/doc-pack/employee-pack-list";
+
+const meta = {
+  title: "Components/DocPack/EmployeePackList",
+  component: EmployeePackList,
+} satisfies Meta<typeof EmployeePackList>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+/** Pick a "viewing as" employee to load their assignments (global handlers). */
+export const Interactive: Story = {};
+
+export const AllPassed: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        ...employeeHandlers.filter((h) => !h.info.path.toString().includes("assignments")),
+        ...docPackHandlers,
+        http.get("/api/employees/:employeeId/assignments", () =>
+          HttpResponse.json([
+            {
+              id: "asg_passed1234567890ab",
+              doc_pack_id: "pack_a1b2c3d4e5f6g7h8i9",
+              employee_id: "emp_a1b2c3d4e5f6g7h8i9",
+              assigned_by: null,
+              assigned_at: "2026-07-04T09:00:00Z",
+              status: "passed",
+              quiz_template_id: "qt_a1b2c3d4e5f6g7h8i9",
+              completed_at: "2026-07-07T16:45:00Z",
+              acks: [],
+            },
+          ]),
+        ),
+      ],
+    },
+  },
+};
+
+export const NoEmployees: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        ...docPackHandlers,
+        http.get("/api/employees", () => HttpResponse.json([])),
+      ],
+    },
+  },
+};

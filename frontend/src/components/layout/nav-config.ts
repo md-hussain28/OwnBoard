@@ -36,8 +36,8 @@ export const WORKSPACE_NAV: NavGroup = {
     },
     {
       href: "/doc-packs",
-      label: "Doc packs",
-      description: "Assigned reading & quizzes",
+      label: "Quizzes",
+      description: "Assign & track",
       icon: BookOpenCheckIcon,
       matchPrefix: true,
     },

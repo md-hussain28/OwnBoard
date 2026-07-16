@@ -25,8 +25,9 @@ export const ASSIGNMENT_STATUS_LABEL: Record<PackAssignmentStatus, string> = {
 };
 
 export function assignmentStatusVariant(status: PackAssignmentStatus) {
-  if (status === "passed") return "default" as const;
+  if (status === "passed") return "success" as const;
   if (status === "failed") return "destructive" as const;
+  if (status === "quiz_in_progress") return "warning" as const;
   return "secondary" as const;
 }
 
@@ -91,7 +92,8 @@ export function DocPackAssignments({
           <>
             {assignableEmployees.length === 0 && assignments.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                No employees yet — add employees first, then assign this pack.
+                No organization members found. Invite people in Clerk, then reopen
+                Assign — members sync automatically.
               </p>
             )}
 

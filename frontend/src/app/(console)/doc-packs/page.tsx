@@ -1,17 +1,32 @@
 "use client";
 
-import { DocPackList } from "@/components/doc-pack/doc-pack-list";
+import { Suspense } from "react";
+import { QuizDesk } from "@/components/doc-pack/quiz-desk";
+import { Skeleton } from "@/ui/skeleton";
+
+function QuizDeskFallback() {
+  return (
+    <div className="flex min-h-[calc(100svh-7.5rem)] flex-col gap-4 lg:flex-row lg:rounded-2xl lg:border lg:border-border lg:p-0">
+      <div className="w-full space-y-3 px-4 py-5 lg:w-[22rem] lg:border-r">
+        <Skeleton className="h-7 w-28" />
+        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+      </div>
+      <div className="flex-1 space-y-3 px-6 py-5">
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-4 w-72" />
+        <Skeleton className="h-24 w-full rounded-xl" />
+      </div>
+    </div>
+  );
+}
 
 export default function DocPacksPage() {
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Doc packs</h1>
-        <p className="text-muted-foreground">
-          Group real documents under one name, generate a cited quiz, and assign it to hires.
-        </p>
-      </div>
-      <DocPackList />
-    </div>
+    <Suspense fallback={<QuizDeskFallback />}>
+      <QuizDesk />
+    </Suspense>
   );
 }

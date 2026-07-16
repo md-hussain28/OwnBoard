@@ -1,0 +1,17 @@
+<!-- The app loads these via next/font in app/layout.tsx; Storybook loads them from
+     Google Fonts and maps them onto the same CSS variables globals.css expects. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  :root {
+    --font-plus-jakarta: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-geist-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+  body {
+    font-family: var(--font-plus-jakarta);
+  }
+</style>

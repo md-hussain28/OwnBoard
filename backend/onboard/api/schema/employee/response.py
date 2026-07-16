@@ -8,6 +8,7 @@ class EmployeeResponse(BaseModel):
 
     id: str
     org_id: str
+    clerk_user_id: str | None = None
     name: str
     role: str | None
     github_handle: str | None

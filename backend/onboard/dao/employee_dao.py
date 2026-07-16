@@ -24,3 +24,9 @@ class EmployeeDAO(BaseDAO[Employee]):
             select(Employee).where(Employee.org_id == org_id, Employee.github_handle == github_handle)
         )
         return result.scalar_one_or_none()
+
+    async def get_by_clerk_user_id(self, org_id: str, clerk_user_id: str) -> Employee | None:
+        result = await self.session.execute(
+            select(Employee).where(Employee.org_id == org_id, Employee.clerk_user_id == clerk_user_id)
+        )
+        return result.scalar_one_or_none()

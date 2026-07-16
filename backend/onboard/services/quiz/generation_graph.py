@@ -12,10 +12,14 @@ A LangGraph graph with three nodes, `coverage_plan -> draft -> verify -> (retry 
   accepted questions. Failures loop back to `draft` (bounded retries) with the failure reason fed
   back in, or are dropped and reported so the caller can flag the pack `needs_review` (PRD §7) rather
   than silently shipping a thin quiz.
+
+Draft and verify LLM calls run concurrently (bounded) within each node; question embeddings for
+semantic dedup are batched into a single OpenAI request per verify wave.
 """
 
 from __future__ import annotations
 
+import asyncio
 import math
 from dataclasses import dataclass, field
 from typing import Any, TypedDict
@@ -23,6 +27,7 @@ from typing import Any, TypedDict
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel
 
+from onboard.config.constants import QUIZ_LLM_CONCURRENCY
 from onboard.core.common.ids import generate_id
 from onboard.core.llm.llm_client import LLMClient
 from onboard.dao.models.quiz_question import QuestionFormat
@@ -31,6 +36,9 @@ MAX_DRAFT_RETRIES = 2
 # Cosine similarity of the two questions' embeddings, on text-embedding-3-small. Paraphrases of the
 # same question land well above this; genuinely different questions sit comfortably below it.
 SEMANTIC_DUPLICATE_THRESHOLD = 0.90
+
+_compiled_graph: Any = None
+_compiled_graph_llm_id: int | None = None
 
 
 class DraftOutput(BaseModel):
@@ -263,6 +271,23 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return dot / (norm_a * norm_b)
 
 
+def _is_near_duplicate(embedding: list[float], against: list[list[float]]) -> bool:
+    return any(_cosine(prior, embedding) > SEMANTIC_DUPLICATE_THRESHOLD for prior in against)
+
+
+async def _map_with_concurrency[T](items: list[T], concurrency: int, worker) -> list:
+    """Run `worker(item)` over items with a bounded semaphore; preserves input order."""
+    if not items:
+        return []
+    sem = asyncio.Semaphore(max(1, concurrency))
+
+    async def run(item: T):
+        async with sem:
+            return await worker(item)
+
+    return list(await asyncio.gather(*(run(item) for item in items)))
+
+
 def build_generation_graph(llm: LLMClient):
     async def coverage_plan_node(state: GenerationState) -> dict[str, Any]:
         slots = plan_coverage(state["documents"], state["target_count"], state["formats"])
@@ -273,9 +298,11 @@ def build_generation_graph(llm: LLMClient):
         still_pending: list[SlotPlan] = []
         rejected = list(state["rejected"])
         avoid = [q.drafted.question_text for q in state["accepted"]]
+        custom_instructions = state["custom_instructions"]
+        pending = list(state["pending"])
 
-        for slot in state["pending"]:
-            prompt = _build_draft_prompt(slot, state["custom_instructions"], avoid)
+        async def draft_one(slot: SlotPlan) -> tuple[SlotPlan, DraftedQuestion | None]:
+            prompt = _build_draft_prompt(slot, custom_instructions, avoid)
             output = await llm.parse(
                 [
                     {"role": "system", "content": _DRAFT_SYSTEM_PROMPT},
@@ -283,7 +310,11 @@ def build_generation_graph(llm: LLMClient):
                 ],
                 DraftOutput,
             )
-            parsed = _validate_draft(output, slot.format)
+            return slot, _validate_draft(output, slot.format)
+
+        results = await _map_with_concurrency(pending, QUIZ_LLM_CONCURRENCY, draft_one)
+
+        for slot, parsed in results:
             if parsed is None:
                 if slot.retry_count >= MAX_DRAFT_RETRIES:
                     rejected.append(RejectedSlot(slot=slot, reason="model did not return a usable question"))
@@ -303,30 +334,53 @@ def build_generation_graph(llm: LLMClient):
         rejected = list(state["rejected"])
         retry_slots: list[SlotPlan] = []
 
+        candidates: list[tuple[SlotPlan, DraftedQuestion]] = []
         for slot in state["pending"]:
             draft = drafted.get(slot.slot_id)
-            if draft is None:
-                continue
+            if draft is not None:
+                candidates.append((slot, draft))
 
-            # Semantic dedup: compare embeddings, not surface text, so paraphrases are caught too.
-            draft_embedding = await llm.embed(draft.question_text)
-            is_duplicate = any(
-                q.embedding is not None and _cosine(q.embedding, draft_embedding) > SEMANTIC_DUPLICATE_THRESHOLD
-                for q in accepted
-            )
-            if is_duplicate:
+        if not candidates:
+            return {"pending": retry_slots, "drafted": {}, "accepted": accepted, "rejected": rejected}
+
+        # One embedding API call for the whole wave (order-preserving).
+        embeddings = await llm.embed_batch([draft.question_text for _, draft in candidates])
+        prior_embeddings = [q.embedding for q in accepted if q.embedding is not None]
+
+        to_verify: list[tuple[SlotPlan, DraftedQuestion, list[float]]] = []
+        for (slot, draft), embedding in zip(candidates, embeddings, strict=True):
+            # Cheap pre-filter against already-accepted questions only. Within-wave duplicates are
+            # resolved after parallel verify so a failed sibling doesn't block a similar candidate.
+            if _is_near_duplicate(embedding, prior_embeddings):
+                if slot.retry_count >= MAX_DRAFT_RETRIES:
+                    rejected.append(RejectedSlot(slot=slot, reason="near-duplicate of another accepted question"))
+                else:
+                    slot.retry_count += 1
+                    slot.last_failure_reason = "near-duplicate of another accepted question"
+                    retry_slots.append(slot)
+                continue
+            to_verify.append((slot, draft, embedding))
+
+        async def verify_one(
+            item: tuple[SlotPlan, DraftedQuestion, list[float]],
+        ) -> tuple[SlotPlan, DraftedQuestion, list[float], bool, str]:
+            slot, draft, embedding = item
+            ok, reason = await _verify_answerable(llm, slot, draft)
+            return slot, draft, embedding, ok, reason
+
+        verify_results = await _map_with_concurrency(to_verify, QUIZ_LLM_CONCURRENCY, verify_one)
+        accepted_embeddings = list(prior_embeddings)
+
+        for slot, draft, embedding, ok, reason in verify_results:
+            if ok and _is_near_duplicate(embedding, accepted_embeddings):
                 ok, reason = False, "near-duplicate of another accepted question"
-            else:
-                ok, reason = await _verify_answerable(llm, slot, draft)
-
             if ok:
-                accepted.append(VerifiedQuestion(slot=slot, drafted=draft, embedding=draft_embedding))
+                accepted.append(VerifiedQuestion(slot=slot, drafted=draft, embedding=embedding))
+                accepted_embeddings.append(embedding)
                 continue
-
             if slot.retry_count >= MAX_DRAFT_RETRIES:
                 rejected.append(RejectedSlot(slot=slot, reason=reason))
                 continue
-
             slot.retry_count += 1
             slot.last_failure_reason = reason
             retry_slots.append(slot)
@@ -347,6 +401,16 @@ def build_generation_graph(llm: LLMClient):
     return graph.compile()
 
 
+def get_generation_graph(llm: LLMClient):
+    """Compile once per LLMClient instance (singleton in prod)."""
+    global _compiled_graph, _compiled_graph_llm_id
+    llm_id = id(llm)
+    if _compiled_graph is None or _compiled_graph_llm_id != llm_id:
+        _compiled_graph = build_generation_graph(llm)
+        _compiled_graph_llm_id = llm_id
+    return _compiled_graph
+
+
 async def run_generation_graph(
     llm: LLMClient,
     documents: list[DocumentForPlanning],
@@ -355,7 +419,7 @@ async def run_generation_graph(
     custom_instructions: str | None,
 ) -> tuple[list[VerifiedQuestion], list[RejectedSlot]]:
     """Runs the full coverage_plan → draft → verify(→retry) pipeline. Returns (accepted, rejected)."""
-    app = build_generation_graph(llm)
+    app = get_generation_graph(llm)
     initial: GenerationState = {
         "documents": documents,
         "target_count": target_count,

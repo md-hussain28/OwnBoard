@@ -1,5 +1,8 @@
 export const API_ENDPOINTS = {
   me: "/me",
+  adminMe: "/admin/me",
+  adminTenants: "/admin/tenants",
+  adminTenant: (id: string) => `/admin/tenants/${id}`,
   repos: "/repos",
   repo: (id: string) => `/repos/${id}`,
   employees: "/employees",

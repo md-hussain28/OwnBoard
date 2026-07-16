@@ -6,6 +6,7 @@ from onboard.dao.models.employee import Employee
 from onboard.dao.models.expertise_availability import ExpertiseAvailability
 from onboard.dao.models.file_expertise import FileExpertise
 from onboard.dao.models.institutional_memory_note import InstitutionalMemoryNote
+from onboard.dao.models.organization import Organization
 from onboard.dao.models.policy_doc import PolicyDoc
 from onboard.dao.models.quiz_attempt import QuizAttempt
 from onboard.dao.models.quiz_question import QuizQuestion
@@ -21,6 +22,7 @@ __all__ = [
     "ExpertiseAvailability",
     "FileExpertise",
     "InstitutionalMemoryNote",
+    "Organization",
     "PolicyDoc",
     "QuizAttempt",
     "QuizQuestion",

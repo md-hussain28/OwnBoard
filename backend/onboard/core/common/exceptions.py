@@ -27,3 +27,10 @@ class UnauthorizedError(OnboardError):
 
     def __init__(self, message: str = "Unauthorized"):
         super().__init__(message)
+
+
+class ForbiddenError(OnboardError):
+    status_code = 403
+
+    def __init__(self, message: str = "Forbidden"):
+        super().__init__(message)

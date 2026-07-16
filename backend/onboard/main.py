@@ -4,7 +4,7 @@ import uvicorn
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from onboard.api.dependency.auth import require_user
+from onboard.api.dependency.auth import require_org, require_user
 from onboard.api.exception_handlers import register_exception_handlers
 from onboard.api.middleware.logging import RequestLoggingMiddleware
 from onboard.api.routes import (
@@ -56,15 +56,19 @@ def create_app() -> FastAPI:
 
     prefix = settings.API_VERSION_PREFIX
     protected = [Depends(require_user)]
+    # Every domain below is tenant-owned data, so in addition to authenticating the user, require an active
+    # Clerk organization on the session token. Individual routes still resolve org_id via `CurrentOrgId`
+    # (api/dependency/tenancy.py) — this is a second, router-level guarantee that can't be forgotten per-route.
+    tenant_scoped = [Depends(require_user), Depends(require_org)]
     app.include_router(auth_router.router, prefix=prefix, dependencies=protected)
-    app.include_router(repo_router.router, prefix=prefix, dependencies=protected)
-    app.include_router(employee_router.router, prefix=prefix, dependencies=protected)
-    app.include_router(skill_graph_router.router, prefix=prefix, dependencies=protected)
-    app.include_router(rag_router.router, prefix=prefix, dependencies=protected)
-    app.include_router(quiz_router.router, prefix=prefix, dependencies=protected)
-    app.include_router(chat_router.router, prefix=prefix, dependencies=protected)
-    app.include_router(expert_router.router, prefix=prefix, dependencies=protected)
-    app.include_router(dashboard_router.router, prefix=prefix, dependencies=protected)
+    app.include_router(repo_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(employee_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(skill_graph_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(rag_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(quiz_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(chat_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(expert_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(dashboard_router.router, prefix=prefix, dependencies=tenant_scoped)
 
     @app.get("/")
     async def root() -> dict[str, str]:

@@ -7,6 +7,7 @@ class RepoResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
+    org_id: str
     url: str
     name: str
     ingested_at: datetime | None

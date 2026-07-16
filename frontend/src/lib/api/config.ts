@@ -2,6 +2,8 @@ import { z } from "zod";
 
 const serverConfigSchema = z.object({
   BACKEND_API_BASE_URL: z.url().default("http://localhost:8000"),
+  /** Comma-separated emails allowed to open /admin and provision tenants. */
+  PLATFORM_ADMIN_EMAILS: z.string().default(""),
 });
 
 const publicConfigSchema = z.object({
@@ -10,6 +12,7 @@ const publicConfigSchema = z.object({
 
 export const serverConfig = serverConfigSchema.parse({
   BACKEND_API_BASE_URL: process.env.BACKEND_API_BASE_URL,
+  PLATFORM_ADMIN_EMAILS: process.env.PLATFORM_ADMIN_EMAILS,
 });
 
 export const publicConfig = publicConfigSchema.parse({

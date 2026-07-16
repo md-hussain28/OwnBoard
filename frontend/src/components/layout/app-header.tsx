@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { OrganizationSwitcher, Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { Button } from "@/ui/button";
+import { usePlatformAdminMe } from "@/hooks/queries/admin/admin.queries";
 
 const NAV_LINKS = [
   { href: "/onboarding", label: "Onboarding" },
@@ -10,7 +11,21 @@ const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
 ];
 
+/** Hide Clerk's built-in "Create organization" affordances — tenants are provisioned via /admin. */
+const hideCreateOrganizationAppearance = {
+  elements: {
+    organizationSwitcherPopoverActionButton__createOrganization: {
+      display: "none",
+    },
+    organizationListCreateOrganizationActionButton: {
+      display: "none",
+    },
+  },
+} as const;
+
 export function AppHeader() {
+  const { data: adminMe } = usePlatformAdminMe();
+
   return (
     <header className="border-b">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
@@ -23,6 +38,11 @@ export function AppHeader() {
               {link.label}
             </Link>
           ))}
+          {adminMe?.isPlatformAdmin && (
+            <Link href="/admin" className="hover:text-foreground">
+              Superadmin
+            </Link>
+          )}
           <div className="flex items-center gap-2">
             <Show when="signed-out">
               <SignInButton mode="modal">
@@ -35,6 +55,11 @@ export function AppHeader() {
               </SignUpButton>
             </Show>
             <Show when="signed-in">
+              <OrganizationSwitcher
+                hidePersonal
+                afterSelectOrganizationUrl="/"
+                appearance={hideCreateOrganizationAppearance}
+              />
               <UserButton />
             </Show>
           </div>

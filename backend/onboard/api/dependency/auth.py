@@ -1,16 +1,25 @@
 """Clerk session verification for FastAPI request dependencies."""
 
+from dataclasses import dataclass
 from typing import Annotated
 
 from clerk_backend_api import AuthenticateRequestOptions, authenticate_request
 from fastapi import Depends, Request
 
 from onboard.config.settings import get_settings
-from onboard.core.common.exceptions import UnauthorizedError
+from onboard.core.common.exceptions import ForbiddenError, UnauthorizedError
 
 
-def require_user(request: Request) -> str:
-    """Verify the Clerk session token and return the Clerk user id (`sub`)."""
+@dataclass(frozen=True)
+class AuthContext:
+    """Identity verified from the Clerk session token: who signed in, and which organization (if any) is active."""
+
+    user_id: str
+    org_id: str | None
+    org_role: str | None
+
+
+def _verify_session(request: Request) -> AuthContext:
     settings = get_settings()
     if not settings.CLERK_SECRET_KEY:
         raise UnauthorizedError("Clerk is not configured on the backend")
@@ -28,10 +37,35 @@ def require_user(request: Request) -> str:
         reason = state.reason.name if state.reason else "unauthorized"
         raise UnauthorizedError(reason)
 
-    user_id = state.payload.get("sub")
+    payload = state.payload
+    user_id = payload.get("sub")
     if not user_id:
         raise UnauthorizedError("Token missing subject claim")
-    return str(user_id)
+
+    # Recent Clerk session tokens nest org claims under a compact "o" object ({id, rol, slg}) to save space;
+    # older tokens/customized claim templates may still use the flat org_id/org_role keys. Accept either.
+    compact_org = payload.get("o") or {}
+    org_id = payload.get("org_id") or compact_org.get("id")
+    org_role = payload.get("org_role") or compact_org.get("rol")
+
+    return AuthContext(user_id=str(user_id), org_id=str(org_id) if org_id else None, org_role=org_role)
+
+
+def require_user(context: Annotated[AuthContext, Depends(_verify_session)]) -> str:
+    """Return the authenticated Clerk user id, regardless of organization state."""
+    return context.user_id
+
+
+def require_org(context: Annotated[AuthContext, Depends(_verify_session)]) -> str:
+    """Return the active Clerk organization id from the verified session token.
+
+    Every tenant-owned read/write must derive `org_id` from this (or `CurrentOrgId` in
+    `api/dependency/tenancy.py`), never from a client-supplied field — that's what keeps a manager in one
+    organization from ever touching another organization's data.
+    """
+    if not context.org_id:
+        raise ForbiddenError("No active organization — select or switch into an organization first")
+    return context.org_id
 
 
 def optional_user(request: Request) -> str | None:
@@ -45,10 +79,11 @@ def optional_user(request: Request) -> str | None:
         return None
 
     try:
-        return require_user(request)
+        return _verify_session(request).user_id
     except UnauthorizedError:
         return None
 
 
 ClerkUserId = Annotated[str, Depends(require_user)]
+ClerkOrgId = Annotated[str, Depends(require_org)]
 OptionalClerkUserId = Annotated[str | None, Depends(optional_user)]

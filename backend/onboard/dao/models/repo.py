@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from onboard.dao.models.base import AuditBase
@@ -9,10 +9,12 @@ from onboard.dao.models.base import AuditBase
 class Repo(AuditBase):
     __tablename__ = "repo"
 
+    org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
     url: Mapped[str] = mapped_column(String(512), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     ingested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    organization: Mapped["Organization"] = relationship(back_populates="repos")
     contributors: Mapped[list["Contributor"]] = relationship(back_populates="repo", cascade="all, delete-orphan")
     file_expertise_entries: Mapped[list["FileExpertise"]] = relationship(
         back_populates="repo", cascade="all, delete-orphan"

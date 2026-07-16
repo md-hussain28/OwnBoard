@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useSendChatMessage } from "@/hooks/queries/chat/chat.mutations";
 import { ChatMessage } from "@/components/chat/chat-message";
 import { ExpertIntroCard } from "@/components/chat/expert-intro-card";
+import { IncomingBadge } from "@/components/layout/incoming-feature";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { DEMO_REPO_ID } from "@/constants/app";
+import { isNotImplementedError } from "@/lib/api/errors";
 import type { ChatMessage as ChatMessageType, ExpertRouting } from "@/schemas/chat.schema";
 
 const WELCOME_MESSAGE: ChatMessageType = {
@@ -43,14 +45,15 @@ export default function ChatPage() {
           setMessages((prev) => [...prev, response.message]);
           setExpertRouting(response.expertRouting ?? null);
         },
-        onError: () => {
+        onError: (error) => {
           setMessages((prev) => [
             ...prev,
             {
               id: crypto.randomUUID(),
               role: "assistant",
-              content:
-                "The archaeology Q&A backend isn't reachable right now. Once it's wired up, answers will appear here with a commit citation.",
+              content: isNotImplementedError(error)
+                ? "Archaeology Q&A is still being built. Once it's wired up, answers will appear here with a commit citation."
+                : "Something went wrong reaching the backend — try again in a moment.",
             },
           ]);
         },
@@ -61,7 +64,10 @@ export default function ChatPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Archaeology Q&A</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold">Archaeology Q&A</h1>
+          <IncomingBadge />
+        </div>
         <p className="text-muted-foreground">
           Cited, commit-grounded answers about why the code is the way it is.
         </p>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useOnboardingStore, type OnboardingStep } from "@/stores/onboarding-store";
+import { IncomingBadge } from "@/components/layout/incoming-feature";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Button } from "@/ui/button";
 import { Badge } from "@/ui/badge";
@@ -19,7 +20,10 @@ export default function OnboardingPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Onboarding wizard</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold">Onboarding</h1>
+          <IncomingBadge />
+        </div>
         <p className="text-muted-foreground">
           Complete the policy quiz, then the codebase quiz, to unlock repo access.
         </p>

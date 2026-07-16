@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useOnboardingStore } from "@/stores/onboarding-store";
 import { QuizQuestionCard } from "@/components/onboarding/quiz-question-card";
+import { IncomingFeature } from "@/components/layout/incoming-feature";
 import { Button } from "@/ui/button";
 
 const MOCK_QUESTION = {
@@ -32,6 +33,7 @@ export default function CodebaseQuizPage() {
           instruction.
         </p>
       </div>
+      <IncomingFeature description="Codebase quizzes grounded in your repo's real git history are still being built — this is a sample question, and answering it won't be graded." />
       <QuizQuestionCard {...MOCK_QUESTION} />
       <Button onClick={handleContinue}>Continue</Button>
     </div>

@@ -1,10 +1,9 @@
-import { ClerkProvider } from "@clerk/nextjs";
-import { shadcn } from "@clerk/ui/themes";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AppClerkProvider } from "@/providers/app-clerk-provider";
 import { QueryProvider } from "@/providers/query-provider";
-import { AppHeader } from "@/components/layout/app-header";
+import { ThemeProvider } from "@/providers/theme-provider";
 import { publicConfig } from "@/lib/api/config";
 
 const geistSans = Geist({
@@ -28,14 +27,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ClerkProvider appearance={{ theme: shadcn }}>
-          <QueryProvider>
-            <AppHeader />
-            <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
-          </QueryProvider>
-        </ClerkProvider>
+        <ThemeProvider>
+          <AppClerkProvider>
+            <QueryProvider>{children}</QueryProvider>
+          </AppClerkProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

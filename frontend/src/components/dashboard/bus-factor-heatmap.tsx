@@ -4,6 +4,8 @@ import { useBusFactor } from "@/hooks/queries/dashboard/dashboard.queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Skeleton } from "@/ui/skeleton";
 import { Badge } from "@/ui/badge";
+import { IncomingFeature } from "@/components/layout/incoming-feature";
+import { isNotImplementedError } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 
 const RISK_STYLES: Record<string, string> = {
@@ -13,7 +15,7 @@ const RISK_STYLES: Record<string, string> = {
 };
 
 export function BusFactorHeatmap({ repoId }: { repoId: string }) {
-  const { data, isLoading, isError } = useBusFactor(repoId);
+  const { data, isLoading, isError, error } = useBusFactor(repoId);
 
   return (
     <Card>
@@ -22,9 +24,12 @@ export function BusFactorHeatmap({ repoId }: { repoId: string }) {
       </CardHeader>
       <CardContent className="space-y-2">
         {isLoading && <Skeleton className="h-24 w-full" />}
-        {isError && (
+        {isError && isNotImplementedError(error) && (
+          <IncomingFeature description="Bus-factor analysis is grounded in real git history — it's still being built." />
+        )}
+        {isError && !isNotImplementedError(error) && (
           <p className="text-sm text-muted-foreground">
-            Bus-factor analytics aren&apos;t available yet.
+            Bus-factor analytics aren&apos;t available right now.
           </p>
         )}
         {!isLoading && !isError && data?.length === 0 && (

@@ -1,56 +1,47 @@
-import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
+"use client";
+
+import { Show, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { ConnectedReposList } from "@/components/repo/connected-repos-list";
+import { Button } from "@/ui/button";
 
-const FLOWS = [
-  {
-    href: "/onboarding",
-    title: "New hire",
-    description:
-      "Policy quiz, codebase quiz, and repo access unlock, each grounded in cited evidence.",
-  },
-  {
-    href: "/chat",
-    title: "Archaeology Q&A",
-    description:
-      "Ask why the code works the way it does; get a cited, commit-grounded answer or an expert hand-off.",
-  },
-  {
-    href: "/dashboard",
-    title: "Engineering manager",
-    description: "Bus-factor heatmap and quiz pass-rate analytics per subsystem.",
-  },
-];
-
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="space-y-12">
-      <section className="space-y-3">
-        <h1 className="text-3xl font-semibold">Onboard</h1>
-        <p className="max-w-2xl text-muted-foreground">
-          Onboard turns a codebase and its git history into a cited onboarding path: a
-          scenario-based policy quiz, a codebase-readiness quiz, and an archaeology-mode Q&A
-          that explains why the code is the way it is, backed by real commits.
-        </p>
-      </section>
+    <>
+      <Show when="signed-out">
+        <div className="space-y-8">
+          <section className="space-y-3">
+            <h1 className="text-3xl font-semibold">Onboard</h1>
+            <p className="max-w-2xl text-muted-foreground">
+              Cited, commit-grounded engineering onboarding — policy quizzes, codebase
+              readiness checks, and archaeology Q&A that escalate to a human when
+              confidence is low.
+            </p>
+          </section>
+          <div className="flex items-center gap-2">
+            <SignInButton mode="modal">
+              <Button size="sm">Sign in</Button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <Button size="sm" variant="outline">
+                Sign up
+              </Button>
+            </SignUpButton>
+          </div>
+        </div>
+      </Show>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        {FLOWS.map((flow) => (
-          <Link key={flow.href} href={flow.href}>
-            <Card className="h-full transition-colors hover:border-foreground/30">
-              <CardHeader>
-                <CardTitle>{flow.title}</CardTitle>
-                <CardDescription>{flow.description}</CardDescription>
-              </CardHeader>
-              <CardContent />
-            </Card>
-          </Link>
-        ))}
-      </section>
-
-      <section>
-        <ConnectedReposList />
-      </section>
-    </div>
+      <Show when="signed-in">
+        <div className="space-y-8">
+          <section className="space-y-1">
+            <h1 className="text-2xl font-semibold">Overview</h1>
+            <p className="text-muted-foreground">
+              Connect repositories to ground quizzes, archaeology answers, and skill-graph
+              risk in real git history.
+            </p>
+          </section>
+          <ConnectedReposList />
+        </div>
+      </Show>
+    </>
   );
 }

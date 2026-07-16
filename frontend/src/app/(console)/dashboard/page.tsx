@@ -3,6 +3,7 @@
 import { useRepos } from "@/hooks/queries/repo/repo.queries";
 import { BusFactorHeatmap } from "@/components/dashboard/bus-factor-heatmap";
 import { QuizAnalyticsCard } from "@/components/dashboard/quiz-analytics-card";
+import { IncomingBadge } from "@/components/layout/incoming-feature";
 import { DEMO_REPO_ID } from "@/constants/app";
 
 export default function DashboardPage() {
@@ -12,7 +13,10 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Engineering manager dashboard</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold">Skill graph</h1>
+          <IncomingBadge />
+        </div>
         <p className="text-muted-foreground">
           Bus-factor concentration risk and quiz outcomes per subsystem.
         </p>

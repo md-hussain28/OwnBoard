@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useOnboardingStore } from "@/stores/onboarding-store";
 import { QuizQuestionCard } from "@/components/onboarding/quiz-question-card";
+import { IncomingFeature } from "@/components/layout/incoming-feature";
 import { Button } from "@/ui/button";
 
 const MOCK_QUESTION = {
@@ -35,6 +36,7 @@ export default function PolicyQuizPage() {
           Scenario-based question, backed by a citation to the policy source.
         </p>
       </div>
+      <IncomingFeature description="AI-generated policy quizzes are still being built — this is a sample question, and answering it won't be graded." />
       <QuizQuestionCard {...MOCK_QUESTION} />
       <Button onClick={handleContinue}>Continue</Button>
     </div>

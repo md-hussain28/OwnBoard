@@ -4,9 +4,11 @@ import { useQuizAnalytics } from "@/hooks/queries/dashboard/dashboard.queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Skeleton } from "@/ui/skeleton";
 import { Progress } from "@/ui/progress";
+import { IncomingFeature } from "@/components/layout/incoming-feature";
+import { isNotImplementedError } from "@/lib/api/errors";
 
 export function QuizAnalyticsCard({ repoId }: { repoId: string }) {
-  const { data, isLoading, isError } = useQuizAnalytics(repoId);
+  const { data, isLoading, isError, error } = useQuizAnalytics(repoId);
 
   return (
     <Card>
@@ -15,8 +17,11 @@ export function QuizAnalyticsCard({ repoId }: { repoId: string }) {
       </CardHeader>
       <CardContent className="space-y-3">
         {isLoading && <Skeleton className="h-24 w-full" />}
-        {isError && (
-          <p className="text-sm text-muted-foreground">Quiz analytics aren&apos;t available yet.</p>
+        {isError && isNotImplementedError(error) && (
+          <IncomingFeature description="Readiness scoring across new hires is still being built." />
+        )}
+        {isError && !isNotImplementedError(error) && (
+          <p className="text-sm text-muted-foreground">Quiz analytics aren&apos;t available right now.</p>
         )}
         {!isLoading && !isError && data && (
           <>

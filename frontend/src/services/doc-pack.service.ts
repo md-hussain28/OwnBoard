@@ -1,5 +1,6 @@
 import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { isNotFoundError } from "@/lib/api/errors";
 import {
   docPackDocumentListSchema,
   docPackListSchema,
@@ -61,9 +62,15 @@ export const docPackService = {
     return generateDocPackQuizResponseSchema.parse(data);
   },
 
-  async getQuiz(id: string): Promise<AdminQuizTemplate> {
-    const { data } = await getApiClient().get(API_ENDPOINTS.docPackQuiz(id));
-    return adminQuizTemplateSchema.parse(data);
+  /** Latest quiz for the pack, or `null` when none has been generated yet (backend 404). */
+  async getQuiz(id: string): Promise<AdminQuizTemplate | null> {
+    try {
+      const { data } = await getApiClient().get(API_ENDPOINTS.docPackQuiz(id));
+      return adminQuizTemplateSchema.parse(data);
+    } catch (error) {
+      if (isNotFoundError(error)) return null;
+      throw error;
+    }
   },
 
   async saveQuiz(id: string, questions: QuizQuestionCurationItem[]): Promise<AdminQuizTemplate> {

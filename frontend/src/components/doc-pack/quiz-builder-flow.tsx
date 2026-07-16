@@ -40,7 +40,9 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
         {isLoading && <Skeleton className="h-8 w-64" />}
         {isError && (
           <p className="text-sm text-muted-foreground">
-            Could not load this quiz. Start the FastAPI service and refresh.
+            Could not load this quiz. Check that you are signed in with an active organization, then
+            refresh. If this persists on a deployed site, confirm BACKEND_API_BASE_URL points at the
+            live API.
           </p>
         )}
 

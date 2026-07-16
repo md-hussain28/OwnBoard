@@ -1,10 +1,52 @@
-# Onboard Backend
+# OwnBoard — Backend
 
-FastAPI backend for Onboard: turns company docs into cited onboarding quizzes, turns git history into a
-readiness quiz that gates repo access, and infers a skill graph to detect bus-factor risk and route new
-hires to experts.
+FastAPI API for OwnBoard. Serves on **http://localhost:8000**.
 
-## Setup
+## Prerequisites
+
+- [uv](https://docs.astral.sh/uv/) (Python 3.12+)
+- [Docker](https://docs.docker.com/get-docker/) (Postgres + pgvector)
+
+## Run locally
+
+```bash
+cd backend
+
+# First time only
+make setup
+
+# Start the API
+make dev
+```
+
+- Docs: http://localhost:8000/docs  
+- Health: http://localhost:8000/health  
+
+Or from the **repo root**: `make backend` (or `make dev` for backend + frontend).
+
+### What `make setup` does
+
+1. Copies `.env.example` → `.env` (if missing)
+2. `uv sync` — install Python deps
+3. `docker compose up -d` — Postgres on port **5432**
+4. `alembic upgrade head` — run migrations
+
+### Env file
+
+Copy manually if you prefer:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Notes |
+|----------|--------|
+| `DATABASE_URL` | Default matches `docker-compose.yml` |
+| `API_PORT` | `8000` |
+| `CORS_ALLOWED_ORIGINS` | Include `http://localhost:3000` for the frontend |
+| `OPENAI_API_KEY` | Optional for basic CRUD; needed for LLM features later |
+
+### Manual commands (without Make)
 
 ```bash
 uv sync
@@ -14,55 +56,18 @@ uv run alembic upgrade head
 uv run dev
 ```
 
-The API serves on `http://localhost:8000`. Docs at `/docs`, health check at `/health`.
+`docker compose down` stops Postgres without deleting data. `docker compose down -v` wipes the DB volume.
 
-Note: `docker compose down -v` deletes the Postgres volume (and all data) — use plain `docker compose down`
-to stop the container without losing data.
-
-## Architecture
-
-Requests flow `api/routes` -> `api/schema` -> `services` -> `dao` -> `core/database`:
-
-- `api/routes/*_router.py` are thin FastAPI routers, one per domain, that translate HTTP <-> service calls.
-- `api/schema/<domain>/{request,response}.py` hold the Pydantic DTOs for that domain, kept separate from
-  the ORM models so the HTTP contract can stay stable while the DB schema evolves.
-- `api/dependency/service_container.py` is a DI container that lazily builds each domain service off a
-  single request-scoped `AsyncSession`.
-- `services/<domain>/` holds business logic. This is where the deterministic (LLM-free) skill-graph /
-  bus-factor pipeline and the LLM-backed RAG / quiz / archaeology / expert-routing logic will live.
-- `dao/models/*.py` are the SQLAlchemy 2.0 ORM models; `dao/<entity>_dao.py` are repository classes
-  (async CRUD) extending `dao/base_dao.py`.
-- `core/database/postgres.py` owns the async engine/session factory and the pgvector extension bootstrap.
-  `core/llm/llm_client.py` is a thin OpenAI SDK wrapper. `core/common/` has logging, the exception
-  hierarchy, and the id generator.
-- `config/settings.py` is a `pydantic-settings` singleton (`get_settings()`) loaded from `.env`.
-
-When adding a new feature: add/extend the DAO, implement the service method (services already exist as
-skeletons for every domain), wire it into the router that's already defined, and add/extend the schema DTOs.
-
-## What's real vs. stubbed
-
-Fully implemented end-to-end: `repo` registration/list/get and `employee` registration/list/get
-(router -> service -> DAO -> Postgres).
-
-Everything else (`skill_graph`, `rag`, `quiz`, `archaeology`/chat, `expert_routing`, `dashboard`) has real
-routes, real request/response schemas, and a real service class wired through the DI container — but the
-service methods raise `NotImplementedError`, which the global exception handler turns into a clean `501`
-JSON response. This proves the full architecture end-to-end without faking feature logic ahead of time.
-
-## Tests
+## Tests & lint
 
 ```bash
-uv run pytest
+make test
+make lint
+make format
 ```
 
-One smoke test lives in `tests/` exercising the repo DAO/service CRUD against the real DB configured via
-`DATABASE_URL`. It's a placeholder establishing the pattern — the skill-graph scoring algorithm should get
-proper fixture-based unit tests once it's implemented (see PRD §9).
+## Architecture (quick map)
 
-## Lint
+`api/routes` → `api/schema` → `services` → `dao` → `core/database`
 
-```bash
-uv run ruff check .
-uv run ruff format .
-```
+See comments in those packages for domain details. Wired today: **repo** and **employee** CRUD. Other domains return `501` until implemented.

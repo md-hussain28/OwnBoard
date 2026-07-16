@@ -5,8 +5,8 @@ help: ## Show available targets
 
 setup: env install ## First-time setup: env + npm install
 
-env: ## Create .env.local from example if missing
-	@if [ ! -f .env.local ]; then cp .env.local.example .env.local && echo "Created .env.local from .env.local.example"; else echo ".env.local already exists"; fi
+env: ## Create .env.local from .env.example if missing
+	@if [ ! -f .env.local ]; then cp .env.example .env.local && echo "Created .env.local from .env.example"; else echo ".env.local already exists"; fi
 
 install: ## Install npm dependencies
 	npm install

@@ -56,89 +56,118 @@
 }
 
 /*
-  Ink & Signal — cool-tinted neutrals + teal accent.
-  Hue ~210 for surfaces, ~195 for primary/signal.
+  Night & Ember — OwnBoard brand palette (Restrained).
+
+  Primitives (source of truth):
+    Brilliance          #fdfcfc  → canvas
+    Violet Essence      #e6e4e6  → muted / secondary fills
+    No Way Rosé         #f9b095  → soft accent wash
+    Palladium           #b1b1b1  → borders / dark muted text
+    Precious Persimmon  #f87941  → primary signal
+    Night Black         #2f3035  → ink / sidebar / primary text on ember
+
+  Note: white-on-Persimmon fails WCAG (~2.6:1). Primary always uses Night Black on Persimmon.
 */
 :root {
-  --background: oklch(0.985 0.006 220);
-  --foreground: oklch(0.22 0.028 255);
-  --card: oklch(0.995 0.003 220);
-  --card-foreground: oklch(0.22 0.028 255);
-  --popover: oklch(0.995 0.003 220);
-  --popover-foreground: oklch(0.22 0.028 255);
-  --primary: oklch(0.48 0.11 195);
-  --primary-foreground: oklch(0.99 0.01 195);
-  --secondary: oklch(0.955 0.01 220);
-  --secondary-foreground: oklch(0.28 0.03 255);
-  --muted: oklch(0.955 0.01 220);
-  --muted-foreground: oklch(0.48 0.025 250);
-  --accent: oklch(0.94 0.02 195);
-  --accent-foreground: oklch(0.32 0.06 195);
-  --destructive: oklch(0.55 0.22 25);
-  --success: oklch(0.55 0.13 155);
+  /* —— Brand primitives —— */
+  --brilliance: oklch(0.992 0.001 17);
+  --violet-essence: oklch(0.921 0.003 326);
+  --no-way-rose: oklch(0.82 0.094 41);
+  --palladium: oklch(0.76 0 90);
+  --precious-persimmon: oklch(0.715 0.171 43);
+  --night-black: oklch(0.31 0.009 277);
+  /* Derived (same ink family as Night Black) */
+  --graphite: oklch(0.472 0.01 279);
+  --border-soft: oklch(0.866 0.003 326);
+
+  /* —— Semantic tokens (light) —— */
+  --background: var(--brilliance);
+  --foreground: var(--night-black);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--night-black);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--night-black);
+  --primary: var(--precious-persimmon);
+  --primary-foreground: var(--night-black);
+  --secondary: var(--violet-essence);
+  --secondary-foreground: var(--night-black);
+  --muted: var(--violet-essence);
+  --muted-foreground: var(--graphite);
+  /* Soft Rosé wash for hover/selection — full Rosé is too loud as a fill */
+  --accent: oklch(0.94 0.04 41);
+  --accent-foreground: var(--night-black);
+  --destructive: oklch(0.55 0.2 25);
+  --success: oklch(0.52 0.12 155);
   --success-foreground: oklch(0.99 0.01 155);
-  --warning: oklch(0.72 0.14 75);
-  --warning-foreground: oklch(0.28 0.04 75);
-  --danger: oklch(0.55 0.22 25);
+  --warning: var(--precious-persimmon);
+  --warning-foreground: var(--night-black);
+  --danger: oklch(0.55 0.2 25);
   --danger-foreground: oklch(0.99 0.01 25);
-  --border: oklch(0.9 0.012 220);
-  --input: oklch(0.9 0.012 220);
-  --ring: oklch(0.55 0.1 195);
-  --chart-1: oklch(0.55 0.12 195);
-  --chart-2: oklch(0.58 0.1 230);
-  --chart-3: oklch(0.55 0.13 155);
-  --chart-4: oklch(0.7 0.12 75);
-  --chart-5: oklch(0.5 0.04 255);
+  --border: var(--border-soft);
+  --input: var(--border-soft);
+  --ring: var(--precious-persimmon);
+  --chart-1: var(--precious-persimmon);
+  --chart-2: var(--no-way-rose);
+  --chart-3: oklch(0.52 0.12 155);
+  --chart-4: var(--palladium);
+  --chart-5: var(--night-black);
   --radius: 0.625rem;
-  /* Committed dark rail on light canvas */
-  --sidebar: oklch(0.2 0.03 255);
-  --sidebar-foreground: oklch(0.92 0.01 220);
-  --sidebar-primary: oklch(0.72 0.12 195);
-  --sidebar-primary-foreground: oklch(0.16 0.03 255);
-  --sidebar-accent: oklch(0.28 0.035 255);
-  --sidebar-accent-foreground: oklch(0.96 0.01 220);
+  /* Night Black rail */
+  --sidebar: var(--night-black);
+  --sidebar-foreground: var(--brilliance);
+  --sidebar-primary: var(--precious-persimmon);
+  --sidebar-primary-foreground: var(--night-black);
+  --sidebar-accent: oklch(0.38 0.01 277);
+  --sidebar-accent-foreground: var(--brilliance);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.72 0.12 195);
+  --sidebar-ring: var(--precious-persimmon);
 }
 
+/*
+  Dark: Night Black as the mid surface, deeper charcoal as canvas.
+  Persimmon stays the signal; Palladium carries muted text; Rosé softens accents.
+*/
 .dark {
-  --background: oklch(0.16 0.025 255);
-  --foreground: oklch(0.95 0.01 220);
-  --card: oklch(0.2 0.028 255);
-  --card-foreground: oklch(0.95 0.01 220);
-  --popover: oklch(0.2 0.028 255);
-  --popover-foreground: oklch(0.95 0.01 220);
-  --primary: oklch(0.72 0.12 195);
-  --primary-foreground: oklch(0.16 0.03 255);
-  --secondary: oklch(0.26 0.03 255);
-  --secondary-foreground: oklch(0.95 0.01 220);
-  --muted: oklch(0.26 0.03 255);
-  --muted-foreground: oklch(0.7 0.02 230);
-  --accent: oklch(0.28 0.045 195);
-  --accent-foreground: oklch(0.88 0.06 195);
-  --destructive: oklch(0.68 0.18 25);
-  --success: oklch(0.7 0.14 155);
-  --success-foreground: oklch(0.16 0.03 155);
-  --warning: oklch(0.78 0.13 75);
-  --warning-foreground: oklch(0.22 0.04 75);
-  --danger: oklch(0.68 0.18 25);
-  --danger-foreground: oklch(0.16 0.03 25);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.65 0.1 195);
-  --chart-1: oklch(0.72 0.12 195);
-  --chart-2: oklch(0.68 0.1 230);
-  --chart-3: oklch(0.7 0.14 155);
-  --chart-4: oklch(0.78 0.13 75);
-  --chart-5: oklch(0.65 0.03 255);
-  --sidebar: oklch(0.13 0.025 255);
-  --sidebar-foreground: oklch(0.93 0.01 220);
-  --sidebar-primary: oklch(0.72 0.12 195);
-  --sidebar-primary-foreground: oklch(0.13 0.03 255);
-  --sidebar-accent: oklch(0.22 0.035 255);
-  --sidebar-accent-foreground: oklch(0.96 0.01 220);
+  --canvas-deep: oklch(0.231 0.008 275);
+  --surface-raised: oklch(0.354 0.01 278);
+
+  --background: var(--canvas-deep);
+  --foreground: var(--brilliance);
+  --card: var(--night-black);
+  --card-foreground: var(--brilliance);
+  --popover: var(--night-black);
+  --popover-foreground: var(--brilliance);
+  --primary: var(--precious-persimmon);
+  --primary-foreground: var(--night-black);
+  --secondary: var(--surface-raised);
+  --secondary-foreground: var(--brilliance);
+  --muted: var(--surface-raised);
+  --muted-foreground: var(--palladium);
+  --accent: oklch(0.38 0.07 41);
+  --accent-foreground: var(--no-way-rose);
+  --destructive: oklch(0.7 0.17 25);
+  --success: oklch(0.72 0.12 155);
+  --success-foreground: var(--canvas-deep);
+  --warning: var(--precious-persimmon);
+  --warning-foreground: var(--night-black);
+  --danger: oklch(0.7 0.17 25);
+  --danger-foreground: var(--canvas-deep);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: var(--precious-persimmon);
+  --chart-1: var(--precious-persimmon);
+  --chart-2: var(--no-way-rose);
+  --chart-3: oklch(0.72 0.12 155);
+  --chart-4: var(--palladium);
+  --chart-5: var(--brilliance);
+  --sidebar: oklch(0.18 0.008 275);
+  --sidebar-foreground: var(--brilliance);
+  --sidebar-primary: var(--precious-persimmon);
+  --sidebar-primary-foreground: var(--night-black);
+  --sidebar-accent: var(--night-black);
+  --sidebar-accent-foreground: var(--brilliance);
   --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.72 0.12 195);
+  --sidebar-ring: var(--precious-persimmon);
 }
 
 @layer base {

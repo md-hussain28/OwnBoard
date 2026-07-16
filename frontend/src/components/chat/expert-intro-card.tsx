@@ -4,11 +4,11 @@ import type { ExpertRouting } from "@/schemas/chat.schema";
 
 export function ExpertIntroCard({ routing }: { routing: ExpertRouting }) {
   return (
-    <Card className="border-amber-500/40">
+    <Card className="border-warning/40">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           Confidence too low — routing to an expert
-          <Badge variant="destructive">Low confidence</Badge>
+          <Badge variant="warning">Low confidence</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">

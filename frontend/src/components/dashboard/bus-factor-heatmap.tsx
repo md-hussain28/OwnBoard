@@ -7,9 +7,9 @@ import { Badge } from "@/ui/badge";
 import { cn } from "@/lib/utils";
 
 const RISK_STYLES: Record<string, string> = {
-  low: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  high: "bg-red-500/10 text-red-600 dark:text-red-400",
+  low: "bg-success/10 text-success",
+  medium: "bg-warning/10 text-warning",
+  high: "bg-danger/10 text-danger",
 };
 
 export function BusFactorHeatmap({ repoId }: { repoId: string }) {

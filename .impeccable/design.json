@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-16T00:00:00Z",
+  "title": "Design System: OwnBoard",
+  "extensions": {
+    "colorMeta": {
+      "background": { "role": "neutral", "displayName": "Paper White", "canonical": "oklch(1 0 0)" },
+      "foreground": { "role": "neutral", "displayName": "Ink", "canonical": "oklch(0.145 0 0)" },
+      "primary": { "role": "primary", "displayName": "Graphite", "canonical": "oklch(0.205 0 0)" },
+      "muted-foreground": { "role": "neutral", "displayName": "Slate Gray", "canonical": "oklch(0.556 0 0)" },
+      "border": { "role": "neutral", "displayName": "Hairline Gray", "canonical": "oklch(0.922 0 0)" },
+      "success": { "role": "status", "displayName": "Verified Green", "canonical": "oklch(0.6 0.14 155)" },
+      "warning": { "role": "status", "displayName": "Caution Amber", "canonical": "oklch(0.7 0.16 70)" },
+      "danger": { "role": "status", "displayName": "Alert Red", "canonical": "oklch(0.577 0.245 27.325)" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "App wordmark and the home page hero heading only." },
+      "headline": { "displayName": "Headline", "purpose": "Page-level titles (Dashboard, Chat, each onboarding step)." },
+      "title": { "displayName": "Title", "purpose": "Component-level headers (card titles, section headers)." },
+      "body": { "displayName": "Body", "purpose": "Default text for paragraphs, list items, form labels, descriptions." },
+      "label": { "displayName": "Label", "purpose": "Captions, muted meta text, timestamps, badge text." },
+      "mono": { "displayName": "Mono (Evidence)", "purpose": "Commit hashes, file paths, citations, code excerpts." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for hover/focus/state transitions (Tailwind's transition-all default)." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single loud action on a screen — near-black fill, opacity-fade on hover.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Add repo</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; height: 2rem; padding: 0 0.625rem; border-radius: 0.625rem; border: 1px solid transparent; font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; white-space: nowrap; transition: background-color 0.15s cubic-bezier(0.4,0,0.2,1), border-color 0.15s cubic-bezier(0.4,0,0.2,1); } .ds-btn-primary { background: var(--primary); color: var(--primary-foreground); } .ds-btn-primary:hover { background: color-mix(in oklch, var(--primary) 80%, transparent); } .ds-btn-primary:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary/tertiary action — neutral surface, border, hover to a muted tone.",
+      "html": "<button class=\"ds-btn ds-btn-outline\">Cancel</button>",
+      "css": ".ds-btn-outline { background: var(--background); color: var(--foreground); border: 1px solid var(--border); } .ds-btn-outline:hover { background: var(--muted); } .ds-btn-outline:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); } .ds-btn-outline:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Status Badge — Success",
+      "kind": "chip",
+      "refersTo": "badge-success",
+      "description": "Low-risk / pass / ingested state — tinted fill, full-strength text.",
+      "html": "<span class=\"ds-badge ds-badge-success\">low</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; height: 1.25rem; padding: 0.125rem 0.5rem; border-radius: 1.625rem; font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; font-weight: 500; white-space: nowrap; } .ds-badge-success { background: color-mix(in oklch, var(--success) 10%, transparent); color: var(--success); }"
+    },
+    {
+      "name": "Status Badge — Warning",
+      "kind": "chip",
+      "refersTo": "badge-warning",
+      "description": "Medium risk / low-confidence escalation state.",
+      "html": "<span class=\"ds-badge ds-badge-warning\">Low confidence</span>",
+      "css": ".ds-badge-warning { background: color-mix(in oklch, var(--warning) 10%, transparent); color: var(--warning); }"
+    },
+    {
+      "name": "Status Badge — Danger",
+      "kind": "chip",
+      "refersTo": "badge-danger",
+      "description": "High risk / fail state.",
+      "html": "<span class=\"ds-badge ds-badge-danger\">high</span>",
+      "css": ".ds-badge-danger { background: color-mix(in oklch, var(--danger) 10%, transparent); color: var(--danger); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Base container — flat, ring-separated, no shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Bus-factor heatmap</div><div class=\"ds-card-body\">No subsystem data yet.</div></div>",
+      "css": ".ds-card { background: var(--card); color: var(--card-foreground); border-radius: 0.875rem; box-shadow: 0 0 0 1px color-mix(in oklch, var(--foreground) 10%, transparent); padding: 1rem; font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif; } .ds-card-title { font-size: 1rem; font-weight: 500; line-height: 1.375; margin-bottom: 0.25rem; } .ds-card-body { font-size: 0.875rem; color: var(--muted-foreground); }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text input — height-matched to buttons, hairline border.",
+      "html": "<input class=\"ds-input\" placeholder=\"Repo URL\" />",
+      "css": ".ds-input { height: 2rem; width: 100%; padding: 0.25rem 0.625rem; border-radius: 0.625rem; border: 1px solid var(--input); background: transparent; color: var(--foreground); font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; transition: border-color 0.15s cubic-bezier(0.4,0,0.2,1); } .ds-input::placeholder { color: var(--muted-foreground); } .ds-input:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); } .ds-input:disabled { opacity: 0.5; background: color-mix(in oklch, var(--input) 50%, transparent); pointer-events: none; }"
+    },
+    {
+      "name": "Skeleton (loading state)",
+      "kind": "custom",
+      "refersTo": "skeleton",
+      "description": "Loading placeholder — pulses, never a spinner.",
+      "html": "<div class=\"ds-skeleton\" style=\"height: 2.5rem; width: 100%;\"></div>",
+      "css": "@keyframes ds-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } } .ds-skeleton { border-radius: 0.5rem; background: var(--muted); animation: ds-pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Evidence Ledger",
+    "overview": "OwnBoard is where a new hire's understanding of a codebase gets checked against reality, not against vibes. The interface reads like a well-kept ledger: quiet, exact, every entry traceable to a source. It is achromatic by default — near-black ink on paper-white, one hairline gray for structure — because the product's whole premise is that trust comes from citations and commit history, not from visual enthusiasm. Color is spent only where it carries meaning: a status (pass/fail, risk level, confidence), never as decoration. This system explicitly rejects the generic gradient-SaaS register, rejects gamified onboarding, and rejects dense enterprise-dashboard chrome. The existing grayscale, generous-whitespace direction is correct; the job is to formalize it, not replace it.",
+    "keyCharacteristics": [
+      "Achromatic surface (grayscale OKLCH) with color reserved strictly for semantic status.",
+      "Flat elevation — structure comes from a 1px ring/border, never a shadow.",
+      "One typeface (Geist Sans) carries every UI role; Geist Mono is reserved for anything that is evidence — commit hashes, file paths, citations.",
+      "Calm, direct copy. No exclamation points, no 'Woo!', no cutesy empty states."
+    ],
+    "rules": [
+      { "name": "The One Loud Color Rule", "body": "primary (near-black) is the only non-status color allowed to carry visual weight. Everything else is Paper White, Pale Gray, or a border hairline.", "section": "colors" },
+      { "name": "The Status-Token-Only Rule", "body": "Severity, risk level, and pass/fail state are expressed exclusively through success/warning/danger. Raw Tailwind palette colors for status meanings are prohibited.", "section": "colors" },
+      { "name": "The One Family Rule", "body": "Every UI role is Geist Sans at a different size/weight step. Do not introduce a second sans-serif for variety.", "section": "typography" },
+      { "name": "The Evidence-Is-Mono Rule", "body": "Anything that is cited provenance — a commit hash, a file path, a quoted code line — renders in Geist Mono, never Geist Sans.", "section": "typography" },
+      { "name": "The No-Shadow Rule", "body": "Surfaces separate from their background via a 1px ring or border, never box-shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use success / warning / danger tokens for every status/severity meaning.",
+      "Do keep the interface achromatic outside of status color and the single primary graphite.",
+      "Do render provenance (commit hashes, file paths, cited snippets) in Geist Mono.",
+      "Do ship the full state set (default/hover/focus-visible/active/disabled, plus loading/error/empty) on every component.",
+      "Do write calm, direct copy for errors and empty states.",
+      "Do keep separation flat: a ring or a single border, never a box-shadow."
+    ],
+    "donts": [
+      "Don't use raw Tailwind palette colors for status or severity — always go through success/warning/danger.",
+      "Don't add a gradient-text hero, tiny uppercase tracked eyebrows, or identical icon-card grids.",
+      "Don't add confetti, badges-as-rewards, mascots, or playful progress theatrics to onboarding.",
+      "Don't build cramped, table-dense enterprise chrome.",
+      "Don't introduce a second sans-serif, or use a display typeface for body copy, labels, or data.",
+      "Don't reach for a modal as the first solution.",
+      "Don't build a component that only has a default state."
+    ]
+  }
+}

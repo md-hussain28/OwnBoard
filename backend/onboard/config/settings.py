@@ -20,9 +20,18 @@ class Settings(BaseSettings):
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
     OPENAI_CHAT_MODEL: str = "gpt-4o-mini"
 
+    # Clerk (backend token verification). Never expose CLERK_SECRET_KEY to the browser.
+    CLERK_SECRET_KEY: str = ""
+    CLERK_JWT_KEY: str = ""
+    CLERK_AUTHORIZED_PARTIES: str = "http://localhost:3000"
+
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ALLOWED_ORIGINS.split(",") if origin.strip()]
+
+    @property
+    def clerk_authorized_parties(self) -> list[str]:
+        return [origin.strip() for origin in self.CLERK_AUTHORIZED_PARTIES.split(",") if origin.strip()]
 
 
 @lru_cache

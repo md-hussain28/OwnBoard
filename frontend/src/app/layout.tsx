@@ -1,3 +1,5 @@
+import { ClerkProvider } from "@clerk/nextjs";
+import { shadcn } from "@clerk/ui/themes";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -27,13 +29,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <QueryProvider>
-          <AppHeader />
-          <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
-        </QueryProvider>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ClerkProvider appearance={{ theme: shadcn }}>
+          <QueryProvider>
+            <AppHeader />
+            <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
+          </QueryProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

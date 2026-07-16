@@ -20,3 +20,10 @@ class ValidationError(OnboardError):
 
     def __init__(self, message: str = "Validation failed"):
         super().__init__(message)
+
+
+class UnauthorizedError(OnboardError):
+    status_code = 401
+
+    def __init__(self, message: str = "Unauthorized"):
+        super().__init__(message)

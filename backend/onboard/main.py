@@ -1,12 +1,14 @@
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from onboard.api.dependency.auth import require_user
 from onboard.api.exception_handlers import register_exception_handlers
 from onboard.api.middleware.logging import RequestLoggingMiddleware
 from onboard.api.routes import (
+    auth_router,
     chat_router,
     dashboard_router,
     employee_router,
@@ -53,14 +55,16 @@ def create_app() -> FastAPI:
     app.include_router(health_router.router)
 
     prefix = settings.API_VERSION_PREFIX
-    app.include_router(repo_router.router, prefix=prefix)
-    app.include_router(employee_router.router, prefix=prefix)
-    app.include_router(skill_graph_router.router, prefix=prefix)
-    app.include_router(rag_router.router, prefix=prefix)
-    app.include_router(quiz_router.router, prefix=prefix)
-    app.include_router(chat_router.router, prefix=prefix)
-    app.include_router(expert_router.router, prefix=prefix)
-    app.include_router(dashboard_router.router, prefix=prefix)
+    protected = [Depends(require_user)]
+    app.include_router(auth_router.router, prefix=prefix, dependencies=protected)
+    app.include_router(repo_router.router, prefix=prefix, dependencies=protected)
+    app.include_router(employee_router.router, prefix=prefix, dependencies=protected)
+    app.include_router(skill_graph_router.router, prefix=prefix, dependencies=protected)
+    app.include_router(rag_router.router, prefix=prefix, dependencies=protected)
+    app.include_router(quiz_router.router, prefix=prefix, dependencies=protected)
+    app.include_router(chat_router.router, prefix=prefix, dependencies=protected)
+    app.include_router(expert_router.router, prefix=prefix, dependencies=protected)
+    app.include_router(dashboard_router.router, prefix=prefix, dependencies=protected)
 
     @app.get("/")
     async def root() -> dict[str, str]:

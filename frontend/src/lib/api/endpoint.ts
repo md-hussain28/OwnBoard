@@ -1,4 +1,5 @@
 export const API_ENDPOINTS = {
+  me: "/me",
   repos: "/repos",
   repo: (id: string) => `/repos/${id}`,
   employees: "/employees",

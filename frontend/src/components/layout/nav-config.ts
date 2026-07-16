@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  BookOpenCheckIcon,
   ClipboardCheckIcon,
   FolderGit2Icon,
   NetworkIcon,
@@ -32,6 +33,13 @@ export const WORKSPACE_NAV: NavGroup = {
       label: "Codebases",
       description: "Connected repos",
       icon: FolderGit2Icon,
+    },
+    {
+      href: "/doc-packs",
+      label: "Doc packs",
+      description: "Assigned reading & quizzes",
+      icon: BookOpenCheckIcon,
+      matchPrefix: true,
     },
     {
       href: "/onboarding",

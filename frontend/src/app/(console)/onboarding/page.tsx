@@ -29,6 +29,21 @@ export default function OnboardingPage() {
         </p>
       </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Assigned reading packs</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            Doc packs assigned by your admin — read every document, then pass the open-book quiz at
+            100%.
+          </p>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/onboarding/packs">Open</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
       <ol className="grid gap-4 sm:grid-cols-3">
         {STEPS.map((step, index) => {
           const isCurrent = step.key === currentStep;

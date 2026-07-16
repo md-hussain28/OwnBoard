@@ -7,10 +7,10 @@ import { IncomingFeature } from "@/components/layout/incoming-feature";
 import { Button } from "@/ui/button";
 
 const MOCK_QUESTION = {
-  prompt:
+  questionText:
     "The `syncRetryQueue` job retries failed webhook deliveries with exponential backoff. Per a senior engineer's note, what's the max backoff cap?",
   options: ["30 seconds", "5 minutes", "1 hour"],
-  citation: "src/jobs/sync-retry-queue.ts (commit a1b2c3d)",
+  sourceCitation: "src/jobs/sync-retry-queue.ts (commit a1b2c3d)",
 };
 
 export default function CodebaseQuizPage() {

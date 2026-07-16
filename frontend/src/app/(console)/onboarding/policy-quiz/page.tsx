@@ -7,14 +7,14 @@ import { IncomingFeature } from "@/components/layout/incoming-feature";
 import { Button } from "@/ui/button";
 
 const MOCK_QUESTION = {
-  prompt:
+  questionText:
     "A teammate asks you to push a hotfix directly to main to save time before a demo. What do you do?",
   options: [
     "Push directly, the demo is more important",
     "Open a PR and request at least one review, even for hotfixes",
     "Ask a manager to push it for you",
   ],
-  citation: "docs/engineering-policy.md#code-review",
+  sourceCitation: "docs/engineering-policy.md#code-review",
 };
 
 export default function PolicyQuizPage() {

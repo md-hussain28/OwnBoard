@@ -1,30 +1,16 @@
 import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
-import {
-  quizTemplateListSchema,
-  quizTemplateSchema,
-  quizAttemptSchema,
-  type QuizAttempt,
-  type QuizTemplate,
-} from "@/schemas/quiz.schema";
+import { quizAttemptSchema, type QuizAttempt } from "@/schemas/quiz.schema";
 
 export const quizService = {
-  async listTemplates(): Promise<QuizTemplate[]> {
-    const { data } = await getApiClient().get(API_ENDPOINTS.quizTemplates);
-    return quizTemplateListSchema.parse(data);
-  },
-
-  async getTemplate(id: string): Promise<QuizTemplate> {
-    const { data } = await getApiClient().get(API_ENDPOINTS.quizTemplate(id));
-    return quizTemplateSchema.parse(data);
-  },
-
-  async submitAttempt(input: {
-    quizTemplateId: string;
-    employeeId: string;
-    answers: number[];
+  /** Grade a completed attempt — reused across policy/codebase/doc_pack quizzes (PRD §9 path fix). */
+  async gradeAttempt(input: {
+    attemptId: string;
+    answers: Record<string, string>;
   }): Promise<QuizAttempt> {
-    const { data } = await getApiClient().post(API_ENDPOINTS.quizAttempts, input);
+    const { data } = await getApiClient().post(API_ENDPOINTS.gradeAttempt(input.attemptId), {
+      answers: input.answers,
+    });
     return quizAttemptSchema.parse(data);
   },
 };

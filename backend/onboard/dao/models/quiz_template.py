@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Enum, String, Text
+from sqlalchemy import Boolean, Enum, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from onboard.dao.models.base import AuditBase
@@ -18,6 +18,12 @@ class QuizTemplate(AuditBase):
     type: Mapped[QuizType] = mapped_column(Enum(QuizType, name="quiz_type"), nullable=False)
     source_ref: Mapped[str] = mapped_column(String(512), nullable=False)
     custom_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Doc Pack E1 versioning (Doc Pack PRD §4/§10.12): a template starts as an unpublished curation draft;
+    # `PUT /doc-packs/{id}/quiz` publishes it (is_published=True), at which point it's immutable — later
+    # regenerate/save cycles create a brand-new template row rather than mutating this one, so in-flight
+    # (`quiz_in_progress`) and completed (`passed`/`failed`) attempts keep grading against the exact version
+    # they started on.
+    is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     questions: Mapped[list["QuizQuestion"]] = relationship(back_populates="quiz_template", cascade="all, delete-orphan")
     attempts: Mapped[list["QuizAttempt"]] = relationship(back_populates="quiz_template", cascade="all, delete-orphan")

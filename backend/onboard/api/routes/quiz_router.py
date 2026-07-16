@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from onboard.api.dependency.service_container import ServiceContainer, get_service_container
+from onboard.api.dependency.tenancy import CurrentOrgId
 from onboard.api.schema.quiz.request import GenerateCodebaseQuizRequest, GeneratePolicyQuizRequest, GradeAttemptRequest
 from onboard.api.schema.quiz.response import QuizAttemptResponse, QuizTemplateResponse
 
@@ -25,7 +26,10 @@ async def generate_policy_quiz(
 
 @router.post("/attempts/{quiz_attempt_id}/grade", response_model=QuizAttemptResponse)
 async def grade_attempt(
-    quiz_attempt_id: str, payload: GradeAttemptRequest, services: ServiceContainer = Depends(get_service_container)
+    quiz_attempt_id: str,
+    payload: GradeAttemptRequest,
+    org_id: CurrentOrgId,
+    services: ServiceContainer = Depends(get_service_container),
 ):
-    """Grade a completed quiz attempt, gating repo access on pass (PRD §6.7)."""
-    return await services.quiz.grade_attempt(quiz_attempt_id, payload.answers)
+    """Grade a completed quiz attempt, gating repo access on pass (PRD §6.7); reused by Doc Pack assignments."""
+    return await services.quiz.grade_attempt(org_id, quiz_attempt_id, payload.answers)

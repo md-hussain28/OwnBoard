@@ -28,7 +28,9 @@ def upgrade() -> None:
         sa.Column("org_id", sa.String(length=64), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("status", sa.Enum("draft", "active", "archived", "needs_review", name="doc_pack_status"), nullable=False),
+        sa.Column(
+            "status", sa.Enum("draft", "active", "archived", "needs_review", name="doc_pack_status"), nullable=False
+        ),
         sa.Column("created_by", sa.String(length=64), nullable=True),
         sa.Column("id", sa.String(length=64), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
@@ -120,10 +122,7 @@ def upgrade() -> None:
     op.create_index(op.f("ix_doc_chunk_document_id"), "doc_chunk", ["document_id"], unique=False)
     op.create_index(op.f("ix_doc_chunk_org_id"), "doc_chunk", ["org_id"], unique=False)
     # HNSW cosine index for production-grade similarity search (PRD §12).
-    op.execute(
-        "CREATE INDEX ix_doc_chunk_embedding_hnsw ON doc_chunk "
-        "USING hnsw (embedding vector_cosine_ops)"
-    )
+    op.execute("CREATE INDEX ix_doc_chunk_embedding_hnsw ON doc_chunk USING hnsw (embedding vector_cosine_ops)")
 
     op.create_table(
         "pack_assignment_ack",

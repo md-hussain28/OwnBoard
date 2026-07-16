@@ -1,9 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import { quizService } from "@/services/quiz.service";
 
-export function useSubmitQuizAttempt() {
+export function useGradeAttempt() {
   return useMutation({
-    mutationFn: (input: { quizTemplateId: string; employeeId: string; answers: number[] }) =>
-      quizService.submitAttempt(input),
+    mutationFn: (input: { attemptId: string; answers: Record<string, string> }) =>
+      quizService.gradeAttempt(input),
   });
 }

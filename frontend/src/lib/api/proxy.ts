@@ -7,7 +7,14 @@ import { getBackendClient } from "@/lib/api/backend-client";
 export async function proxyRequest(
   method: "get" | "post" | "put" | "patch" | "delete",
   path: string,
-  options: { data?: unknown; params?: Record<string, string> } = {},
+  options: {
+    data?: unknown;
+    params?: Record<string, string>;
+    /** Extra headers; set a key to null to drop an instance default (e.g. Content-Type for FormData). */
+    headers?: Record<string, string | null>;
+    /** Override the 15s default for slow endpoints (file upload, LLM generation). */
+    timeout?: number;
+  } = {},
 ) {
   try {
     const { getToken } = await auth();
@@ -18,7 +25,11 @@ export async function proxyRequest(
       url: path,
       data: options.data,
       params: options.params,
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      timeout: options.timeout,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers ?? {}),
+      },
     });
     return NextResponse.json(response.data, { status: response.status });
   } catch (error) {

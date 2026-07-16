@@ -44,9 +44,12 @@ class Settings(BaseSettings):
         else:
             url = self.DATABASE_URL_LOCAL.strip()
         # Neon pooler URLs often include channel_binding=require; asyncpg rejects it.
-        return url.replace("&channel_binding=require", "").replace("?channel_binding=require&", "?").replace(
-            "?channel_binding=require", ""
+        return (
+            url.replace("&channel_binding=require", "")
+            .replace("?channel_binding=require&", "?")
+            .replace("?channel_binding=require", "")
         )
+
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ALLOWED_ORIGINS.split(",") if origin.strip()]

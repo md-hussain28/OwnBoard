@@ -45,6 +45,7 @@ class DocPack(AuditBase):
         nullable=False,
         default=DocPackStatus.draft,
     )
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     organization: Mapped["Organization"] = relationship(back_populates="doc_packs")

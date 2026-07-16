@@ -19,7 +19,7 @@ from onboard.dao.models.institutional_memory_note import InstitutionalMemoryNote
 from onboard.dao.models.organization import Organization
 from onboard.dao.models.policy_doc import PolicyDoc
 from onboard.dao.models.quiz_attempt import QuizAttempt
-from onboard.dao.models.quiz_question import QuizQuestion
+from onboard.dao.models.quiz_question import QuestionFormat, QuizQuestion
 from onboard.dao.models.quiz_template import QuizTemplate, QuizType
 from onboard.dao.models.repo import Repo
 
@@ -42,6 +42,7 @@ __all__ = [
     "PackAssignmentAck",
     "PackAssignmentStatus",
     "PolicyDoc",
+    "QuestionFormat",
     "QuizAttempt",
     "QuizQuestion",
     "QuizTemplate",

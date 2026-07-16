@@ -1,0 +1,136 @@
+"use client";
+
+import { useRef } from "react";
+import { FileTextIcon, Loader2Icon, Trash2Icon, UploadIcon } from "lucide-react";
+import { useUploadDocuments, useDeleteDocument } from "@/hooks/queries/doc-pack/doc-pack.mutations";
+import { Button } from "@/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { Badge } from "@/ui/badge";
+import type { DocPackDocument } from "@/schemas/docPack.schema";
+
+const STATUS_LABEL: Record<DocPackDocument["status"], string> = {
+  uploaded: "Queued",
+  processing: "Processing",
+  processed: "Processed",
+  failed: "Failed",
+};
+
+function statusVariant(status: DocPackDocument["status"]) {
+  if (status === "processed") return "default" as const;
+  if (status === "failed") return "destructive" as const;
+  return "secondary" as const;
+}
+
+function formatSize(bytes: number): string {
+  if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} B`;
+}
+
+export function DocPackDocuments({
+  packId,
+  documents,
+}: {
+  packId: string;
+  documents: DocPackDocument[];
+}) {
+  const upload = useUploadDocuments(packId);
+  const deleteDocument = useDeleteDocument(packId);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleFiles(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return;
+    upload.mutate(Array.from(fileList));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Documents</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.docx,.txt,.md,.markdown"
+          className="hidden"
+          onChange={(e) => handleFiles(e.target.files)}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full border-dashed py-8"
+          disabled={upload.isPending}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {upload.isPending ? (
+            <>
+              <Loader2Icon className="size-4 animate-spin" /> Uploading...
+            </>
+          ) : (
+            <>
+              <UploadIcon className="size-4" /> Upload PDF, DOCX, TXT or MD files
+            </>
+          )}
+        </Button>
+
+        {upload.isError && (
+          <p className="text-sm text-destructive">
+            Upload failed ({upload.error instanceof Error ? upload.error.message : "unknown error"}).
+          </p>
+        )}
+
+        {documents.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            No documents yet. Upload at least one file to generate a quiz.
+          </p>
+        )}
+
+        {documents.length > 0 && (
+          <ul className="space-y-2">
+            {documents.map((doc) => (
+              <li
+                key={doc.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <FileTextIcon className="size-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{doc.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {doc.fileType.toUpperCase()} · {formatSize(doc.fileSizeBytes)}
+                      {doc.pageCount ? ` · ${doc.pageCount} pages` : ""}
+                    </p>
+                    {doc.status === "failed" && doc.errorMessage && (
+                      <p className="truncate text-xs text-destructive">{doc.errorMessage}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge variant={statusVariant(doc.status)}>
+                    {(doc.status === "processing" || doc.status === "uploaded") && (
+                      <Loader2Icon className="size-3 animate-spin" />
+                    )}
+                    {STATUS_LABEL[doc.status]}
+                  </Badge>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Delete ${doc.title}`}
+                    disabled={deleteDocument.isPending}
+                    onClick={() => deleteDocument.mutate(doc.id)}
+                  >
+                    <Trash2Icon className="size-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

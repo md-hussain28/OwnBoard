@@ -10,6 +10,16 @@ from onboard.api.schema.doc_pack.response import (
     DocPackRetrieveResponse,
     RetrievedDocChunkResponse,
 )
+from onboard.api.schema.quiz.request import (
+    GenerateDocPackQuizRequest,
+    RegenerateQuestionsRequest,
+    SaveDocPackQuizRequest,
+)
+from onboard.api.schema.quiz.response import (
+    GenerateDocPackQuizResponse,
+    GeneratedSlotIssueResponse,
+    QuizTemplateAdminResponse,
+)
 from onboard.services.doc_pack.doc_pack_service import ingest_document_background
 
 router = APIRouter(prefix="/doc-packs", tags=["doc-packs"])
@@ -103,3 +113,55 @@ async def retrieve_doc_pack(
             for hit in hits
         ]
     )
+
+
+@router.post("/{pack_id}/generate-quiz", response_model=GenerateDocPackQuizResponse, status_code=201)
+async def generate_doc_pack_quiz(
+    pack_id: str,
+    payload: GenerateDocPackQuizRequest,
+    org_id: CurrentOrgId,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Doc Pack PRD §5 — coverage_plan → draft → verify pipeline; returns a curation-ready draft."""
+    template, rejected = await services.quiz.generate_doc_pack_quiz(
+        org_id, pack_id, payload.target_count, list(payload.formats), payload.custom_instructions
+    )
+    return GenerateDocPackQuizResponse(
+        template=QuizTemplateAdminResponse.model_validate(template),
+        rejected_slots=[
+            GeneratedSlotIssueResponse(document_title=r.slot.document_title, citation=r.slot.citation, reason=r.reason)
+            for r in rejected
+        ],
+        needs_review=bool(rejected),
+    )
+
+
+@router.post("/{pack_id}/quiz/regenerate-questions", response_model=QuizTemplateAdminResponse)
+async def regenerate_quiz_questions(
+    pack_id: str,
+    payload: RegenerateQuestionsRequest,
+    org_id: CurrentOrgId,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Doc Pack PRD §2.1/§6 — regenerate specific dropped question slots within the current draft."""
+    return await services.quiz.regenerate_questions(org_id, pack_id, payload.question_ids)
+
+
+@router.get("/{pack_id}/quiz", response_model=QuizTemplateAdminResponse)
+async def get_doc_pack_quiz(
+    pack_id: str, org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)
+):
+    """Admin view of the latest generated/saved questions, including correct answers (Doc Pack PRD §6)."""
+    return await services.quiz.get_admin_quiz(org_id, pack_id)
+
+
+@router.put("/{pack_id}/quiz", response_model=QuizTemplateAdminResponse)
+async def save_doc_pack_quiz(
+    pack_id: str,
+    payload: SaveDocPackQuizRequest,
+    org_id: CurrentOrgId,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Doc Pack PRD §5.5/§5.6 — publish the admin's curated set; pack becomes assignable."""
+    curation = [item.model_dump() for item in payload.questions]
+    return await services.quiz.save_curated_quiz(org_id, pack_id, curation)

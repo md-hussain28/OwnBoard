@@ -23,6 +23,14 @@ class DocChunkDAO(BaseDAO[DocChunk]):
             await self.session.refresh(instance)
         return instances
 
+    async def list_for_document(self, org_id: str, document_id: str) -> list[DocChunk]:
+        result = await self.session.execute(
+            select(DocChunk)
+            .where(DocChunk.org_id == org_id, DocChunk.document_id == document_id)
+            .order_by(DocChunk.chunk_index)
+        )
+        return list(result.scalars().all())
+
     async def list_for_pack(self, org_id: str, doc_pack_id: str) -> list[DocChunk]:
         result = await self.session.execute(
             select(DocChunk)

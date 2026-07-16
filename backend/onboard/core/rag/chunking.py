@@ -1,18 +1,27 @@
 from dataclasses import dataclass
+from functools import lru_cache
 
+import tiktoken
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from onboard.config.constants import CHUNK_OVERLAP_TOKENS, CHUNK_TARGET_TOKENS
 from onboard.core.rag.extract import ExtractedDocument
 
-# Approximate chars/token for English prose; avoids a runtime tiktoken download.
-_CHARS_PER_TOKEN = 4
+# `text-embedding-3-small` uses the cl100k_base encoding; size chunks by real tokens, not a char guess.
+_ENCODING_NAME = "cl100k_base"
+
+
+@lru_cache(maxsize=1)
+def _encoder() -> tiktoken.Encoding:
+    return tiktoken.get_encoding(_ENCODING_NAME)
 
 
 def _splitter() -> RecursiveCharacterTextSplitter:
-    return RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_TARGET_TOKENS * _CHARS_PER_TOKEN,
-        chunk_overlap=CHUNK_OVERLAP_TOKENS * _CHARS_PER_TOKEN,
+    # `from_tiktoken_encoder` measures chunk_size/overlap in real tokens rather than characters.
+    return RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        encoding_name=_ENCODING_NAME,
+        chunk_size=CHUNK_TARGET_TOKENS,
+        chunk_overlap=CHUNK_OVERLAP_TOKENS,
         separators=["\n\n", "\n", ". ", " ", ""],
     )
 
@@ -75,4 +84,4 @@ def chunk_extracted_document(extracted: ExtractedDocument) -> list[ChunkDraft]:
 
 
 def _estimate_tokens(text: str) -> int:
-    return max(1, len(text) // _CHARS_PER_TOKEN)
+    return max(1, len(_encoder().encode(text)))

@@ -7,6 +7,7 @@ from onboard.services.dashboard.dashboard_service import DashboardService
 from onboard.services.doc_pack.doc_pack_service import DocPackService
 from onboard.services.employee.employee_service import EmployeeService
 from onboard.services.expert_routing.expert_routing_service import ExpertRoutingService
+from onboard.services.pack_assignment.pack_assignment_service import PackAssignmentService
 from onboard.services.quiz.quiz_service import QuizService
 from onboard.services.rag.rag_service import RAGService
 from onboard.services.repo_ingestion.repo_ingestion_service import RepoIngestionService
@@ -27,6 +28,7 @@ class ServiceContainer:
         self._expert_routing: ExpertRoutingService | None = None
         self._dashboard: DashboardService | None = None
         self._doc_pack: DocPackService | None = None
+        self._pack_assignment: PackAssignmentService | None = None
 
     @property
     def repo_ingestion(self) -> RepoIngestionService:
@@ -81,6 +83,12 @@ class ServiceContainer:
         if self._doc_pack is None:
             self._doc_pack = DocPackService(self.session)
         return self._doc_pack
+
+    @property
+    def pack_assignment(self) -> PackAssignmentService:
+        if self._pack_assignment is None:
+            self._pack_assignment = PackAssignmentService(self.session)
+        return self._pack_assignment
 
 
 def get_service_container(session: AsyncSession = Depends(get_db)) -> ServiceContainer:

@@ -1,8 +1,12 @@
 from functools import lru_cache
+from typing import TypeVar
 
 from openai import AsyncOpenAI
+from pydantic import BaseModel
 
 from onboard.config.settings import get_settings
+
+TModel = TypeVar("TModel", bound=BaseModel)
 
 
 class LLMClient:
@@ -29,6 +33,18 @@ class LLMClient:
     async def chat(self, messages: list[dict[str, str]]) -> str:
         response = await self._client.chat.completions.create(model=self.chat_model, messages=messages)
         return response.choices[0].message.content or ""
+
+    async def parse(self, messages: list[dict[str, str]], response_model: type[TModel]) -> TModel | None:
+        """Structured output via the SDK's native JSON-schema parsing.
+
+        Uses OpenAI structured outputs so the model is *constrained* to emit an object matching
+        `response_model` — no regex-scraping free text, no malformed-JSON retries. Returns the parsed
+        model, or None when the model refused / returned nothing usable.
+        """
+        completion = await self._client.chat.completions.parse(
+            model=self.chat_model, messages=messages, response_format=response_model
+        )
+        return completion.choices[0].message.parsed
 
 
 @lru_cache

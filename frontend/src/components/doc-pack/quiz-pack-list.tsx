@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { DocPackListItem } from "@/schemas/docPack.schema";
 import type { PackAssignment, PackAssignmentStatus } from "@/schemas/packAssignment.schema";
+import { getApiErrorMessage } from "@/lib/api/errors";
 
 type PackStatus = DocPackListItem["status"];
 type StatusFilter = "all" | PackStatus;
@@ -265,7 +266,7 @@ export function QuizPackList({
       {isError && (
         <p className="text-sm text-muted-foreground">
           Could not reach the backend (
-          {error instanceof Error ? error.message : "unknown error"}). Start the FastAPI service
+          {getApiErrorMessage(error)}). Start the FastAPI service
           and refresh.
         </p>
       )}

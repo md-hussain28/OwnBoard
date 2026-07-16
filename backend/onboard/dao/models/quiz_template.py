@@ -14,6 +14,7 @@ class QuizType(str, enum.Enum):
 
 class QuizTemplate(AuditBase):
     __tablename__ = "quiz_template"
+    __id_prefix__ = "quiz"
 
     type: Mapped[QuizType] = mapped_column(Enum(QuizType, name="quiz_type"), nullable=False)
     source_ref: Mapped[str] = mapped_column(String(512), nullable=False)

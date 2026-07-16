@@ -14,6 +14,7 @@ import { Badge } from "@/ui/badge";
 import { Skeleton } from "@/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { PackAssignmentStatus } from "@/schemas/packAssignment.schema";
+import { getApiErrorMessage } from "@/lib/api/errors";
 
 export const ASSIGNMENT_STATUS_LABEL: Record<PackAssignmentStatus, string> = {
   assigned: "Assigned",
@@ -133,9 +134,7 @@ export function DocPackAssignments({
                 </Button>
                 {createAssignments.isError && (
                   <p className="text-sm text-destructive">
-                    {createAssignments.error instanceof Error
-                      ? createAssignments.error.message
-                      : "Assigning failed."}
+                    {getApiErrorMessage(createAssignments.error, "Assigning failed.")}
                   </p>
                 )}
               </div>

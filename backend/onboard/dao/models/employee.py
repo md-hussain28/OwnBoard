@@ -6,6 +6,7 @@ from onboard.dao.models.base import AuditBase
 
 class Employee(AuditBase):
     __tablename__ = "employee"
+    __id_prefix__ = "emp"
     __table_args__ = (UniqueConstraint("org_id", "clerk_user_id", name="uq_employee_org_clerk_user"),)
 
     org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)

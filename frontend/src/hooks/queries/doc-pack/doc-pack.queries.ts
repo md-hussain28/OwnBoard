@@ -6,6 +6,7 @@ export const docPackKeys = {
   detail: (id: string) => ["doc-packs", id] as const,
   quiz: (id: string) => ["doc-packs", id, "quiz"] as const,
   assignments: (id: string) => ["doc-packs", id, "assignments"] as const,
+  ingestStatus: (id: string) => ["doc-packs", id, "ingest-status"] as const,
 };
 
 export function useDocPacks() {
@@ -20,13 +21,22 @@ export function useDocPack(id: string) {
     queryKey: docPackKeys.detail(id),
     queryFn: () => docPackService.get(id),
     enabled: Boolean(id),
-    // Poll while documents are still `uploaded`/`processing` so per-file status stays live.
+    // No refetchInterval here: live per-file progress comes from the cheap
+    // `useDocPackIngestStatus` poll — re-fetching the whole pack every few seconds
+    // is too heavy for the backend.
+  });
+}
+
+/** Polls the lightweight status endpoint while any document is still queued/processing. */
+export function useDocPackIngestStatus(id: string, enabled = true) {
+  return useQuery({
+    queryKey: docPackKeys.ingestStatus(id),
+    queryFn: () => docPackService.getIngestStatus(id),
+    enabled: Boolean(id) && enabled,
     refetchInterval: (query) => {
-      const documents = query.state.data?.documents ?? [];
-      const stillIngesting = documents.some(
-        (d) => d.status === "uploaded" || d.status === "processing",
-      );
-      return stillIngesting ? 3000 : false;
+      const status = query.state.data;
+      if (!status) return 4000; // first fetch pending/failed — keep trying while enabled
+      return status.isComplete ? false : 4000;
     },
   });
 }

@@ -1,7 +1,9 @@
+import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { docPackService } from "@/services/doc-pack.service";
 import type { QuizQuestionCurationItem } from "@/schemas/quiz.schema";
 import { docPackKeys } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { useUploadStore } from "@/stores/upload-store";
 
 export function useCreateDocPack() {
   const queryClient = useQueryClient();
@@ -11,12 +13,34 @@ export function useCreateDocPack() {
   });
 }
 
-export function useUploadDocuments(packId: string) {
+/**
+ * Fire-and-forget upload tracked in the global upload store (progress widget).
+ * Returns `start(files)` which validates the batch and returns an error message, or null
+ * when the upload was queued. The upload keeps running if the caller unmounts.
+ */
+export function useBackgroundUpload(packId: string, packName: string) {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (files: File[]) => docPackService.uploadDocuments(packId, files),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) }),
-  });
+  const validateFiles = useUploadStore((s) => s.validateFiles);
+  const startUpload = useUploadStore((s) => s.startUpload);
+
+  return useCallback(
+    (files: File[]): string | null => {
+      const validationError = validateFiles(files);
+      if (validationError) return validationError;
+      startUpload({
+        packId,
+        packName,
+        files,
+        onUploaded: () => {
+          // New rows exist — refresh the pack and restart the ingest-status poll.
+          void queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
+          void queryClient.invalidateQueries({ queryKey: docPackKeys.ingestStatus(packId) });
+        },
+      });
+      return null;
+    },
+    [packId, packName, queryClient, startUpload, validateFiles],
+  );
 }
 
 export function useDeleteDocument(packId: string) {

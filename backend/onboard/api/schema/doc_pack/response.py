@@ -17,8 +17,31 @@ class DocPackDocumentResponse(BaseModel):
     status: DocumentStatus
     page_count: int | None
     error_message: str | None
+    created_by: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class DocumentIngestStatusItem(BaseModel):
+    """One document's ingestion state — column-only projection, cheap to poll."""
+
+    id: str
+    title: str
+    status: DocumentStatus
+    page_count: int | None
+    error_message: str | None
+
+
+class DocPackIngestStatusResponse(BaseModel):
+    """Aggregate ingestion progress for a pack. `is_complete` means nothing is queued or processing."""
+
+    pack_id: str
+    total: int
+    processed: int
+    failed: int
+    pending: int
+    is_complete: bool
+    documents: list[DocumentIngestStatusItem]
 
 
 class DocPackResponse(BaseModel):

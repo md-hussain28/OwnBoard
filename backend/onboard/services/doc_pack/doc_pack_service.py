@@ -2,9 +2,12 @@ from pathlib import PurePosixPath
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from onboard.config.constants import ALLOWED_DOC_PACK_EXTENSIONS
+from onboard.config.constants import (
+    ALLOWED_DOC_PACK_EXTENSIONS,
+    MAX_DOC_PACK_FILE_SIZE_BYTES,
+    MAX_DOC_PACK_FILES_PER_UPLOAD,
+)
 from onboard.core.common.exceptions import NotFoundError, ValidationError
-from onboard.core.common.ids import generate_id
 from onboard.core.common.logger import get_logger
 from onboard.core.database.postgres import get_session_factory
 from onboard.core.storage.supabase_client import SupabaseStorageClient, get_storage_client
@@ -80,6 +83,7 @@ class DocPackService:
         org_id: str,
         pack_id: str,
         files: list[tuple[str, bytes, str | None]],
+        created_by: str | None = None,
     ) -> list[DocPackDocument]:
         """Upload files to Supabase Storage and create `doc_pack_document` rows.
 
@@ -89,35 +93,67 @@ class DocPackService:
         pack = await self.get_pack(org_id, pack_id)
         if not files:
             raise ValidationError("At least one file is required")
+        if len(files) > MAX_DOC_PACK_FILES_PER_UPLOAD:
+            raise ValidationError(f"Too many files — upload at most {MAX_DOC_PACK_FILES_PER_UPLOAD} at a time")
 
-        storage = await self._storage_client()
-        created: list[DocPackDocument] = []
-
-        for filename, content, content_type in files:
+        # Validate every file before touching storage, so a bad file in the batch never leaves
+        # earlier files half-ingested.
+        for filename, content, _ in files:
             extension = _extension_for(filename)
             if extension not in ALLOWED_DOC_PACK_EXTENSIONS:
                 raise ValidationError(f"Unsupported file type: {filename}")
             if not content:
                 raise ValidationError(f"Empty file: {filename}")
+            if len(content) > MAX_DOC_PACK_FILE_SIZE_BYTES:
+                limit_mb = MAX_DOC_PACK_FILE_SIZE_BYTES // (1024 * 1024)
+                raise ValidationError(f"{filename} is too large — the limit is {limit_mb} MB per file")
 
-            document_id = generate_id()
-            safe_name = PurePosixPath(filename).name.replace(" ", "_")
-            storage_path = f"{org_id}/{pack.id}/{document_id}-{safe_name}"
-            mime = content_type or _CONTENT_TYPES.get(extension, "application/octet-stream")
+        storage = await self._storage_client()
+        created: list[DocPackDocument] = []
+        uploaded_paths: list[str] = []
 
-            await storage.upload(storage_path, content, mime)
-            document = await self.document_dao.create(
-                id=document_id,
-                doc_pack_id=pack.id,
-                title=PurePosixPath(filename).stem or safe_name,
-                storage_path=storage_path,
-                file_type=extension if extension != "markdown" else "md",
-                file_size_bytes=len(content),
-                status=DocumentStatus.uploaded,
-            )
-            created.append(document)
+        try:
+            for filename, content, content_type in files:
+                extension = _extension_for(filename)
+                document_id = DocPackDocument.generate_pk()
+                safe_name = PurePosixPath(filename).name.replace(" ", "_")
+                storage_path = f"{org_id}/{pack.id}/{document_id}-{safe_name}"
+                mime = content_type or _CONTENT_TYPES.get(extension, "application/octet-stream")
+
+                await storage.upload(storage_path, content, mime)
+                uploaded_paths.append(storage_path)
+                document = await self.document_dao.create(
+                    id=document_id,
+                    doc_pack_id=pack.id,
+                    title=PurePosixPath(filename).stem or safe_name,
+                    storage_path=storage_path,
+                    file_type=extension if extension != "markdown" else "md",
+                    file_size_bytes=len(content),
+                    status=DocumentStatus.uploaded,
+                    created_by=created_by,
+                )
+                created.append(document)
+        except Exception:
+            # Best-effort rollback of the partial batch: DB rows first, then storage objects.
+            for document in created:
+                try:
+                    await self.document_dao.delete(document.id)
+                except Exception:
+                    logger.exception("upload_rollback_row_failed document_id=%s", document.id)
+            for path in uploaded_paths:
+                try:
+                    await storage.delete(path)
+                except Exception:
+                    logger.exception("upload_rollback_storage_failed path=%s", path)
+            raise
 
         return created
+
+    async def get_ingest_status(self, org_id: str, pack_id: str) -> list:
+        """Lightweight status rows for polling — see `DocPackDocumentDAO.list_status_for_pack`."""
+        if not await self.pack_dao.exists_for_org(org_id, pack_id):
+            raise NotFoundError(f"Doc pack {pack_id} not found")
+        return await self.document_dao.list_status_for_pack(org_id, pack_id)
 
     async def delete_document(self, org_id: str, pack_id: str, document_id: str) -> None:
         pack = await self.get_pack(org_id, pack_id)

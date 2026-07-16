@@ -18,6 +18,7 @@ import { Badge } from "@/ui/badge";
 import { Skeleton } from "@/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { QuizAttempt, QuizTemplate } from "@/schemas/quiz.schema";
+import { getApiErrorMessage } from "@/lib/api/errors";
 
 function DocumentReader({
   assignmentId,
@@ -231,9 +232,7 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
                 </Button>
                 {startQuiz.isError && (
                   <p className="text-sm text-destructive">
-                    {startQuiz.error instanceof Error
-                      ? startQuiz.error.message
-                      : "Could not start the quiz."}
+                    {getApiErrorMessage(startQuiz.error, "Could not start the quiz.")}
                   </p>
                 )}
               </>
@@ -266,7 +265,7 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
                 </Button>
                 {grade.isError && (
                   <p className="text-sm text-destructive">
-                    {grade.error instanceof Error ? grade.error.message : "Grading failed."}
+                    {getApiErrorMessage(grade.error, "Grading failed.")}
                   </p>
                 )}
               </div>

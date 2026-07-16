@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeftIcon } from "lucide-react";
 import { useCreateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Textarea } from "@/ui/textarea";
 import { cn } from "@/lib/utils";
+import { getApiErrorMessage } from "@/lib/api/errors";
 
 const STEPS = [
   { id: 1, label: "Details" },
@@ -37,20 +36,12 @@ export function QuizCreateFlow() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8">
-      <div className="space-y-3">
-        <Link
-          href="/doc-packs"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3.5" /> Back to Quizzes
-        </Link>
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-balance">Create a quiz</h1>
-          <p className="text-sm text-muted-foreground text-pretty">
-            Name the pack, upload the reading, then generate and publish a cited quiz — all in one
-            flow.
-          </p>
-        </div>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">Create a quiz</h1>
+        <p className="text-sm text-muted-foreground text-pretty">
+          Name the pack, upload the reading, then generate and publish a cited quiz — all in one
+          flow.
+        </p>
       </div>
 
       <ol className="flex items-center gap-2" aria-label="Create progress">
@@ -117,9 +108,7 @@ export function QuizCreateFlow() {
 
         {createPack.isError && (
           <p className="text-sm text-destructive">
-            {createPack.error instanceof Error
-              ? createPack.error.message
-              : "Could not create quiz."}
+            {getApiErrorMessage(createPack.error, "Could not create quiz.")}
           </p>
         )}
 

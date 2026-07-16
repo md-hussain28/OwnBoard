@@ -8,6 +8,7 @@ from onboard.dao.models.base import AuditBase
 
 class CommitRecord(AuditBase):
     __tablename__ = "commit_record"
+    __id_prefix__ = "cmt"
 
     repo_id: Mapped[str] = mapped_column(ForeignKey("repo.id", ondelete="CASCADE"), nullable=False)
     hash: Mapped[str] = mapped_column(String(64), nullable=False)

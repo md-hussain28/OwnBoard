@@ -8,6 +8,7 @@ import { Input } from "@/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Skeleton } from "@/ui/skeleton";
 import { Badge } from "@/ui/badge";
+import { getApiErrorMessage } from "@/lib/api/errors";
 
 export function ConnectedReposList() {
   const { data: repos, isLoading, isError, error } = useRepos();
@@ -60,7 +61,7 @@ export function ConnectedReposList() {
 
         {isError && (
           <p className="text-sm text-muted-foreground">
-            Could not reach the backend ({error instanceof Error ? error.message : "unknown error"}).
+            Could not reach the backend ({getApiErrorMessage(error)}).
             Start the FastAPI service and refresh.
           </p>
         )}

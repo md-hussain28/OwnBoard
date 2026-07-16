@@ -6,6 +6,7 @@ from onboard.dao.models.base import AuditBase
 
 class Contributor(AuditBase):
     __tablename__ = "contributor"
+    __id_prefix__ = "ctrb"
 
     repo_id: Mapped[str] = mapped_column(ForeignKey("repo.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Skeleton } from "@/ui/skeleton";
 import { Badge } from "@/ui/badge";
 import type { DocPackListItem } from "@/schemas/docPack.schema";
+import { getApiErrorMessage } from "@/lib/api/errors";
 
 const STATUS_LABEL: Record<DocPackListItem["status"], string> = {
   draft: "Draft",
@@ -75,7 +76,7 @@ export function DocPackList() {
 
         {isError && (
           <p className="text-sm text-muted-foreground">
-            Could not reach the backend ({error instanceof Error ? error.message : "unknown error"}).
+            Could not reach the backend ({getApiErrorMessage(error)}).
             Start the FastAPI service and refresh.
           </p>
         )}

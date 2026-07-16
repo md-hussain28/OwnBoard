@@ -10,6 +10,9 @@ class Organization(AuditBase):
 
     __tablename__ = "organization"
 
+    # Clerk supplies the id verbatim — no default generator, insertion without an explicit id must fail.
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     employees: Mapped[list["Employee"]] = relationship(back_populates="organization", cascade="all, delete-orphan")

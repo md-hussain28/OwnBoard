@@ -26,6 +26,7 @@ dependencies = [
 
 [project.scripts]
 dev = "onboard.main:dev"
+start = "onboard.main:run"
 
 [dependency-groups]
 dev = [

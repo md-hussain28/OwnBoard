@@ -1,13 +1,16 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
 
+from onboard.api.dependency.auth import ClerkOrgId, ClerkUserId
 from onboard.api.dependency.service_container import ServiceContainer, get_service_container
 from onboard.api.dependency.tenancy import CurrentOrgId
 from onboard.api.schema.doc_pack.request import DocPackCreateRequest, DocPackRetrieveRequest, DocPackUpdateRequest
 from onboard.api.schema.doc_pack.response import (
     DocPackDocumentResponse,
+    DocPackIngestStatusResponse,
     DocPackListItemResponse,
     DocPackResponse,
     DocPackRetrieveResponse,
+    DocumentIngestStatusItem,
     RetrievedDocChunkResponse,
 )
 from onboard.api.schema.quiz.request import (
@@ -20,6 +23,7 @@ from onboard.api.schema.quiz.response import (
     GeneratedSlotIssueResponse,
     QuizTemplateAdminResponse,
 )
+from onboard.dao.models.doc_pack import DocumentStatus
 from onboard.services.doc_pack.doc_pack_service import ingest_document_background
 
 router = APIRouter(prefix="/doc-packs", tags=["doc-packs"])
@@ -29,9 +33,12 @@ router = APIRouter(prefix="/doc-packs", tags=["doc-packs"])
 async def create_doc_pack(
     payload: DocPackCreateRequest,
     org_id: CurrentOrgId,
+    user_id: ClerkUserId,
     services: ServiceContainer = Depends(get_service_container),
 ):
-    pack = await services.doc_pack.create_pack(org_id=org_id, name=payload.name, description=payload.description)
+    pack = await services.doc_pack.create_pack(
+        org_id=org_id, name=payload.name, description=payload.description, created_by=user_id
+    )
     return await services.doc_pack.get_pack(org_id, pack.id)
 
 
@@ -59,6 +66,7 @@ async def update_doc_pack(
 async def upload_documents(
     pack_id: str,
     org_id: CurrentOrgId,
+    user_id: ClerkUserId,
     background_tasks: BackgroundTasks,
     files: list[UploadFile] = File(...),
     services: ServiceContainer = Depends(get_service_container),
@@ -68,10 +76,38 @@ async def upload_documents(
         content = await upload.read()
         payloads.append((upload.filename or "untitled.txt", content, upload.content_type))
 
-    documents = await services.doc_pack.upload_documents(org_id, pack_id, payloads)
+    documents = await services.doc_pack.upload_documents(org_id, pack_id, payloads, created_by=user_id)
     for document in documents:
         background_tasks.add_task(ingest_document_background, org_id, document.id)
     return documents
+
+
+@router.get("/{pack_id}/documents/status", response_model=DocPackIngestStatusResponse)
+async def get_documents_status(
+    pack_id: str,
+    org_id: ClerkOrgId,  # not CurrentOrgId: this is polled — skip the org get-or-create round trip
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Cheap ingestion-progress poll: column-only query, no document/chunk hydration."""
+    rows = await services.doc_pack.get_ingest_status(org_id, pack_id)
+    documents = [
+        DocumentIngestStatusItem(
+            id=row.id, title=row.title, status=row.status, page_count=row.page_count, error_message=row.error_message
+        )
+        for row in rows
+    ]
+    processed = sum(1 for d in documents if d.status == DocumentStatus.processed)
+    failed = sum(1 for d in documents if d.status == DocumentStatus.failed)
+    pending = len(documents) - processed - failed
+    return DocPackIngestStatusResponse(
+        pack_id=pack_id,
+        total=len(documents),
+        processed=processed,
+        failed=failed,
+        pending=pending,
+        is_complete=pending == 0,
+        documents=documents,
+    )
 
 
 @router.delete("/{pack_id}/documents/{document_id}", status_code=204)

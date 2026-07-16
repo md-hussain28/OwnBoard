@@ -16,6 +16,7 @@ import { Badge } from "@/ui/badge";
 import { Skeleton } from "@/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { AdminQuizTemplate } from "@/schemas/quiz.schema";
+import { getApiErrorMessage } from "@/lib/api/errors";
 
 type QuestionFormat = "mcq_4" | "true_false";
 
@@ -181,7 +182,7 @@ export function DocPackQuizBuilder({
           )}
           {generate.isError && (
             <p className="text-sm text-destructive">
-              {generate.error instanceof Error ? generate.error.message : "Generation failed."}
+              {getApiErrorMessage(generate.error, "Generation failed.")}
             </p>
           )}
         </form>
@@ -252,14 +253,12 @@ export function DocPackQuizBuilder({
 
             {regenerate.isError && (
               <p className="text-sm text-destructive">
-                {regenerate.error instanceof Error
-                  ? regenerate.error.message
-                  : "Regeneration failed."}
+                {getApiErrorMessage(regenerate.error, "Regeneration failed.")}
               </p>
             )}
             {save.isError && (
               <p className="text-sm text-destructive">
-                {save.error instanceof Error ? save.error.message : "Save failed."}
+                {getApiErrorMessage(save.error, "Save failed.")}
               </p>
             )}
 

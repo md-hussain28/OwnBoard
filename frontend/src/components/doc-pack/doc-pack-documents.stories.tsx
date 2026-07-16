@@ -10,7 +10,7 @@ const documents = docPackDocumentListSchema.parse(mockDocuments);
 const meta = {
   title: "Components/DocPack/DocPackDocuments",
   component: DocPackDocuments,
-  args: { packId: "pack_a1b2c3d4e5f6g7h8i9" },
+  args: { packId: "pack_a1b2c3d4e5f6g7h8i9", packName: "HR Policy" },
 } satisfies Meta<typeof DocPackDocuments>;
 
 export default meta;

@@ -7,6 +7,7 @@ import {
   mockBusFactor,
   mockChatResponse,
   mockDocPackDetail,
+  mockDocPackIngestStatus,
   mockDocPacks,
   mockEmployees,
   mockExperts,
@@ -49,6 +50,7 @@ export const employeeHandlers = [
 export const docPackHandlers = [
   http.get("/api/doc-packs", () => HttpResponse.json(mockDocPacks)),
   http.get("/api/doc-packs/:id", () => HttpResponse.json(mockDocPackDetail)),
+  http.get("/api/doc-packs/:id/documents/status", () => HttpResponse.json(mockDocPackIngestStatus)),
   http.post("/api/doc-packs", async ({ request }) => {
     const body = (await request.json()) as { name: string; description?: string };
     return HttpResponse.json(

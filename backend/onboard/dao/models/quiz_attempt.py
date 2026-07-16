@@ -8,6 +8,7 @@ from onboard.dao.models.base import AuditBase
 
 class QuizAttempt(AuditBase):
     __tablename__ = "quiz_attempt"
+    __id_prefix__ = "attm"
 
     employee_id: Mapped[str] = mapped_column(ForeignKey("employee.id", ondelete="CASCADE"), nullable=False)
     quiz_template_id: Mapped[str] = mapped_column(ForeignKey("quiz_template.id", ondelete="CASCADE"), nullable=False)

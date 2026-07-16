@@ -36,6 +36,7 @@ class DocPack(AuditBase):
     """Named group of uploaded documents that can generate a grounded quiz (Doc Pack PRD §3)."""
 
     __tablename__ = "doc_pack"
+    __id_prefix__ = "pack"
 
     org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -58,6 +59,7 @@ class DocPackDocument(AuditBase):
     """One uploaded file inside a Doc Pack; `storage_path` points into Supabase Storage."""
 
     __tablename__ = "doc_pack_document"
+    __id_prefix__ = "doc"
 
     doc_pack_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("doc_pack.id", ondelete="CASCADE"), nullable=False, index=True
@@ -73,6 +75,7 @@ class DocPackDocument(AuditBase):
     )
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     doc_pack: Mapped["DocPack"] = relationship(back_populates="documents")
     chunks: Mapped[list["DocChunk"]] = relationship(back_populates="document", cascade="all, delete-orphan")
@@ -82,6 +85,7 @@ class DocChunk(AuditBase):
     """RAG retrieval unit for Doc Packs — same shape as `code_chunk`, generalized (PRD §12)."""
 
     __tablename__ = "doc_chunk"
+    __id_prefix__ = "dchk"
 
     org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
     document_id: Mapped[str] = mapped_column(
@@ -106,6 +110,7 @@ class PackAssignment(AuditBase):
     """One hire's assignment to one pack — pre-attempt state machine (Doc Pack PRD §4)."""
 
     __tablename__ = "pack_assignment"
+    __id_prefix__ = "asgn"
     __table_args__ = (UniqueConstraint("doc_pack_id", "employee_id", name="uq_pack_assignment_pack_employee"),)
 
     org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
@@ -136,6 +141,7 @@ class PackAssignmentAck(AuditBase):
     """Per-document 'I've read this' gate for an assignment."""
 
     __tablename__ = "pack_assignment_ack"
+    __id_prefix__ = "ack"
     __table_args__ = (UniqueConstraint("assignment_id", "document_id", name="uq_pack_ack_assignment_document"),)
 
     assignment_id: Mapped[str] = mapped_column(

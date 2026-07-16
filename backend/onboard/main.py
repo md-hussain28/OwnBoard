@@ -33,7 +33,18 @@ logger = get_logger("onboard.main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await ensure_vector_extension()
+    logger.info(
+        "startup_begin",
+        extra={"environment": settings.ENVIRONMENT, "is_prod": settings.is_prod},
+    )
+    try:
+        await ensure_vector_extension()
+    except Exception:
+        logger.exception(
+            "startup_db_failed — check ENVIRONMENT=prod|production and DATABASE_URL_PROD "
+            "(use postgresql+asyncpg://…?ssl=require for Neon)"
+        )
+        raise
     logger.info("startup_complete")
     yield
     await dispose_engine()
@@ -85,8 +96,21 @@ app = create_app()
 
 
 def dev() -> None:
-    uvicorn.run("onboard.main:app", host=settings.API_HOST, port=settings.API_PORT, reload=True)
+    uvicorn.run(
+        "onboard.main:app",
+        host=settings.API_HOST,
+        port=settings.API_PORT,
+        reload=True,
+    )
+
+
+def run() -> None:
+    """Production entrypoint (Render/etc). Honors $PORT when set."""
+    import os
+
+    port = int(os.environ.get("PORT", settings.API_PORT))
+    uvicorn.run("onboard.main:app", host=settings.API_HOST, port=port, reload=False)
 
 
 if __name__ == "__main__":
-    dev()
+    run() if settings.is_prod else dev()

@@ -34,21 +34,19 @@ class Settings(BaseSettings):
     SUPABASE_STORAGE_BUCKET: str = "doc-packs"
 
     @property
+    def is_prod(self) -> bool:
+        return self.ENVIRONMENT.strip().lower() in ("prod", "production")
+
+    @property
     def DATABASE_URL(self) -> str:
         """Active Postgres URL for the current ENVIRONMENT (local Docker vs Neon)."""
-        env = self.ENVIRONMENT.strip().lower()
-        if env in ("prod", "production"):
+        if self.is_prod:
             if not self.DATABASE_URL_PROD.strip():
                 raise ValueError("DATABASE_URL_PROD is required when ENVIRONMENT is prod/production")
             url = self.DATABASE_URL_PROD.strip()
         else:
             url = self.DATABASE_URL_LOCAL.strip()
-        # Neon pooler URLs often include channel_binding=require; asyncpg rejects it.
-        return (
-            url.replace("&channel_binding=require", "")
-            .replace("?channel_binding=require&", "?")
-            .replace("?channel_binding=require", "")
-        )
+        return _normalize_database_url(url, require_ssl=self.is_prod)
 
     @property
     def cors_origins(self) -> list[str]:
@@ -57,6 +55,27 @@ class Settings(BaseSettings):
     @property
     def clerk_authorized_parties(self) -> list[str]:
         return [origin.strip() for origin in self.CLERK_AUTHORIZED_PARTIES.split(",") if origin.strip()]
+
+
+def _normalize_database_url(url: str, *, require_ssl: bool) -> str:
+    """Rewrite hosted Postgres URLs for asyncpg (scheme + ssl + Neon quirks)."""
+    # Render/Neon dashboards often hand out postgres:// or postgresql:// without +asyncpg.
+    if url.startswith("postgres://"):
+        url = "postgresql+asyncpg://" + url.removeprefix("postgres://")
+    elif url.startswith("postgresql://"):
+        url = "postgresql+asyncpg://" + url.removeprefix("postgresql://")
+
+    # Neon pooler URLs often include channel_binding=require; asyncpg rejects it.
+    url = (
+        url.replace("&channel_binding=require", "")
+        .replace("?channel_binding=require&", "?")
+        .replace("?channel_binding=require", "")
+    )
+
+    if require_ssl and "ssl=" not in url and "sslmode=" not in url:
+        url += "&ssl=require" if "?" in url else "?ssl=require"
+
+    return url
 
 
 @lru_cache

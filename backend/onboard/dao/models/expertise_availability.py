@@ -6,6 +6,7 @@ from onboard.dao.models.base import AuditBase
 
 class ExpertiseAvailability(AuditBase):
     __tablename__ = "expertise_availability"
+    __id_prefix__ = "exav"
 
     contributor_id: Mapped[str] = mapped_column(
         ForeignKey("contributor.id", ondelete="CASCADE"), nullable=False, unique=True

@@ -14,6 +14,7 @@ export const API_ENDPOINTS = {
   docPack: (id: string) => `/doc-packs/${id}`,
   docPackDocuments: (id: string) => `/doc-packs/${id}/documents`,
   docPackDocument: (id: string, documentId: string) => `/doc-packs/${id}/documents/${documentId}`,
+  docPackDocumentsStatus: (id: string) => `/doc-packs/${id}/documents/status`,
   docPackGenerateQuiz: (id: string) => `/doc-packs/${id}/generate-quiz`,
   docPackQuiz: (id: string) => `/doc-packs/${id}/quiz`,
   docPackRegenerateQuestions: (id: string) => `/doc-packs/${id}/quiz/regenerate-questions`,

@@ -24,6 +24,7 @@ import { Skeleton } from "@/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { DocPackListItem } from "@/schemas/docPack.schema";
 import type { PackAssignmentStatus } from "@/schemas/packAssignment.schema";
+import { getApiErrorMessage } from "@/lib/api/errors";
 
 const PROGRESS_STRIP: { status: PackAssignmentStatus; tone: string }[] = [
   { status: "assigned", tone: "bg-muted text-muted-foreground" },
@@ -182,9 +183,7 @@ function QuizAssignmentPanelLoaded({ pack }: { pack: DocPackListItem }) {
                 </Button>
                 {createAssignments.isError && (
                   <p className="text-sm text-destructive">
-                    {createAssignments.error instanceof Error
-                      ? createAssignments.error.message
-                      : "Assigning failed."}
+                    {getApiErrorMessage(createAssignments.error, "Assigning failed.")}
                   </p>
                 )}
               </div>
@@ -237,7 +236,7 @@ function QuizAssignmentPanelLoaded({ pack }: { pack: DocPackListItem }) {
             )}
             {revoke.isError && (
               <p className="text-sm text-destructive">
-                {revoke.error instanceof Error ? revoke.error.message : "Revoke failed."}
+                {getApiErrorMessage(revoke.error, "Revoke failed.")}
               </p>
             )}
           </section>

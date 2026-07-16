@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "lucide-react";
+import { ArrowRightIcon, CheckIcon } from "lucide-react";
 import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { DocPackDocuments } from "@/components/doc-pack/doc-pack-documents";
 import { DocPackQuizBuilder } from "@/components/doc-pack/doc-pack-quiz-builder";
@@ -30,13 +30,6 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div className="space-y-4">
-        <Link
-          href="/doc-packs"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3.5" /> Back to Quizzes
-        </Link>
-
         {isLoading && <Skeleton className="h-8 w-64" />}
         {isError && (
           <p className="text-sm text-muted-foreground">
@@ -127,7 +120,7 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
                 <span className="text-xs text-muted-foreground">Upload at least one file</span>
               )}
             </div>
-            <DocPackDocuments packId={pack.id} documents={pack.documents} />
+            <DocPackDocuments packId={pack.id} packName={pack.name} documents={pack.documents} />
           </section>
 
           <section className="space-y-2" aria-labelledby="quiz-step">

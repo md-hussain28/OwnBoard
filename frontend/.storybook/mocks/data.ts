@@ -103,6 +103,23 @@ export const mockDocPackDetail = {
   documents: mockDocuments,
 };
 
+// Lightweight ingest-status poll (docPackIngestStatusSchema — snake_case)
+export const mockDocPackIngestStatus = {
+  pack_id: "pack_a1b2c3d4e5f6g7h8i9",
+  total: mockDocuments.length,
+  processed: mockDocuments.filter((d) => d.status === "processed").length,
+  failed: mockDocuments.filter((d) => d.status === "failed").length,
+  pending: mockDocuments.filter((d) => d.status === "processing" || d.status === "uploaded").length,
+  is_complete: false,
+  documents: mockDocuments.map((d) => ({
+    id: d.id,
+    title: d.title,
+    status: d.status,
+    page_count: d.page_count,
+    error_message: d.error_message,
+  })),
+};
+
 // --- Pack assignments (packAssignment.schema.ts — snake_case) ---
 export const mockAssignments = [
   {

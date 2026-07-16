@@ -50,7 +50,7 @@ Follow the `repo`/`employee` domains as the reference implementation:
 
 ## Conventions
 
-- IDs are always `str`, 20-char random alphanumeric from `core/common/ids.generate_id()` — never auto-increment ints.
+- IDs are always `str`, typed and time-ordered: `<prefix>_<uuid7-hex>` (e.g. `doc_0198f6a2...`) from `core/common/ids.typed_id()`. Every model sets `__id_prefix__` (registered in `ids.ID_PREFIXES`); `AuditBase.generate_pk()` pre-generates one when needed before insert. Never auto-increment ints. Exception: `Organization.id` is the Clerk org id verbatim.
 - snake_case files, PascalCase classes, one class per DAO/service/model file.
 - Import sorting and pyupgrade rules are enforced by ruff (`select = ["E", "F", "I", "UP"]`, line length 120) — run `make format` before considering a change done.
 - Auth is real, via Clerk: `api/dependency/auth.py` verifies the session token on every non-health request (`main.py` applies `Depends(require_user)`/`Depends(require_org)` at `include_router(..., dependencies=...)` level, not per-route). Never raise `HTTPException(401/403)` directly — raise `UnauthorizedError`/`ForbiddenError` from `core/common/exceptions.py` instead, same as any other domain error.

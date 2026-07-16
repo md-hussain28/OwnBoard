@@ -13,6 +13,7 @@ class QuestionFormat(str, enum.Enum):
 
 class QuizQuestion(AuditBase):
     __tablename__ = "quiz_question"
+    __id_prefix__ = "ques"
 
     quiz_template_id: Mapped[str] = mapped_column(ForeignKey("quiz_template.id", ondelete="CASCADE"), nullable=False)
     question_text: Mapped[str] = mapped_column(Text, nullable=False)

@@ -1,0 +1,13 @@
+export const API_ENDPOINTS = {
+  repos: "/repos",
+  repo: (id: string) => `/repos/${id}`,
+  employees: "/employees",
+  employee: (id: string) => `/employees/${id}`,
+  quizTemplates: "/quiz-templates",
+  quizTemplate: (id: string) => `/quiz-templates/${id}`,
+  quizAttempts: "/quiz-attempts",
+  chat: "/chat",
+  experts: "/experts",
+  dashboardBusFactor: (repoId: string) => `/dashboard/bus-factor?repoId=${repoId}`,
+  dashboardQuizAnalytics: (repoId: string) => `/dashboard/quiz-analytics?repoId=${repoId}`,
+} as const;

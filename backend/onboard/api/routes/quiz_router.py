@@ -1,0 +1,31 @@
+from fastapi import APIRouter, Depends
+
+from onboard.api.dependency.service_container import ServiceContainer, get_service_container
+from onboard.api.schema.quiz.request import GenerateCodebaseQuizRequest, GeneratePolicyQuizRequest, GradeAttemptRequest
+from onboard.api.schema.quiz.response import QuizAttemptResponse, QuizTemplateResponse
+
+router = APIRouter(prefix="/quizzes", tags=["quiz"])
+
+
+@router.post("/codebase", response_model=QuizTemplateResponse, status_code=201)
+async def generate_codebase_quiz(
+    payload: GenerateCodebaseQuizRequest, services: ServiceContainer = Depends(get_service_container)
+):
+    """Generate a git-history-grounded readiness quiz (PRD §6.3)."""
+    return await services.quiz.generate_codebase_quiz(payload.repo_id, payload.custom_instructions)
+
+
+@router.post("/policy", response_model=QuizTemplateResponse, status_code=201)
+async def generate_policy_quiz(
+    payload: GeneratePolicyQuizRequest, services: ServiceContainer = Depends(get_service_container)
+):
+    """Generate a scenario-based policy onboarding quiz (PRD §6.5)."""
+    return await services.quiz.generate_policy_quiz(payload.policy_doc_id, payload.custom_instructions)
+
+
+@router.post("/attempts/{quiz_attempt_id}/grade", response_model=QuizAttemptResponse)
+async def grade_attempt(
+    quiz_attempt_id: str, payload: GradeAttemptRequest, services: ServiceContainer = Depends(get_service_container)
+):
+    """Grade a completed quiz attempt, gating repo access on pass (PRD §6.7)."""
+    return await services.quiz.grade_attempt(quiz_attempt_id, payload.answers)

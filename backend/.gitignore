@@ -1,0 +1,29 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Env files
+.env
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Alembic
+alembic/versions/__pycache__/
+
+# Ruff
+.ruff_cache/

@@ -8,15 +8,35 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-plus-jakarta);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-plus-jakarta);
+
+  /* Named brand primitives — use these for intentional color moments */
+  --color-brand-honey: var(--brand-honey);
+  --color-brand-amber: var(--brand-amber);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-coral: var(--brand-coral);
+  --color-brand-moss: var(--brand-moss);
+  --color-brand-info: var(--brand-info);
+  --color-brand-plum: var(--brand-plum);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-mist: var(--brand-mist);
+  --color-brand-honey-soft: var(--brand-honey-soft);
+  --color-brand-teal-soft: var(--brand-teal-soft);
+  --color-brand-coral-soft: var(--brand-coral-soft);
+  --color-brand-moss-soft: var(--brand-moss-soft);
+  --color-brand-info-soft: var(--brand-info-soft);
+  --color-brand-plum-soft: var(--brand-plum-soft);
+
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,128 +66,166 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --shadow-soft: var(--shadow-soft);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-button: var(--shadow-button);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 2.5);
+  --radius-4xl: calc(var(--radius) * 3);
 }
 
 /*
-  Night & Ember — OwnBoard brand palette (Restrained).
+  OwnBoard — "Evidence desk at golden hour"
 
-  Primitives (source of truth):
-    Brilliance          #fdfcfc  → canvas
-    Violet Essence      #e6e4e6  → muted / secondary fills
-    No Way Rosé         #f9b095  → soft accent wash
-    Palladium           #b1b1b1  → borders / dark muted text
-    Precious Persimmon  #f87941  → primary signal
-    Night Black         #2f3035  → ink / sidebar / primary text on ember
+  Pure white canvas. Brand warmth lives in Honey (primary) + Teal (verified),
+  not in the background. Full palette: honey, amber, teal, coral, moss, info,
+  plum — each role means one thing.
 
-  Note: white-on-Persimmon fails WCAG (~2.6:1). Primary always uses Night Black on Persimmon.
+  All values OKLCH.
 */
 :root {
   /* —— Brand primitives —— */
-  --brilliance: oklch(0.992 0.001 17);
-  --violet-essence: oklch(0.921 0.003 326);
-  --no-way-rose: oklch(0.82 0.094 41);
-  --palladium: oklch(0.76 0 90);
-  --precious-persimmon: oklch(0.715 0.171 43);
-  --night-black: oklch(0.31 0.009 277);
-  /* Derived (same ink family as Night Black) */
-  --graphite: oklch(0.472 0.01 279);
-  --border-soft: oklch(0.866 0.003 326);
+  --brand-honey: oklch(0.68 0.155 72);
+  --brand-amber: oklch(0.55 0.145 55);
+  --brand-teal: oklch(0.55 0.105 195);
+  --brand-coral: oklch(0.62 0.175 28);
+  --brand-moss: oklch(0.58 0.115 155);
+  --brand-info: oklch(0.55 0.12 250);
+  --brand-plum: oklch(0.52 0.12 320);
+  --brand-ink: oklch(0.28 0.025 75);
+  --brand-mist: oklch(0.965 0.012 75);
+
+  /* Soft fills (badges, icon wells) */
+  --brand-honey-soft: oklch(0.95 0.04 75);
+  --brand-teal-soft: oklch(0.94 0.03 195);
+  --brand-coral-soft: oklch(0.94 0.04 28);
+  --brand-moss-soft: oklch(0.94 0.04 155);
+  --brand-info-soft: oklch(0.94 0.03 250);
+  --brand-plum-soft: oklch(0.94 0.03 320);
 
   /* —— Semantic tokens (light) —— */
-  --background: var(--brilliance);
-  --foreground: var(--night-black);
+  --background: oklch(1 0 0);
+  --foreground: var(--brand-ink);
   --card: oklch(1 0 0);
-  --card-foreground: var(--night-black);
+  --card-foreground: var(--brand-ink);
   --popover: oklch(1 0 0);
-  --popover-foreground: var(--night-black);
-  --primary: var(--precious-persimmon);
-  --primary-foreground: var(--night-black);
-  --secondary: var(--violet-essence);
-  --secondary-foreground: var(--night-black);
-  --muted: var(--violet-essence);
-  --muted-foreground: var(--graphite);
-  /* Soft Rosé wash for hover/selection — full Rosé is too loud as a fill */
-  --accent: oklch(0.94 0.04 41);
-  --accent-foreground: var(--night-black);
-  --destructive: oklch(0.55 0.2 25);
-  --success: oklch(0.52 0.12 155);
+  --popover-foreground: var(--brand-ink);
+  --primary: var(--brand-honey);
+  --primary-foreground: oklch(0.99 0.005 75);
+  --secondary: var(--brand-mist);
+  --secondary-foreground: var(--brand-amber);
+  --muted: var(--brand-mist);
+  --muted-foreground: oklch(0.48 0.025 75);
+  --accent: var(--brand-teal-soft);
+  --accent-foreground: var(--brand-teal);
+  --destructive: var(--brand-coral);
+  --success: var(--brand-moss);
   --success-foreground: oklch(0.99 0.01 155);
-  --warning: var(--precious-persimmon);
-  --warning-foreground: var(--night-black);
-  --danger: oklch(0.55 0.2 25);
-  --danger-foreground: oklch(0.99 0.01 25);
-  --border: var(--border-soft);
-  --input: var(--border-soft);
-  --ring: var(--precious-persimmon);
-  --chart-1: var(--precious-persimmon);
-  --chart-2: var(--no-way-rose);
-  --chart-3: oklch(0.52 0.12 155);
-  --chart-4: var(--palladium);
-  --chart-5: var(--night-black);
-  --radius: 0.625rem;
-  /* Night Black rail */
-  --sidebar: var(--night-black);
-  --sidebar-foreground: var(--brilliance);
-  --sidebar-primary: var(--precious-persimmon);
-  --sidebar-primary-foreground: var(--night-black);
-  --sidebar-accent: oklch(0.38 0.01 277);
-  --sidebar-accent-foreground: var(--brilliance);
+  --warning: var(--brand-amber);
+  --warning-foreground: oklch(0.99 0.01 55);
+  --danger: var(--brand-coral);
+  --danger-foreground: oklch(0.99 0.01 28);
+  --info: var(--brand-info);
+  --info-foreground: oklch(0.99 0.01 250);
+  --border: oklch(0.9 0.015 75);
+  --input: oklch(0.9 0.015 75);
+  --ring: var(--brand-honey);
+  --chart-1: var(--brand-honey);
+  --chart-2: var(--brand-teal);
+  --chart-3: var(--brand-moss);
+  --chart-4: var(--brand-coral);
+  --chart-5: var(--brand-plum);
+  --radius: 0.75rem;
+
+  --shadow-soft: 0 4px 20px -2px
+    color-mix(in oklch, var(--brand-honey) 14%, transparent);
+  --shadow-card-hover:
+    0 10px 28px -6px color-mix(in oklch, var(--brand-honey) 18%, transparent),
+    0 6px 12px -6px color-mix(in oklch, var(--brand-ink) 6%, transparent);
+  --shadow-button: 0 4px 14px 0
+    color-mix(in oklch, var(--brand-honey) 32%, transparent);
+
+  /* Sidebar — deep ink rail, honey signal */
+  --sidebar: oklch(0.22 0.03 75);
+  --sidebar-foreground: oklch(0.94 0.015 75);
+  --sidebar-primary: var(--brand-honey);
+  --sidebar-primary-foreground: oklch(0.22 0.03 75);
+  --sidebar-accent: oklch(0.3 0.035 75);
+  --sidebar-accent-foreground: oklch(0.94 0.015 75);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: var(--precious-persimmon);
+  --sidebar-ring: var(--brand-honey);
 }
 
-/*
-  Dark: Night Black as the mid surface, deeper charcoal as canvas.
-  Persimmon stays the signal; Palladium carries muted text; Rosé softens accents.
-*/
 .dark {
-  --canvas-deep: oklch(0.231 0.008 275);
-  --surface-raised: oklch(0.354 0.01 278);
+  --brand-honey: oklch(0.78 0.14 72);
+  --brand-amber: oklch(0.72 0.13 55);
+  --brand-teal: oklch(0.72 0.1 195);
+  --brand-coral: oklch(0.72 0.15 28);
+  --brand-moss: oklch(0.72 0.11 155);
+  --brand-info: oklch(0.7 0.11 250);
+  --brand-plum: oklch(0.7 0.11 320);
+  --brand-ink: oklch(0.94 0.015 75);
+  --brand-mist: oklch(0.26 0.025 75);
 
-  --background: var(--canvas-deep);
-  --foreground: var(--brilliance);
-  --card: var(--night-black);
-  --card-foreground: var(--brilliance);
-  --popover: var(--night-black);
-  --popover-foreground: var(--brilliance);
-  --primary: var(--precious-persimmon);
-  --primary-foreground: var(--night-black);
-  --secondary: var(--surface-raised);
-  --secondary-foreground: var(--brilliance);
-  --muted: var(--surface-raised);
-  --muted-foreground: var(--palladium);
-  --accent: oklch(0.38 0.07 41);
-  --accent-foreground: var(--no-way-rose);
-  --destructive: oklch(0.7 0.17 25);
-  --success: oklch(0.72 0.12 155);
-  --success-foreground: var(--canvas-deep);
-  --warning: var(--precious-persimmon);
-  --warning-foreground: var(--night-black);
-  --danger: oklch(0.7 0.17 25);
-  --danger-foreground: var(--canvas-deep);
+  --brand-honey-soft: oklch(0.32 0.05 72);
+  --brand-teal-soft: oklch(0.3 0.04 195);
+  --brand-coral-soft: oklch(0.32 0.05 28);
+  --brand-moss-soft: oklch(0.3 0.04 155);
+  --brand-info-soft: oklch(0.3 0.04 250);
+  --brand-plum-soft: oklch(0.3 0.04 320);
+
+  --background: oklch(0.16 0.015 75);
+  --foreground: oklch(0.94 0.015 75);
+  --card: oklch(0.22 0.02 75);
+  --card-foreground: oklch(0.94 0.015 75);
+  --popover: oklch(0.22 0.02 75);
+  --popover-foreground: oklch(0.94 0.015 75);
+  --primary: var(--brand-honey);
+  --primary-foreground: oklch(0.2 0.03 75);
+  --secondary: var(--brand-mist);
+  --secondary-foreground: var(--brand-amber);
+  --muted: var(--brand-mist);
+  --muted-foreground: oklch(0.7 0.02 75);
+  --accent: var(--brand-teal-soft);
+  --accent-foreground: var(--brand-teal);
+  --destructive: var(--brand-coral);
+  --success: var(--brand-moss);
+  --success-foreground: oklch(0.18 0.02 155);
+  --warning: var(--brand-amber);
+  --warning-foreground: oklch(0.2 0.03 55);
+  --danger: var(--brand-coral);
+  --danger-foreground: oklch(0.18 0.02 28);
+  --info: var(--brand-info);
+  --info-foreground: oklch(0.18 0.02 250);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 14%);
-  --ring: var(--precious-persimmon);
-  --chart-1: var(--precious-persimmon);
-  --chart-2: var(--no-way-rose);
-  --chart-3: oklch(0.72 0.12 155);
-  --chart-4: var(--palladium);
-  --chart-5: var(--brilliance);
-  --sidebar: oklch(0.18 0.008 275);
-  --sidebar-foreground: var(--brilliance);
-  --sidebar-primary: var(--precious-persimmon);
-  --sidebar-primary-foreground: var(--night-black);
-  --sidebar-accent: var(--night-black);
-  --sidebar-accent-foreground: var(--brilliance);
+  --ring: var(--brand-honey);
+  --chart-1: var(--brand-honey);
+  --chart-2: var(--brand-teal);
+  --chart-3: var(--brand-moss);
+  --chart-4: var(--brand-coral);
+  --chart-5: var(--brand-plum);
+
+  --shadow-soft: 0 4px 20px -2px
+    color-mix(in oklch, var(--brand-honey) 22%, transparent);
+  --shadow-card-hover:
+    0 10px 28px -6px color-mix(in oklch, var(--brand-honey) 28%, transparent),
+    0 6px 12px -6px oklch(0 0 0 / 25%);
+  --shadow-button: 0 4px 14px 0
+    color-mix(in oklch, var(--brand-honey) 38%, transparent);
+
+  --sidebar: oklch(0.12 0.02 75);
+  --sidebar-foreground: oklch(0.92 0.015 75);
+  --sidebar-primary: var(--brand-honey);
+  --sidebar-primary-foreground: oklch(0.18 0.03 75);
+  --sidebar-accent: oklch(0.2 0.025 75);
+  --sidebar-accent-foreground: oklch(0.92 0.015 75);
   --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: var(--precious-persimmon);
+  --sidebar-ring: var(--brand-honey);
 }
 
 @layer base {
@@ -183,7 +241,52 @@
   h1,
   h2,
   h3 {
+    @apply font-heading tracking-tight;
     text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@layer utilities {
+  .bg-brand-gradient {
+    background-image: linear-gradient(
+      135deg,
+      var(--brand-honey),
+      var(--brand-amber)
+    );
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+  .shadow-button {
+    box-shadow: var(--shadow-button);
+  }
+}
+
+@layer components {
+  .atmosphere-blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(64px);
+    pointer-events: none;
+    animation: trust-pulse 4s ease-in-out infinite;
+  }
+}
+
+@keyframes trust-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.05);
   }
 }
 

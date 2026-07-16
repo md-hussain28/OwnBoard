@@ -2,65 +2,58 @@
 name: OwnBoard
 description: A cited, evidence-grounded onboarding console for new hires, mentors, and engineering managers.
 colors:
-  brilliance: "#fdfcfc"
-  violet-essence: "#e6e4e6"
-  no-way-rose: "#f9b095"
-  palladium: "#b1b1b1"
-  precious-persimmon: "#f87941"
-  night-black: "#2f3035"
-  background: "#fdfcfc"
-  foreground: "#2f3035"
-  card: "#ffffff"
-  primary: "#f87941"
-  primary-foreground: "#2f3035"
-  secondary: "#e6e4e6"
-  secondary-foreground: "#2f3035"
-  muted: "#e6e4e6"
-  muted-foreground: "#5a5b61"
-  accent: "oklch(0.94 0.04 41)"
-  border: "#d4d2d4"
-  ring: "#f87941"
-  destructive: "oklch(0.55 0.2 25)"
-  success: "oklch(0.52 0.12 155)"
-  warning: "#f87941"
-  danger: "oklch(0.55 0.2 25)"
-  sidebar: "#2f3035"
-  sidebar-primary: "#f87941"
-  chart-1: "#f87941"
-  chart-2: "#f9b095"
-  chart-3: "oklch(0.52 0.12 155)"
-  chart-4: "#b1b1b1"
-  chart-5: "#2f3035"
-  dark-background: "#1c1d21"
-  dark-card: "#2f3035"
-  dark-muted-foreground: "#b1b1b1"
+  brand-honey: "oklch(0.68 0.155 72)"
+  brand-amber: "oklch(0.55 0.145 55)"
+  brand-teal: "oklch(0.55 0.105 195)"
+  brand-coral: "oklch(0.62 0.175 28)"
+  brand-moss: "oklch(0.58 0.115 155)"
+  brand-info: "oklch(0.55 0.12 250)"
+  brand-plum: "oklch(0.52 0.12 320)"
+  brand-ink: "oklch(0.28 0.025 75)"
+  brand-mist: "oklch(0.965 0.012 75)"
+  background: "oklch(1 0 0)"
+  foreground: "oklch(0.28 0.025 75)"
+  primary: "oklch(0.68 0.155 72)"
+  primary-foreground: "oklch(0.99 0.005 75)"
+  accent: "oklch(0.94 0.03 195)"
+  accent-foreground: "oklch(0.55 0.105 195)"
+  success: "oklch(0.58 0.115 155)"
+  warning: "oklch(0.55 0.145 55)"
+  danger: "oklch(0.62 0.175 28)"
+  info: "oklch(0.55 0.12 250)"
+  sidebar: "oklch(0.22 0.03 75)"
+  chart-1: "oklch(0.68 0.155 72)"
+  chart-2: "oklch(0.55 0.105 195)"
+  chart-3: "oklch(0.58 0.115 155)"
+  chart-4: "oklch(0.62 0.175 28)"
+  chart-5: "oklch(0.52 0.12 320)"
 typography:
   display:
-    fontFamily: "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1.875rem"
-    fontWeight: 600
-    lineHeight: 1.2
-    letterSpacing: "normal"
+    fontFamily: "var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif"
+    fontSize: "2.25rem"
+    fontWeight: 800
+    lineHeight: 1.1
+    letterSpacing: "-0.02em"
   headline:
-    fontFamily: "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.5rem"
-    fontWeight: 600
+    fontWeight: 700
     lineHeight: 1.25
-    letterSpacing: "normal"
+    letterSpacing: "-0.02em"
   title:
-    fontFamily: "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif"
     fontSize: "1rem"
-    fontWeight: 500
+    fontWeight: 600
     lineHeight: 1.375
     letterSpacing: "normal"
   body:
-    fontFamily: "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 400
-    lineHeight: 1.5
+    lineHeight: 1.6
     letterSpacing: "normal"
   label:
-    fontFamily: "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.75rem"
     fontWeight: 500
     lineHeight: 1
@@ -72,157 +65,65 @@ typography:
     lineHeight: 1.5
     letterSpacing: "normal"
 rounded:
-  sm: "0.375rem"
-  md: "0.5rem"
-  lg: "0.625rem"
-  xl: "0.875rem"
-  2xl: "1.125rem"
-  3xl: "1.375rem"
-  4xl: "1.625rem"
-spacing:
-  xs: "0.375rem"
-  sm: "0.625rem"
-  md: "1rem"
-  lg: "1.5rem"
-  xl: "2.5rem"
-  2xl: "3rem"
-components:
-  button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.primary-foreground}"
-    typography: "{typography.body}"
-    rounded: "{rounded.lg}"
-    padding: "0 0.625rem"
-    height: "2rem"
-  button-outline:
-    backgroundColor: "{colors.background}"
-    textColor: "{colors.foreground}"
-    typography: "{typography.body}"
-    rounded: "{rounded.lg}"
-    padding: "0 0.625rem"
-    height: "2rem"
-  card:
-    backgroundColor: "{colors.card}"
-    textColor: "{colors.foreground}"
-    typography: "{typography.body}"
-    rounded: "{rounded.xl}"
-    padding: "1rem"
-  input:
-    backgroundColor: "{colors.background}"
-    textColor: "{colors.foreground}"
-    typography: "{typography.body}"
-    rounded: "{rounded.lg}"
-    padding: "0.25rem 0.625rem"
-    height: "2rem"
-  badge-success:
-    backgroundColor: "{colors.success}"
-    textColor: "{colors.success-foreground}"
-    typography: "{typography.label}"
-    rounded: "{rounded.4xl}"
-    padding: "0.125rem 0.5rem"
-  badge-warning:
-    backgroundColor: "{colors.warning}"
-    textColor: "{colors.warning-foreground}"
-    typography: "{typography.label}"
-    rounded: "{rounded.4xl}"
-    padding: "0.125rem 0.5rem"
-  badge-danger:
-    backgroundColor: "{colors.danger}"
-    textColor: "{colors.danger-foreground}"
-    typography: "{typography.label}"
-    rounded: "{rounded.4xl}"
-    padding: "0.125rem 0.5rem"
+  sm: "0.45rem"
+  md: "0.6rem"
+  lg: "0.75rem"
+  xl: "1.125rem"
+  2xl: "1.5rem"
+  3xl: "1.875rem"
+  4xl: "2.25rem"
 ---
 
-# Design System: OwnBoard
+# Design System: OwnBoard — Evidence Desk
 
 ## 1. Overview
 
-**Creative North Star: "Night & Ember"**
+**Creative North Star: "Evidence desk at golden hour"**
 
-OwnBoard is where a new hire's understanding of a codebase gets checked against reality. The interface is a modern console: Brilliance canvas, a Night Black sidebar rail, and a single **Precious Persimmon** signal for primary actions and the current nav selection. Color is spent on wayfinding and status — never decoration. Light and dark themes are first-class equals.
+Pure white paper. Warm **Honey** for primary actions. Cool **Teal** for verified / cited. Distinct hues for status so risk never looks like success. No generic indigo SaaS purple.
 
-This system rejects generic purple-glow SaaS, teal-by-default tech chrome, gamified onboarding theatrics, and dense enterprise layouts. Calm, precise, warm-signal.
+**Strategy:** Full palette — multiple named brand roles, each with one job.
 
-**Key Characteristics:**
-- Six brand primitives → semantic tokens (never hardcode hex in components).
-- Night Black rail + Persimmon signal; Rosé only as a soft wash / chart secondary.
-- Flat elevation — structure from borders and tone shifts; optional light backdrop-blur on sticky chrome only.
-- Geist Sans for UI; Geist Mono for evidence (commits, paths, citations).
-- Theme toggle + org + user live in the **sidebar footer**.
+## 2. Brand primitives
 
-## 2. Colors
+| Token | Role | When to use |
+|-------|------|-------------|
+| `brand-honey` | Primary / CTA | Buttons, focus ring, active nav signal |
+| `brand-amber` | Deep companion / warning | Gradients end, caution states |
+| `brand-teal` | Verified / accent | Citations, “escalates to human”, secondary emphasis |
+| `brand-coral` | Danger / bus-factor risk | Fail, destructive, high risk |
+| `brand-moss` | Success / pass | Quiz pass, healthy coverage |
+| `brand-info` | Informational | Neutral tips, docs links |
+| `brand-plum` | Chart / variety | 5th series in dashboards |
+| `brand-ink` | Text | Body and headings |
+| `brand-mist` | Soft fill | Secondary surfaces, muted wells |
 
-### Brand primitives
+Soft companions (`*-soft`) exist for icon wells and pills: `bg-brand-honey-soft text-brand-honey`, etc.
 
-| Name | Hex | Role |
-|------|-----|------|
-| Brilliance | `#fdfcfc` | Light canvas |
-| Violet Essence | `#e6e4e6` | Muted / secondary fills |
-| No Way Rosé | `#f9b095` | Soft accent (charts, dark accent text) |
-| Palladium | `#b1b1b1` | Borders (via soft mix); dark muted text |
-| Precious Persimmon | `#f87941` | Primary signal |
-| Night Black | `#2f3035` | Ink, sidebar, text on Persimmon |
+## 3. Semantic mapping
 
-Derived (same ink family as Night Black): **Graphite** `#5a5b61` (light muted text), **Canvas Deep** `#1c1d21` (dark background).
+- `primary` → honey  
+- `accent` → teal soft fill + teal text  
+- `success` → moss  
+- `warning` → amber  
+- `danger` / `destructive` → coral  
+- `info` → info blue  
+- Charts: honey → teal → moss → coral → plum  
 
-### Primary (Persimmon)
-- Both themes: `#f87941` with **Night Black** foreground — white-on-Persimmon fails contrast (~2.6:1); Night-on-Persimmon passes (~4.9:1).
-- Focus rings and sidebar active mark use the same Persimmon.
+## 4. Surfaces & elevation
 
-### Surfaces
-- **Light:** Brilliance canvas → white cards → Violet Essence muted fills → soft Palladium-adjacent borders.
-- **Dark:** Canvas Deep (`#1c1d21`) → Night Black cards → raised muted (`~#3a3b41`) → Palladium muted text. Depth from surface lightness, not shadows.
-- **Sidebar:** Night Black in light; deeper charcoal in dark. Active = Persimmon.
+- Canvas: pure white (`oklch(1 0 0)`). Warmth is in brand colors, not the page tint.
+- Cards: white + honey-tinted `shadow-soft`.
+- Sidebar: deep warm ink; honey for active.
 
-### Status (semantic only)
-- **success** / **danger** / **destructive** — dedicated tokens. **warning** reuses Persimmon (brand-aligned caution). Never raw Tailwind palette colors for severity.
-
-### Named Rules
-**The Ember Rule.** Persimmon (`primary` / `sidebar-primary`) is the only non-status accent with visual weight. Use it for primary actions, focus, and current selection.
-
-**The Ink-on-Ember Rule.** Never put white text on Persimmon. Always Night Black (or `primary-foreground`).
-
-**The Status-Token-Only Rule.** Severity and pass/fail go through `success` / `warning` / `danger` only.
-
-**The Dual-Theme Rule.** Every semantic token has a paired `.dark` value. Prefer `next-themes` class strategy (`class="dark"` on `<html>`). Default theme: light; persist user choice.
-
-## 3. Typography
-
-Same roles as before: Display → Headline → Title → Body → Label → Mono. One sans family (Geist); mono reserved for evidence.
-
-## 4. Elevation
-
-Prefer `border` / `ring-1` over shadows. Sticky top chrome may use `backdrop-blur` + translucent background. Do not pair wide soft drop shadows with 1px borders on cards.
-
-## 5. Components
-
-### Navigation (console)
-- Collapsible left sidebar + slim top bar (trigger + context only).
-- **Sidebar footer:** theme toggle → org switcher → user button.
-- Active nav: `sidebar-accent` fill + `sidebar-primary` text/icon.
-- Stub domains keep the outline **Incoming** badge.
-
-### Buttons / inputs / badges
-- Primary = Persimmon fill + Night Black text; outline/ghost = neutrals; destructive = tinted red fill.
-- Focus: `ring-3 ring-ring/50` + border shift.
-- Transitions: ~150ms ease-out; honor `prefers-reduced-motion`.
-
-### Loading / Error / Empty
-Unchanged three-state pattern: Skeleton → muted error line → "No X yet."
-
-## 6. Do's and Don'ts
+## 5. Do's and Don'ts
 
 ### Do
-- Ship light and dark with matching semantics.
-- Keep org/account/theme in the sidebar footer on console surfaces.
-- Use Persimmon only for signal (action / selection / focus).
-- Render provenance in Geist Mono.
-- Reference brand primitives (`--precious-persimmon`, etc.) when extending the palette.
+- Use named `brand-*` tokens for intentional color moments.
+- Keep one meaning per hue (coral = risk, moss = pass, teal = verified).
+- Prefer soft fills + saturated text for badges.
 
 ### Don't
-- Don't put white text on Persimmon.
-- Don't put org/user chrome back in the top bar on console pages.
-- Don't use purple gradients, glow stacks, teal defaults, or gamified mascots.
-- Don't use raw Tailwind status colors instead of tokens.
-- Don't use Palladium as body/muted text on Brilliance (fails contrast) — use Graphite.
+- Don't use raw Tailwind indigo/violet/purple for brand.
+- Don't tint the whole page warm-cream — that fights the honey primary.
+- Don't reuse honey for both success and warning.

@@ -3,13 +3,14 @@
 import { useAuth } from "@clerk/nextjs";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppTopbar } from "@/components/layout/app-topbar";
+import { AtmosphereBlobs } from "@/components/layout/atmosphere-blobs";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { SidebarInset, SidebarProvider } from "@/ui/sidebar";
 import { TooltipProvider } from "@/ui/tooltip";
 
 /**
  * Signed-in: collapsible sidebar + topbar (console shell).
- * Signed-out: marketing header only — used for the public home at `/`.
+ * Signed-out: marketing header + atmosphere blobs — used for the public home at `/`.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
@@ -25,9 +26,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!isSignedIn) {
     return (
-      <div className="flex min-h-svh flex-col bg-background">
+      <div className="relative flex min-h-svh flex-col bg-background">
+        <AtmosphereBlobs />
         <MarketingHeader />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">{children}</main>
+        <main className="relative z-0 mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+          {children}
+        </main>
       </div>
     );
   }

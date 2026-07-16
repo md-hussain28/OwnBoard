@@ -17,6 +17,12 @@ export function AppClerkProvider({ children }: { children: ReactNode }) {
     const isDark = mounted && resolvedTheme === "dark";
     return {
       theme: isDark ? [shadcn, dark] : shadcn,
+      variables: {
+        fontFamily:
+          "var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif",
+        colorPrimary: "var(--primary)",
+        borderRadius: "0.75rem",
+      },
     };
   }, [mounted, resolvedTheme]);
 

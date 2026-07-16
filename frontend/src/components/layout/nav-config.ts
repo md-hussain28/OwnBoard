@@ -1,14 +1,16 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  BookOpen,
-  FolderGit2,
-  LayoutDashboard,
-  MessageSquare,
+  ClipboardCheckIcon,
+  FolderGit2Icon,
+  NetworkIcon,
+  SearchCodeIcon,
 } from "lucide-react";
 
 export type NavItem = {
   href: string;
   label: string;
+  /** Short line under the label — expanded sidebar only. */
+  description?: string;
   icon: LucideIcon;
   /** Backend still stubbed — show Incoming badge, keep route clickable for demos. */
   incoming?: boolean;
@@ -23,39 +25,42 @@ export type NavGroup = {
 
 /** Workspace nav — shown to every signed-in org member. */
 export const WORKSPACE_NAV: NavGroup = {
-  label: "Workspace",
+  label: "Evidence desk",
   items: [
     {
       href: "/",
-      label: "Overview",
-      icon: FolderGit2,
+      label: "Codebases",
+      description: "Connected repos",
+      icon: FolderGit2Icon,
     },
     {
       href: "/onboarding",
-      label: "Onboarding",
-      icon: BookOpen,
+      label: "Readiness",
+      description: "Policy & code quizzes",
+      icon: ClipboardCheckIcon,
       incoming: true,
       matchPrefix: true,
     },
     {
       href: "/chat",
       label: "Archaeology",
-      icon: MessageSquare,
+      description: "Ask why the code is",
+      icon: SearchCodeIcon,
       incoming: true,
     },
     {
       href: "/dashboard",
-      label: "Skill graph",
-      icon: LayoutDashboard,
+      label: "Skill map",
+      description: "Who knows what",
+      icon: NetworkIcon,
       incoming: true,
     },
   ],
 };
 
 /**
- * Platform / Tenants lives in the org switcher → Manage organization tabs
- * for platform superadmins only (see SidebarAccountFooter). Kept here for
- * shared active-route helpers if needed later.
+ * Platform tenant admin — `/admin`, platform superadmins only.
+ * Reached by URL (not org settings); create-org is hidden in the switcher.
  */
 export const PLATFORM_ADMIN_HREF = "/admin";
 

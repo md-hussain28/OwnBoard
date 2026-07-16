@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     CLERK_JWT_KEY: str = ""
     CLERK_AUTHORIZED_PARTIES: str = "http://localhost:3000"
 
+    # Supabase Storage (doc pack file uploads). Service role key is server-only —
+    # never expose it to the browser; it bypasses Row Level Security entirely.
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    SUPABASE_STORAGE_BUCKET: str = "doc-packs"
+
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ALLOWED_ORIGINS.split(",") if origin.strip()]

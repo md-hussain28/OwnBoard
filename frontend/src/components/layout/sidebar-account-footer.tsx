@@ -1,89 +1,107 @@
 "use client";
 
-import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
-import { Building2 } from "lucide-react";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { usePlatformAdminMe } from "@/hooks/queries/admin/admin.queries";
-import { SidebarFooter, SidebarSeparator, useSidebar } from "@/ui/sidebar";
+import { useAuth, UserButton } from "@clerk/nextjs";
+import { dark, shadcn } from "@clerk/ui/themes";
+import { ThemeSettings } from "@/components/layout/theme-settings";
+import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
+import {
+  SidebarFooter,
+  SidebarSeparator,
+  useSidebar,
+} from "@/ui/sidebar";
 import { cn } from "@/lib/utils";
 
-/** Hide Clerk's built-in "Create organization" — tenants are provisioned via /admin. */
-export const hideCreateOrganizationAppearance = {
-  elements: {
-    organizationSwitcherPopoverActionButton__createOrganization: {
-      display: "none",
-    },
-    organizationListCreateOrganizationActionButton: {
-      display: "none",
-    },
-  },
-} as const;
+/** Shared ghost trigger — matches nav item rhythm. */
+const sidebarTabTrigger = cn(
+  "flex h-9 w-full! items-center gap-2.5 overflow-hidden rounded-lg px-2.5 text-left text-[0.8125rem]",
+  "font-medium text-sidebar-foreground/80 outline-hidden",
+  "transition-[color,background-color] duration-150 ease-out",
+  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+  "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+  "border-0! bg-transparent! shadow-none!",
+);
 
 export function SidebarAccountFooter() {
+  const { has, isLoaded: authLoaded } = useAuth();
   const { state, isMobile } = useSidebar();
-  const { data: adminMe } = usePlatformAdminMe();
-  const isSuperAdmin = Boolean(adminMe?.isPlatformAdmin);
   const collapsed = !isMobile && state === "collapsed";
+  const showManageTeam = authLoaded && !!has?.({ role: "org:admin" });
 
   const appearance = {
-    ...hideCreateOrganizationAppearance,
+    theme: [shadcn, dark],
     elements: {
-      ...hideCreateOrganizationAppearance.elements,
-      ...(isSuperAdmin
-        ? {}
-        : {
-            organizationSwitcherPopoverActionButton__manageOrganization: {
-              display: "none",
-            },
-          }),
-      rootBox: collapsed ? "w-auto" : "w-full",
-      organizationSwitcherTrigger: cn(
-        "rounded-lg border border-sidebar-border/80 bg-sidebar-accent/50 text-sidebar-foreground transition-colors duration-150 hover:bg-sidebar-accent",
-        collapsed
-          ? "size-8 justify-center border-0 bg-transparent p-0 hover:bg-sidebar-accent"
-          : "w-full justify-between px-2 py-1.5",
+      userButtonPopoverRootBox: "z-50 pointer-events-auto!",
+      userButtonPopoverCard: "pointer-events-auto!",
+      rootBox: cn(
+        "relative z-20 flex! h-9! items-center!",
+        collapsed ? "w-auto!" : "w-full!",
       ),
-      userButtonBox: collapsed ? "w-auto" : "w-full justify-start",
+      // Clerk DOM is name-then-avatar; order forces avatar → name → (settings beside).
+      userButtonBox: cn(
+        "flex! h-9! flex-row items-center! justify-start gap-2.5",
+        collapsed ? "w-auto! justify-center gap-0" : "w-full!",
+      ),
+      userButtonOuterIdentifier: cn(
+        "order-2 min-w-0 flex-1 truncate text-left text-[0.8125rem] font-medium leading-none text-sidebar-foreground/85",
+        collapsed && "hidden",
+      ),
       userButtonTrigger: cn(
-        "rounded-lg transition-colors duration-150",
-        collapsed
-          ? "size-8 justify-center"
-          : "w-full justify-start rounded-lg border border-sidebar-border/80 bg-sidebar-accent/50 px-1.5 py-1 hover:bg-sidebar-accent",
+        sidebarTabTrigger,
+        "justify-start! items-center! pr-1!",
+        collapsed && "size-8! w-8! justify-center! gap-0 px-0! pr-0!",
       ),
+      userButtonAvatarBox: "order-1 size-5! shrink-0 self-center rounded-full",
     },
   };
 
   return (
-    <SidebarFooter className="mt-auto gap-1.5 border-t border-sidebar-border p-2">
-      <ThemeToggle />
-      <SidebarSeparator className="mx-0 my-0.5" />
+    <SidebarFooter
+      className={cn(
+        "relative z-20 mt-auto gap-1 border-t border-sidebar-border p-2 pb-2.5",
+        collapsed && "items-center",
+      )}
+    >
+      {showManageTeam && (
+        <>
+          <div
+            className={cn(
+              "relative z-20 flex items-center px-0.5",
+              collapsed && "h-8 w-full justify-center px-0",
+            )}
+          >
+            <WorkspaceSwitcher />
+          </div>
+
+          <SidebarSeparator
+            className={cn(
+              "mx-1 my-1 bg-sidebar-border/80",
+              collapsed && "mx-0 w-8",
+            )}
+          />
+        </>
+      )}
+
       <div
         className={cn(
-          "flex w-full flex-col gap-1.5",
-          collapsed && "items-center",
+          "relative z-20 flex h-9 items-center gap-0.5 px-0.5",
+          collapsed && "h-8 w-full justify-center px-0",
         )}
       >
-        <OrganizationSwitcher
-          hidePersonal
-          afterSelectOrganizationUrl="/"
-          appearance={appearance}
-        >
-          {isSuperAdmin ? (
-            <OrganizationSwitcher.OrganizationProfileLink
-              label="Tenants"
-              url="/admin"
-              labelIcon={<Building2 className="size-4" />}
-            />
-          ) : null}
-        </OrganizationSwitcher>
         <div
           className={cn(
-            "flex w-full items-center",
-            collapsed ? "justify-center" : "px-0.5",
+            "flex h-9 min-w-0 flex-1 items-center overflow-hidden",
+            collapsed && "h-8 w-full flex-none justify-center",
           )}
         >
-          <UserButton appearance={appearance} />
+          <UserButton
+            appearance={appearance}
+            showName={!collapsed}
+            userProfileMode="modal"
+          />
         </div>
+        {!collapsed && (
+          <ThemeSettings className="flex h-9 shrink-0 items-center justify-center" />
+        )}
       </div>
     </SidebarFooter>
   );

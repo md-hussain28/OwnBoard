@@ -18,13 +18,13 @@ export function MarketingHeader() {
   const isDark = mounted && resolvedTheme === "dark";
 
   return (
-    <header className="sticky top-0 z-10 border-b border-border/80 bg-background/85 backdrop-blur-md supports-backdrop-filter:bg-background/70">
+    <header className="sticky top-0 z-20 border-b border-border/60 bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/65">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3.5">
         <Link
           href="/"
-          className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground transition-colors hover:text-primary"
+          className="flex items-center gap-2.5 text-base font-bold tracking-tight text-foreground transition-opacity hover:opacity-90"
         >
-          <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-[11px] font-bold text-primary-foreground">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-brand-gradient text-[11px] font-bold text-white shadow-button">
             Ob
           </span>
           OwnBoard

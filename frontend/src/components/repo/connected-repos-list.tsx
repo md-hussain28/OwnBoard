@@ -74,7 +74,7 @@ export function ConnectedReposList() {
             {repos.map((repo) => (
               <li
                 key={repo.id}
-                className="flex items-center justify-between rounded-md border px-4 py-3"
+                className="flex items-center justify-between rounded-xl border border-border px-4 py-3 transition-shadow duration-200 hover:shadow-soft"
               >
                 <div>
                   <p className="font-medium">{repo.name}</p>

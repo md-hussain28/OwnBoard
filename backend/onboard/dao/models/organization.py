@@ -15,3 +15,4 @@ class Organization(AuditBase):
     employees: Mapped[list["Employee"]] = relationship(back_populates="organization", cascade="all, delete-orphan")
     repos: Mapped[list["Repo"]] = relationship(back_populates="organization", cascade="all, delete-orphan")
     policy_docs: Mapped[list["PolicyDoc"]] = relationship(back_populates="organization", cascade="all, delete-orphan")
+    doc_packs: Mapped[list["DocPack"]] = relationship(back_populates="organization", cascade="all, delete-orphan")

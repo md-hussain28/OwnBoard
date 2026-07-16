@@ -17,6 +17,15 @@ class LLMClient:
         response = await self._client.embeddings.create(model=self.embedding_model, input=text)
         return response.data[0].embedding
 
+    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
+        """Batch-embed texts in a single OpenAI request (order-preserving)."""
+        if not texts:
+            return []
+        response = await self._client.embeddings.create(model=self.embedding_model, input=texts)
+        # API returns data possibly unsorted; sort by index to preserve input order.
+        ordered = sorted(response.data, key=lambda item: item.index)
+        return [item.embedding for item in ordered]
+
     async def chat(self, messages: list[dict[str, str]]) -> str:
         response = await self._client.chat.completions.create(model=self.chat_model, messages=messages)
         return response.choices[0].message.content or ""

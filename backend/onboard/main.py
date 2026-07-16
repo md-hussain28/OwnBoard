@@ -11,6 +11,7 @@ from onboard.api.routes import (
     auth_router,
     chat_router,
     dashboard_router,
+    doc_pack_router,
     employee_router,
     expert_router,
     health_router,
@@ -63,6 +64,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router.router, prefix=prefix, dependencies=protected)
     app.include_router(repo_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(employee_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(doc_pack_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(skill_graph_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(rag_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(quiz_router.router, prefix=prefix, dependencies=tenant_scoped)

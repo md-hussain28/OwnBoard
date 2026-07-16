@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from onboard.api.dependency.db import get_db
 from onboard.services.archaeology.archaeology_service import ArchaeologyService
 from onboard.services.dashboard.dashboard_service import DashboardService
+from onboard.services.doc_pack.doc_pack_service import DocPackService
 from onboard.services.employee.employee_service import EmployeeService
 from onboard.services.expert_routing.expert_routing_service import ExpertRoutingService
 from onboard.services.quiz.quiz_service import QuizService
@@ -25,6 +26,7 @@ class ServiceContainer:
         self._archaeology: ArchaeologyService | None = None
         self._expert_routing: ExpertRoutingService | None = None
         self._dashboard: DashboardService | None = None
+        self._doc_pack: DocPackService | None = None
 
     @property
     def repo_ingestion(self) -> RepoIngestionService:
@@ -73,6 +75,12 @@ class ServiceContainer:
         if self._dashboard is None:
             self._dashboard = DashboardService(self.session)
         return self._dashboard
+
+    @property
+    def doc_pack(self) -> DocPackService:
+        if self._doc_pack is None:
+            self._doc_pack = DocPackService(self.session)
+        return self._doc_pack
 
 
 def get_service_container(session: AsyncSession = Depends(get_db)) -> ServiceContainer:

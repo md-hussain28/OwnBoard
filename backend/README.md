@@ -41,10 +41,13 @@ cp .env.example .env
 
 | Variable | Notes |
 |----------|--------|
-| `DATABASE_URL` | Default matches `docker-compose.yml` |
+| `ENVIRONMENT` | `local` (default) or `prod` / `production` |
+| `DATABASE_URL_LOCAL` | Docker Postgres; used when `ENVIRONMENT=local` |
+| `DATABASE_URL_PROD` | Neon (or other cloud); used when `ENVIRONMENT=prod` |
 | `API_PORT` | `8000` |
 | `CORS_ALLOWED_ORIGINS` | Include `http://localhost:3000` for the frontend |
 | `OPENAI_API_KEY` | Optional for basic CRUD; needed for LLM features later |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_STORAGE_BUCKET` | Doc pack file storage |
 
 ### Manual commands (without Make)
 

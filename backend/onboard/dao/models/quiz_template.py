@@ -9,6 +9,7 @@ from onboard.dao.models.base import AuditBase
 class QuizType(str, enum.Enum):
     policy = "policy"
     codebase = "codebase"
+    doc_pack = "doc_pack"
 
 
 class QuizTemplate(AuditBase):

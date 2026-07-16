@@ -2,6 +2,16 @@ from onboard.dao.models.base import AuditBase
 from onboard.dao.models.code_chunk import CodeChunk
 from onboard.dao.models.commit_record import CommitRecord
 from onboard.dao.models.contributor import Contributor
+from onboard.dao.models.doc_pack import (
+    DocChunk,
+    DocPack,
+    DocPackDocument,
+    DocPackStatus,
+    DocumentStatus,
+    PackAssignment,
+    PackAssignmentAck,
+    PackAssignmentStatus,
+)
 from onboard.dao.models.employee import Employee
 from onboard.dao.models.expertise_availability import ExpertiseAvailability
 from onboard.dao.models.file_expertise import FileExpertise
@@ -18,11 +28,19 @@ __all__ = [
     "CodeChunk",
     "CommitRecord",
     "Contributor",
+    "DocChunk",
+    "DocPack",
+    "DocPackDocument",
+    "DocPackStatus",
+    "DocumentStatus",
     "Employee",
     "ExpertiseAvailability",
     "FileExpertise",
     "InstitutionalMemoryNote",
     "Organization",
+    "PackAssignment",
+    "PackAssignmentAck",
+    "PackAssignmentStatus",
     "PolicyDoc",
     "QuizAttempt",
     "QuizQuestion",

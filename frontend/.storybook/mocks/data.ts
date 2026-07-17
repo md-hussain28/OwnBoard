@@ -243,6 +243,32 @@ export const mockAssignments = [
   },
 ];
 
+/** Admin inbox — passed/failed only (GET /assignments/outcomes). */
+export const mockAssignmentOutcomes = [
+  {
+    id: "asg_b2c3d4e5f6g7h8i9j0",
+    doc_pack_id: "pack_a1b2c3d4e5f6g7h8i9",
+    doc_pack_name: "Security & Compliance",
+    employee_id: "emp_b2c3d4e5f6g7h8i9j0",
+    employee_name: "Diego Alvarez",
+    status: "passed",
+    assigned_at: "2026-07-04T09:00:00Z",
+    completed_at: "2026-07-07T16:45:00Z",
+    updated_at: "2026-07-07T16:45:00Z",
+  },
+  {
+    id: "asg_d4e5f6g7h8i9j0k1l2",
+    doc_pack_id: "pack_b2c3d4e5f6g7h8i9j0",
+    doc_pack_name: "Engineering Handbook",
+    employee_id: "emp_a1b2c3d4e5f6g7h8i9",
+    employee_name: "Priya Sharma",
+    status: "failed",
+    assigned_at: "2026-07-10T10:00:00Z",
+    completed_at: null,
+    updated_at: "2026-07-16T11:20:00Z",
+  },
+];
+
 export const mockAssignmentDetail = {
   id: "asg_a1b2c3d4e5f6g7h8i9",
   doc_pack_id: "pack_a1b2c3d4e5f6g7h8i9",

@@ -8,6 +8,7 @@ from onboard.api.schema.pack_assignment.request import CreateAssignmentsRequest
 from onboard.api.schema.pack_assignment.response import (
     AssignmentDocumentContentResponse,
     AssignmentDocumentStatusResponse,
+    AssignmentOutcomeResponse,
     PackAssignmentDetailResponse,
     PackAssignmentResponse,
     StartQuizResponse,
@@ -66,6 +67,30 @@ async def list_employee_assignments(
     return [
         PackAssignmentResponse.model_validate(assignment).model_copy(update={"doc_pack_name": pack_name})
         for assignment, pack_name in rows
+    ]
+
+
+@router.get("/assignments/outcomes", response_model=list[AssignmentOutcomeResponse])
+async def list_assignment_outcomes(
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Org-admin inbox — recent quiz pass/fail outcomes across the workspace."""
+    assignments = await services.pack_assignment.list_recent_outcomes(org_id)
+    return [
+        AssignmentOutcomeResponse(
+            id=a.id,
+            doc_pack_id=a.doc_pack_id,
+            doc_pack_name=a.doc_pack.name if a.doc_pack else "Quiz pack",
+            employee_id=a.employee_id,
+            employee_name=a.employee.name if a.employee else "Team member",
+            status=a.status,
+            assigned_at=a.assigned_at,
+            completed_at=a.completed_at,
+            updated_at=a.updated_at,
+        )
+        for a in assignments
     ]
 
 

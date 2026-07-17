@@ -3,8 +3,10 @@ import { API_ENDPOINTS } from "@/lib/api/endpoint";
 import {
   type AssignmentDetail,
   type AssignmentDocumentContent,
+  type AssignmentOutcome,
   assignmentDetailSchema,
   assignmentDocumentContentSchema,
+  assignmentOutcomeListSchema,
   type PackAssignment,
   packAssignmentListSchema,
   packAssignmentSchema,
@@ -28,6 +30,11 @@ export const packAssignmentService = {
   async listForEmployee(employeeId: string): Promise<PackAssignment[]> {
     const { data } = await getApiClient().get(API_ENDPOINTS.employeeAssignments(employeeId));
     return packAssignmentListSchema.parse(data);
+  },
+
+  async listOutcomes(): Promise<AssignmentOutcome[]> {
+    const { data } = await getApiClient().get(API_ENDPOINTS.assignmentOutcomes);
+    return assignmentOutcomeListSchema.parse(data);
   },
 
   async getDetail(assignmentId: string): Promise<AssignmentDetail> {

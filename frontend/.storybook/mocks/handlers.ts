@@ -3,6 +3,7 @@ import {
   mockAdminQuizTemplate,
   mockAssignmentDetail,
   mockAssignmentDocumentContent,
+  mockAssignmentOutcomes,
   mockAssignments,
   mockBusFactor,
   mockChatResponse,
@@ -198,6 +199,8 @@ export const docPackHandlers = [
 ];
 
 export const assignmentHandlers = [
+  // Must be before `/api/assignments/:id` so MSW doesn't treat "outcomes" as an id.
+  http.get("/api/assignments/outcomes", () => HttpResponse.json(mockAssignmentOutcomes)),
   http.get("/api/assignments/:id", () => HttpResponse.json(mockAssignmentDetail)),
   http.get("/api/assignments/:id/documents/:documentId/content", () =>
     HttpResponse.json(mockAssignmentDocumentContent),

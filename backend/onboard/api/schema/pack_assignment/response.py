@@ -29,6 +29,20 @@ class PackAssignmentResponse(BaseModel):
     doc_pack_name: str | None = None
 
 
+class AssignmentOutcomeResponse(BaseModel):
+    """One pass/fail event for the org-admin inbox."""
+
+    id: str
+    doc_pack_id: str
+    doc_pack_name: str
+    employee_id: str
+    employee_name: str
+    status: PackAssignmentStatus
+    assigned_at: datetime
+    completed_at: datetime | None
+    updated_at: datetime
+
+
 class AssignmentDocumentStatusResponse(BaseModel):
     """One document in an assignment's reading list, with the employee's ack state (PRD §4/§6)."""
 

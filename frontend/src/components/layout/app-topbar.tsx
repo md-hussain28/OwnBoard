@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminOutcomeNotifications } from "@/components/layout/admin-outcome-notifications";
 import { AppBreadcrumbs } from "@/components/layout/app-breadcrumbs";
 import { AssignmentNotifications } from "@/components/layout/assignment-notifications";
 import { Separator } from "@/ui/separator";
@@ -14,6 +15,7 @@ export function AppTopbar() {
         <AppBreadcrumbs />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1">
+        <AdminOutcomeNotifications />
         <AssignmentNotifications />
       </div>
     </header>

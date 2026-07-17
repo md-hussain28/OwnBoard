@@ -42,6 +42,20 @@ class PackAssignmentDAO(BaseDAO[PackAssignment]):
         )
         return list(result.scalars().all())
 
+    async def list_recent_outcomes(self, org_id: str, *, limit: int = 50) -> list[PackAssignment]:
+        """Passed/failed assignments for the org admin inbox, newest grade first."""
+        result = await self.session.execute(
+            select(PackAssignment)
+            .where(
+                PackAssignment.org_id == org_id,
+                PackAssignment.status.in_([PackAssignmentStatus.passed, PackAssignmentStatus.failed]),
+            )
+            .options(selectinload(PackAssignment.doc_pack), selectinload(PackAssignment.employee))
+            .order_by(PackAssignment.updated_at.desc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
     async def has_locking_assignment(self, doc_pack_id: str) -> bool:
         """True if any assignment for this pack has ever started its quiz (Doc Pack PRD E1, §10.12)."""
         result = await self.session.execute(

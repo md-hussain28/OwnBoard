@@ -7,6 +7,7 @@ export const packAssignmentKeys = {
   all: ["pack-assignments"] as const,
   forPack: (packId: string) => [...packAssignmentKeys.all, "pack", packId] as const,
   forEmployee: (employeeId: string) => [...packAssignmentKeys.all, "employee", employeeId] as const,
+  outcomes: () => [...packAssignmentKeys.all, "outcomes"] as const,
   detail: (id: string) => [...packAssignmentKeys.all, "detail", id] as const,
   documentContent: (id: string, documentId: string) =>
     [...packAssignmentKeys.all, "detail", id, "document", documentId] as const,
@@ -28,6 +29,18 @@ export function useEmployeeAssignments(
     queryKey: packAssignmentKeys.forEmployee(employeeId),
     queryFn: () => packAssignmentService.listForEmployee(employeeId),
     enabled: Boolean(employeeId),
+    refetchInterval: options?.refetchInterval,
+  });
+}
+
+export function useAssignmentOutcomes(options?: {
+  enabled?: boolean;
+  refetchInterval?: number | false;
+}) {
+  return useQuery({
+    queryKey: packAssignmentKeys.outcomes(),
+    queryFn: () => packAssignmentService.listOutcomes(),
+    enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval,
   });
 }

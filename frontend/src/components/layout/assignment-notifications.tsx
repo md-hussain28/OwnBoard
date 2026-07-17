@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BookOpen, ClipboardCheck } from "lucide-react";
+import { BookOpen, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -257,7 +257,7 @@ export function AssignmentNotifications() {
               : "Quiz assignments"
           }
         >
-          <Bell className="size-4" />
+          <ClipboardCheck className="size-4" />
           {newCount > 0 && (
             <span
               className={cn(

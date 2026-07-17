@@ -143,6 +143,10 @@ class PackAssignmentService:
             (assignment, assignment.doc_pack.name if assignment.doc_pack else "Doc pack") for assignment in assignments
         ]
 
+    async def list_recent_outcomes(self, org_id: str, *, limit: int = 50) -> list[PackAssignment]:
+        """Org-admin inbox of recent quiz pass/fail outcomes."""
+        return await self.assignment_dao.list_recent_outcomes(org_id, limit=limit)
+
     async def get_assignment_detail(self, org_id: str, assignment_id: str, *, actor: Employee) -> AssignmentDetail:
         assignment = await self.assignment_dao.get_by_id_for_org(org_id, assignment_id)
         if assignment is None:

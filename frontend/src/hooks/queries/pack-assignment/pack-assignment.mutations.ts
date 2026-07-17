@@ -84,7 +84,18 @@ export function useStartQuiz(assignmentId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => packAssignmentService.startQuiz(assignmentId),
-    onSuccess: () => {
+    onMutate: async () => {
+      // Flip status immediately so the pane doesn't wait on the network round-trip.
+      return optimisticUpdate<AssignmentDetail>(
+        queryClient,
+        packAssignmentKeys.detail(assignmentId),
+        (prev) => (prev ? { ...prev, status: "quiz_in_progress" } : prev),
+      );
+    },
+    onError: (_err, _void, context: OptimisticSnapshot<AssignmentDetail> | undefined) => {
+      rollbackOptimistic(queryClient, packAssignmentKeys.detail(assignmentId), context);
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: packAssignmentKeys.detail(assignmentId) });
     },
   });

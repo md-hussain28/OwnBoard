@@ -20,3 +20,17 @@ class QuizAttemptDAO(BaseDAO[QuizAttempt]):
             .where(QuizAttempt.id == quiz_attempt_id, Employee.org_id == org_id)
         )
         return result.scalar_one_or_none()
+
+    async def get_open_for_employee_template(self, employee_id: str, quiz_template_id: str) -> QuizAttempt | None:
+        """Most recent incomplete attempt for this employee + template (for resume)."""
+        result = await self.session.execute(
+            select(QuizAttempt)
+            .where(
+                QuizAttempt.employee_id == employee_id,
+                QuizAttempt.quiz_template_id == quiz_template_id,
+                QuizAttempt.completed_at.is_(None),
+            )
+            .order_by(QuizAttempt.started_at.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()

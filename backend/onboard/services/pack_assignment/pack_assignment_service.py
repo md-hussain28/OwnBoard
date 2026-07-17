@@ -246,9 +246,22 @@ class PackAssignmentService:
         if template is None:
             raise NotFoundError("Quiz template not found")
 
+        # Resume an open attempt instead of minting a new one (and avoid a second round-trip commit).
+        if assignment.status == PackAssignmentStatus.quiz_in_progress:
+            open_attempt = await self.attempt_dao.get_open_for_employee_template(
+                assignment.employee_id, assignment.quiz_template_id
+            )
+            if open_attempt is not None:
+                return open_attempt, template
+
         now = datetime.now(UTC)
-        attempt = await self.attempt_dao.create(
-            employee_id=assignment.employee_id, quiz_template_id=assignment.quiz_template_id, started_at=now
+        attempt = QuizAttempt(
+            employee_id=assignment.employee_id,
+            quiz_template_id=assignment.quiz_template_id,
+            started_at=now,
         )
-        await self.assignment_dao.update(assignment.id, status=PackAssignmentStatus.quiz_in_progress)
+        self.session.add(attempt)
+        assignment.status = PackAssignmentStatus.quiz_in_progress
+        await self.session.commit()
+        await self.session.refresh(attempt)
         return attempt, template

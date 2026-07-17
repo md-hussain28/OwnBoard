@@ -17,6 +17,7 @@ from onboard.dao.models.quiz_template import QuizTemplate, QuizType
 from onboard.dao.pack_assignment_dao import PackAssignmentAckDAO, PackAssignmentDAO
 from onboard.dao.quiz_attempt_dao import QuizAttemptDAO
 from onboard.dao.quiz_template_dao import QuizTemplateDAO
+from onboard.services.pack_assignment.assign_helpers import compute_due_at, notify_assigned
 
 
 @dataclass
@@ -25,6 +26,41 @@ class AssignmentDetail:
     doc_pack_name: str
     documents: list[tuple[DocPackDocument, datetime | None]]
     quiz_unlocked: bool
+    # Hard-lock sequencing: True when an earlier required track in the org sequence isn't passed yet.
+    locked: bool = False
+    locked_by_name: str | None = None
+    due_at: datetime | None = None
+    estimated_minutes: int | None = None
+    pass_pct: int | None = None
+
+
+@dataclass
+class CohortTrack:
+    id: str
+    name: str
+    sequence_order: int
+
+
+@dataclass
+class CohortEmployeeRow:
+    employee_id: str
+    employee_name: str
+    cells: dict[str, PackAssignmentStatus]
+    passed_count: int
+    total_count: int
+
+
+@dataclass
+class CohortDashboardData:
+    tracks: list[CohortTrack]
+    employees: list[CohortEmployeeRow]
+    total_assignments: int
+    passed_assignments: int
+    overdue_assignments: int
+    not_started_assignments: int
+    completion_pct: int
+    avg_days_to_onboard: float | None
+    fully_onboarded_count: int
 
 
 @dataclass
@@ -122,6 +158,8 @@ class PackAssignmentService:
         if published is None:
             raise ValidationError("This pack has no published quiz yet — save a curated quiz before assigning")
 
+        now = datetime.now(UTC)
+        due_at = compute_due_at(pack, now)
         created: list[PackAssignment] = []
         for employee_id in employee_ids:
             employee = await self.employee_dao.get_by_id_for_org(org_id, employee_id)
@@ -140,10 +178,12 @@ class PackAssignmentService:
                 assigned_by=assigned_by,
                 status=PackAssignmentStatus.assigned,
                 quiz_template_id=published.id,
+                due_at=due_at,
             )
             # New rows have no acks; mark loaded so response serialization doesn't
             # lazy-load (async MissingGreenlet / 500).
             set_committed_value(assignment, "acks", [])
+            await notify_assigned(self.session, org_id, employee_id, pack, assignment.id)
             created.append(assignment)
         return created
 
@@ -153,23 +193,121 @@ class PackAssignmentService:
             raise NotFoundError(f"Doc pack {pack_id} not found")
         return await self.assignment_dao.list_for_pack(org_id, pack_id)
 
+    @staticmethod
+    def _compute_locks(assignments: list[PackAssignment]) -> dict[str, tuple[bool, str | None]]:
+        """Hard-lock sequencing: walking the org sequence, exactly the earliest not-yet-passed track is
+        actionable; every track after it is locked by that track's name. Earlier (passed) tracks stay open."""
+        ordered = sorted(
+            assignments,
+            key=lambda a: (a.doc_pack.sequence_order if a.doc_pack else 0, a.assigned_at),
+        )
+        locks: dict[str, tuple[bool, str | None]] = {}
+        blocker_name: str | None = None
+        for assignment in ordered:
+            locks[assignment.id] = (blocker_name is not None, blocker_name)
+            if blocker_name is None and assignment.status != PackAssignmentStatus.passed:
+                blocker_name = assignment.doc_pack.name if assignment.doc_pack else "an earlier track"
+        return locks
+
     async def list_for_employee(
         self, org_id: str, employee_id: str, *, actor: Employee
-    ) -> list[tuple[PackAssignment, str]]:
-        """Return (assignment, doc_pack_name) pairs the actor is allowed to see."""
+    ) -> list[tuple[PackAssignment, str, bool, str | None]]:
+        """Return (assignment, doc_pack_name, locked, locked_by_name) tuples the actor is allowed to see."""
         if actor.app_role != APP_ROLE_ADMIN and actor.id != employee_id:
             raise ForbiddenError("You can only list your own assignments")
         employee = await self.employee_dao.get_by_id_for_org(org_id, employee_id)
         if employee is None:
             raise NotFoundError(f"Employee {employee_id} not found")
         assignments = await self.assignment_dao.list_for_employee(org_id, employee_id)
-        return [
-            (assignment, assignment.doc_pack.name if assignment.doc_pack else "Doc pack") for assignment in assignments
-        ]
+        locks = self._compute_locks(assignments)
+        result = []
+        for assignment in assignments:
+            locked, locked_by = locks.get(assignment.id, (False, None))
+            name = assignment.doc_pack.name if assignment.doc_pack else "Doc pack"
+            result.append((assignment, name, locked, locked_by))
+        return result
 
     async def list_recent_outcomes(self, org_id: str, *, limit: int = 50) -> list[PackAssignment]:
         """Org-admin inbox of recent quiz pass/fail outcomes."""
         return await self.assignment_dao.list_recent_outcomes(org_id, limit=limit)
+
+    async def get_cohort_dashboard(self, org_id: str) -> "CohortDashboardData":
+        """Employees × tracks completion matrix + org onboarding stats (Track PRD §cohort dashboard)."""
+        assignments = await self.assignment_dao.list_all_for_org(org_id)
+        now = datetime.now(UTC)
+
+        tracks: dict[str, tuple[str, int]] = {}
+        employees: dict[str, str] = {}
+        cells: dict[str, dict[str, PackAssignmentStatus]] = {}
+        emp_assigned_at: dict[str, datetime] = {}
+        emp_completed_at: dict[str, datetime | None] = {}
+        emp_all_passed: dict[str, bool] = {}
+
+        total = passed = overdue = not_started = 0
+        for a in assignments:
+            pack_name = a.doc_pack.name if a.doc_pack else "Track"
+            seq = a.doc_pack.sequence_order if a.doc_pack else 0
+            tracks[a.doc_pack_id] = (pack_name, seq)
+            emp_name = a.employee.name if a.employee else "Team member"
+            employees[a.employee_id] = emp_name
+            cells.setdefault(a.employee_id, {})[a.doc_pack_id] = a.status
+
+            total += 1
+            is_passed = a.status == PackAssignmentStatus.passed
+            if is_passed:
+                passed += 1
+            if a.status == PackAssignmentStatus.assigned:
+                not_started += 1
+            if a.due_at is not None and a.due_at < now and not is_passed:
+                overdue += 1
+
+            # Time-to-onboard bookkeeping: earliest assignment start, latest completion, all-passed flag.
+            if a.employee_id not in emp_assigned_at or a.assigned_at < emp_assigned_at[a.employee_id]:
+                emp_assigned_at[a.employee_id] = a.assigned_at
+            emp_all_passed[a.employee_id] = emp_all_passed.get(a.employee_id, True) and is_passed
+            if is_passed and a.completed_at is not None:
+                prev = emp_completed_at.get(a.employee_id)
+                if prev is None or a.completed_at > prev:
+                    emp_completed_at[a.employee_id] = a.completed_at
+
+        durations = [
+            (emp_completed_at[eid] - emp_assigned_at[eid]).total_seconds() / 86400
+            for eid, all_passed in emp_all_passed.items()
+            if all_passed and emp_completed_at.get(eid) is not None and eid in emp_assigned_at
+        ]
+        fully_onboarded = len(durations)
+        avg_days = round(sum(durations) / fully_onboarded, 1) if fully_onboarded else None
+
+        track_rows = [
+            CohortTrack(id=tid, name=name, sequence_order=seq)
+            for tid, (name, seq) in sorted(tracks.items(), key=lambda kv: (kv[1][1], kv[1][0]))
+        ]
+        employee_rows = []
+        for eid, name in sorted(employees.items(), key=lambda kv: kv[1].lower()):
+            emp_cells = cells.get(eid, {})
+            emp_passed = sum(1 for s in emp_cells.values() if s == PackAssignmentStatus.passed)
+            employee_rows.append(
+                CohortEmployeeRow(
+                    employee_id=eid,
+                    employee_name=name,
+                    cells=emp_cells,
+                    passed_count=emp_passed,
+                    total_count=len(emp_cells),
+                )
+            )
+
+        completion_pct = round(passed / total * 100) if total else 0
+        return CohortDashboardData(
+            tracks=track_rows,
+            employees=employee_rows,
+            total_assignments=total,
+            passed_assignments=passed,
+            overdue_assignments=overdue,
+            not_started_assignments=not_started,
+            completion_pct=completion_pct,
+            avg_days_to_onboard=avg_days,
+            fully_onboarded_count=fully_onboarded,
+        )
 
     async def get_assignment_detail(self, org_id: str, assignment_id: str, *, actor: Employee) -> AssignmentDetail:
         assignment = await self.assignment_dao.get_by_id_for_org(org_id, assignment_id)
@@ -184,8 +322,20 @@ class PackAssignmentService:
         documents = [(doc, ack_by_doc.get(doc.id)) for doc in pack.documents]
         quiz_unlocked = bool(pack.documents) and all(ack_by_doc.get(doc.id) is not None for doc in pack.documents)
 
+        # Sequencing: recompute locks across the employee's whole assignment set.
+        siblings = await self.assignment_dao.list_for_employee(org_id, assignment.employee_id)
+        locked, locked_by = self._compute_locks(siblings).get(assignment.id, (False, None))
+
         return AssignmentDetail(
-            assignment=assignment, doc_pack_name=pack.name, documents=documents, quiz_unlocked=quiz_unlocked
+            assignment=assignment,
+            doc_pack_name=pack.name,
+            documents=documents,
+            quiz_unlocked=quiz_unlocked,
+            locked=locked,
+            locked_by_name=locked_by,
+            due_at=assignment.due_at,
+            estimated_minutes=pack.estimated_minutes,
+            pass_pct=pack.pass_pct,
         )
 
     async def revoke_assignment(self, org_id: str, assignment_id: str) -> None:
@@ -237,6 +387,11 @@ class PackAssignmentService:
 
         if assignment.status == PackAssignmentStatus.passed:
             raise ValidationError("This assignment has already been passed")
+        # Hard-lock sequencing: block starting a quiz while an earlier required track is unfinished.
+        siblings = await self.assignment_dao.list_for_employee(org_id, assignment.employee_id)
+        locked, locked_by = self._compute_locks(siblings).get(assignment.id, (False, None))
+        if locked:
+            raise ForbiddenError(f"Finish '{locked_by}' before starting this track")
         if assignment.status in (PackAssignmentStatus.assigned, PackAssignmentStatus.reading):
             raise ForbiddenError("Acknowledge every document before starting the quiz (Doc Pack PRD §4)")
         if assignment.quiz_template_id is None:

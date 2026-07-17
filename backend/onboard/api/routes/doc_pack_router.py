@@ -4,8 +4,14 @@ from onboard.api.dependency.auth import ClerkOrgId, ClerkUserId
 from onboard.api.dependency.rbac import RequireAdmin
 from onboard.api.dependency.service_container import ServiceContainer, get_service_container
 from onboard.api.dependency.tenancy import CurrentOrgId
-from onboard.api.schema.doc_pack.request import DocPackCreateRequest, DocPackRetrieveRequest, DocPackUpdateRequest
+from onboard.api.schema.doc_pack.request import (
+    AudiencePreviewRequest,
+    DocPackCreateRequest,
+    DocPackRetrieveRequest,
+    DocPackUpdateRequest,
+)
 from onboard.api.schema.doc_pack.response import (
+    AudiencePreviewResponse,
     DocPackDocumentResponse,
     DocPackIngestStatusResponse,
     DocPackListItemResponse,
@@ -26,8 +32,17 @@ from onboard.api.schema.quiz.response import (
 )
 from onboard.dao.models.doc_pack import DocPack, DocumentStatus
 from onboard.services.doc_pack.doc_pack_service import ingest_document_background
+from onboard.services.pack_assignment.auto_assign import assign_pack_to_audience
 
 router = APIRouter(prefix="/doc-packs", tags=["doc-packs"])
+
+
+def _audience_ids(pack: DocPack) -> list[str]:
+    return [a.org_domain_id for a in pack.audience_domains]
+
+
+def _audience_names(pack: DocPack) -> list[str]:
+    return [a.org_domain.name for a in pack.audience_domains if a.org_domain is not None]
 
 
 def _pack_list_item(pack: DocPack) -> DocPackListItemResponse:
@@ -42,6 +57,13 @@ def _pack_list_item(pack: DocPack) -> DocPackListItemResponse:
         updated_at=pack.updated_at,
         domain_id=pack.domain_id,
         domain_name=pack.domain.name if pack.domain else None,
+        assign_to_all=pack.assign_to_all,
+        audience_domain_ids=_audience_ids(pack),
+        audience_domain_names=_audience_names(pack),
+        sequence_order=pack.sequence_order,
+        estimated_minutes=pack.estimated_minutes,
+        due_offset_days=pack.due_offset_days,
+        pass_pct=pack.pass_pct,
     )
 
 
@@ -57,6 +79,13 @@ def _pack_response(pack: DocPack) -> DocPackResponse:
         updated_at=pack.updated_at,
         domain_id=pack.domain_id,
         domain_name=pack.domain.name if pack.domain else None,
+        assign_to_all=pack.assign_to_all,
+        audience_domain_ids=_audience_ids(pack),
+        audience_domain_names=_audience_names(pack),
+        sequence_order=pack.sequence_order,
+        estimated_minutes=pack.estimated_minutes,
+        due_offset_days=pack.due_offset_days,
+        pass_pct=pack.pass_pct,
         documents=pack.documents or [],
     )
 
@@ -75,8 +104,25 @@ async def create_doc_pack(
         description=payload.description,
         created_by=user_id,
         domain_id=payload.domain_id,
+        assign_to_all=payload.assign_to_all,
+        audience_domain_ids=payload.audience_domain_ids,
+        sequence_order=payload.sequence_order,
+        estimated_minutes=payload.estimated_minutes,
+        due_offset_days=payload.due_offset_days,
     )
     return _pack_response(pack)
+
+
+@router.post("/audience-preview", response_model=AudiencePreviewResponse)
+async def preview_audience(
+    payload: AudiencePreviewRequest,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Dry-run how many employees a targeting rule would auto-assign to, before publishing (Track PRD)."""
+    count, sample = await services.doc_pack.preview_audience(org_id, payload.assign_to_all, payload.audience_domain_ids)
+    return AudiencePreviewResponse(count=count, sample_names=sample)
 
 
 @router.get("", response_model=list[DocPackListItemResponse])
@@ -111,6 +157,7 @@ async def update_doc_pack(
     fields = payload.model_dump(exclude_unset=True)
     clear_domain = "domain_id" in fields and fields.get("domain_id") is None
     domain_id = fields.get("domain_id") if not clear_domain else None
+    audience_changed = "assign_to_all" in fields or "audience_domain_ids" in fields
     pack = await services.doc_pack.update_pack(
         org_id,
         pack_id,
@@ -118,7 +165,18 @@ async def update_doc_pack(
         description=fields.get("description"),
         domain_id=domain_id,
         clear_domain=clear_domain,
+        assign_to_all=fields.get("assign_to_all"),
+        audience_domain_ids=fields.get("audience_domain_ids"),
+        sequence_order=fields.get("sequence_order"),
+        estimated_minutes=fields.get("estimated_minutes"),
+        due_offset_days=fields.get("due_offset_days"),
+        clear_estimated_minutes="estimated_minutes" in fields and fields.get("estimated_minutes") is None,
+        clear_due_offset_days="due_offset_days" in fields and fields.get("due_offset_days") is None,
     )
+    # A widened audience should reach existing employees immediately (only affects published tracks).
+    if audience_changed:
+        await assign_pack_to_audience(services.session, org_id, pack_id)
+        pack = await services.doc_pack.get_pack(org_id, pack_id)
     return _pack_response(pack)
 
 
@@ -275,6 +333,14 @@ async def save_doc_pack_quiz(
     _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
-    """Doc Pack PRD §5.5/§5.6 — publish the admin's curated set; pack becomes assignable."""
+    """Doc Pack PRD §5.5/§5.6 — publish the admin's curated set; pack becomes assignable.
+
+    Publishing is also what makes a track eligible for auto-assignment, so fan out to its
+    audience (domain-matched employees, or everyone) right after the quiz goes live.
+    """
     curation = [item.model_dump() for item in payload.questions]
-    return await services.quiz.save_curated_quiz(org_id, pack_id, curation, open_book=payload.open_book)
+    template = await services.quiz.save_curated_quiz(
+        org_id, pack_id, curation, open_book=payload.open_book, pass_pct=payload.pass_pct
+    )
+    await assign_pack_to_audience(services.session, org_id, pack_id)
+    return template

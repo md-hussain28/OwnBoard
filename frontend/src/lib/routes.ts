@@ -1,7 +1,7 @@
 /** Frontend app (console) lives under `/app`. Marketing stays at `/`. */
 export const APP_HOME = "/app";
 
-/** Build a console path: `appPath("doc-packs", id)` → `/app/doc-packs/:id`. */
+/** Build a console path: `appPath("tracks", id)` → `/app/tracks/:id`. */
 export function appPath(...segments: string[]): string {
   const tail = segments
     .filter(Boolean)

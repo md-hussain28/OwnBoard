@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusIcon, SearchIcon } from "lucide-react";
+import { ChevronDownIcon, PlusIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { FilterSelect } from "@/components/shared/filter-select";
@@ -20,6 +20,7 @@ import { useEmployees, usePendingInvitations } from "@/hooks/queries/employee/em
 import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { useOrgDomains } from "@/hooks/queries/org-domain/org-domain.queries";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import { cn } from "@/lib/utils";
 import type { Employee, EmployeeInvitation } from "@/schemas/employee.schema";
 import type { OrgDomain } from "@/schemas/org-domain.schema";
 import { Button } from "@/ui/button";
@@ -273,6 +274,8 @@ function PendingInvitationsSection({
   isError: boolean;
   error: unknown;
 }) {
+  const [open, setOpen] = useState(false);
+
   if (isLoading) {
     return (
       <section className="space-y-3" aria-labelledby="pending-invites-heading">
@@ -280,7 +283,7 @@ function PendingInvitationsSection({
           Pending invites
         </h2>
         <div className="space-y-2 rounded-xl border border-border p-2">
-          <Skeleton className="h-14 w-full rounded-lg" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
       </section>
     );
@@ -301,21 +304,43 @@ function PendingInvitationsSection({
 
   if (invitations.length === 0) return null;
 
+  const countLabel = `${invitations.length} ${invitations.length === 1 ? "invite" : "invites"}`;
+
   return (
     <section className="space-y-3" aria-labelledby="pending-invites-heading">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 id="pending-invites-heading" className="text-sm font-semibold">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+        aria-controls="pending-invites-list"
+        className={cn(
+          "flex w-full items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 text-left shadow-soft",
+          "transition-colors duration-150 hover:bg-muted/50",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        )}
+      >
+        <h2 id="pending-invites-heading" className="min-w-0 flex-1 text-sm font-semibold">
           Pending invites
         </h2>
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {invitations.length} {invitations.length === 1 ? "invite" : "invites"}
-        </span>
-      </div>
-      <ul className="rounded-xl border border-border bg-card p-1.5 shadow-soft">
-        {invitations.map((invitation) => (
-          <PendingInvitationRow key={invitation.id} invitation={invitation} />
-        ))}
-      </ul>
+        <span className="text-xs tabular-nums text-muted-foreground">{countLabel}</span>
+        <ChevronDownIcon
+          aria-hidden
+          className={cn(
+            "size-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+      {open && (
+        <ul
+          id="pending-invites-list"
+          className="rounded-xl border border-border bg-card p-1.5 shadow-soft"
+        >
+          {invitations.map((invitation) => (
+            <PendingInvitationRow key={invitation.id} invitation={invitation} />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

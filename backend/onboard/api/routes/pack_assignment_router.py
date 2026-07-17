@@ -9,6 +9,9 @@ from onboard.api.schema.pack_assignment.response import (
     AssignmentDocumentContentResponse,
     AssignmentDocumentStatusResponse,
     AssignmentOutcomeResponse,
+    CohortDashboardResponse,
+    CohortEmployeeRowResponse,
+    CohortTrackResponse,
     PackAssignmentDetailResponse,
     PackAssignmentResponse,
     StartQuizResponse,
@@ -65,8 +68,16 @@ async def list_employee_assignments(
     """
     rows = await services.pack_assignment.list_for_employee(org_id, employee_id, actor=actor)
     return [
-        PackAssignmentResponse.model_validate(assignment).model_copy(update={"doc_pack_name": pack_name})
-        for assignment, pack_name in rows
+        PackAssignmentResponse.model_validate(assignment).model_copy(
+            update={
+                "doc_pack_name": pack_name,
+                "locked": locked,
+                "locked_by_name": locked_by,
+                "estimated_minutes": assignment.doc_pack.estimated_minutes if assignment.doc_pack else None,
+                "pass_pct": assignment.doc_pack.pass_pct if assignment.doc_pack else None,
+            }
+        )
+        for assignment, pack_name, locked, locked_by in rows
     ]
 
 
@@ -94,6 +105,36 @@ async def list_assignment_outcomes(
     ]
 
 
+@router.get("/onboarding/cohort", response_model=CohortDashboardResponse)
+async def get_cohort_dashboard(
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Admin onboarding overview — employees × tracks completion matrix + time-to-onboard (Track PRD)."""
+    data = await services.pack_assignment.get_cohort_dashboard(org_id)
+    return CohortDashboardResponse(
+        tracks=[CohortTrackResponse(id=t.id, name=t.name, sequence_order=t.sequence_order) for t in data.tracks],
+        employees=[
+            CohortEmployeeRowResponse(
+                employee_id=e.employee_id,
+                employee_name=e.employee_name,
+                cells=e.cells,
+                passed_count=e.passed_count,
+                total_count=e.total_count,
+            )
+            for e in data.employees
+        ],
+        total_assignments=data.total_assignments,
+        passed_assignments=data.passed_assignments,
+        overdue_assignments=data.overdue_assignments,
+        not_started_assignments=data.not_started_assignments,
+        completion_pct=data.completion_pct,
+        avg_days_to_onboard=data.avg_days_to_onboard,
+        fully_onboarded_count=data.fully_onboarded_count,
+    )
+
+
 @router.get("/assignments/{assignment_id}", response_model=PackAssignmentDetailResponse)
 async def get_assignment_detail(
     assignment_id: str,
@@ -111,7 +152,12 @@ async def get_assignment_detail(
         status=detail.assignment.status,
         quiz_template_id=detail.assignment.quiz_template_id,
         assigned_at=detail.assignment.assigned_at,
+        due_at=detail.due_at,
         completed_at=detail.assignment.completed_at,
+        locked=detail.locked,
+        locked_by_name=detail.locked_by_name,
+        estimated_minutes=detail.estimated_minutes,
+        pass_pct=detail.pass_pct,
         documents=[
             AssignmentDocumentStatusResponse(
                 id=doc.id,

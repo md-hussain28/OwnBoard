@@ -1,61 +1,36 @@
 "use client";
 
+import { AlarmClockIcon, ClockIcon, LockIcon } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   ASSIGNMENT_STATUS_LABEL,
   assignmentStatusVariant,
 } from "@/components/shared/assignment-status";
-import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { useEmployees } from "@/hooks/queries/employee/employee.queries";
-import { useAppRole, useMe } from "@/hooks/queries/me/me.queries";
+import { useMe } from "@/hooks/queries/me/me.queries";
 import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { cn } from "@/lib/utils";
-import type { DocPackListItem } from "@/schemas/docPack.schema";
-import type { Employee } from "@/schemas/employee.schema";
 import type { PackAssignment } from "@/schemas/packAssignment.schema";
 import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Skeleton } from "@/ui/skeleton";
+
+function formatDue(dueAt: string | null): string {
+  const date = new Date(dueAt ?? "");
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function isOverdue(dueAt: string | null, status: PackAssignment["status"]): boolean {
+  if (!dueAt || status === "passed") return false;
+  const date = new Date(dueAt);
+  return !Number.isNaN(date.getTime()) && date.getTime() < Date.now();
+}
 
 function TestsLeftBadge({ testsLeft }: { testsLeft: number }) {
   return (
     <Badge variant={testsLeft > 0 ? "secondary" : "default"}>
-      {testsLeft > 0 ? `${testsLeft} test${testsLeft > 1 ? "s" : ""} left` : "All passed"}
+      {testsLeft > 0 ? `${testsLeft} left` : "All cleared"}
     </Badge>
-  );
-}
-
-function ViewingAsPicker({
-  employees,
-  employeeId,
-  onSelect,
-}: {
-  employees: Employee[];
-  employeeId: string;
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <div className="space-y-2">
-      <p className="text-sm font-medium">Viewing as</p>
-      <div className="flex flex-wrap gap-2">
-        {employees.length === 0 && (
-          <p className="text-sm text-muted-foreground">No employees in this org yet.</p>
-        )}
-        {employees.map((employee) => (
-          <Button
-            key={employee.id}
-            type="button"
-            size="sm"
-            variant={employeeId === employee.id ? "default" : "outline"}
-            onClick={() => onSelect(employee.id)}
-          >
-            {employee.name}
-          </Button>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -78,15 +53,9 @@ function ctaLabel(status: PackAssignment["status"]): string {
   }
 }
 
-function AssignmentList({
-  assignments,
-  packById,
-}: {
-  assignments: PackAssignment[];
-  packById: Map<string, DocPackListItem>;
-}) {
+function AssignmentList({ assignments }: { assignments: PackAssignment[] }) {
   if (assignments.length === 0) {
-    return <p className="text-sm text-muted-foreground">No packs assigned yet.</p>;
+    return <p className="text-sm text-muted-foreground">No tracks assigned yet.</p>;
   }
 
   const sorted = [...assignments].sort((a, b) => {
@@ -102,6 +71,8 @@ function AssignmentList({
     <ul className="space-y-2">
       {sorted.map((assignment) => {
         const isNew = assignment.status === "assigned";
+        const overdue = isOverdue(assignment.dueAt, assignment.status);
+        const due = formatDue(assignment.dueAt);
         return (
           <li key={assignment.id}>
             <Link
@@ -115,20 +86,37 @@ function AssignmentList({
             >
               <div className="min-w-0">
                 <p className="flex items-center gap-2 font-medium">
-                  <span className="truncate">
-                    {assignment.docPackName ??
-                      packById.get(assignment.docPackId)?.name ??
-                      "Doc pack"}
-                  </span>
+                  <span className="truncate">{assignment.docPackName ?? "Track"}</span>
                   {isNew && (
                     <Badge variant="warning" className="h-5 shrink-0 px-1.5 text-[0.65rem]">
                       New
                     </Badge>
                   )}
+                  {assignment.locked && (
+                    <Badge variant="secondary" className="h-5 shrink-0 gap-1 px-1.5">
+                      <LockIcon className="size-3" /> Locked
+                    </Badge>
+                  )}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Assigned {new Date(assignment.assignedAt).toLocaleDateString()}
-                </p>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                  <span>Assigned {new Date(assignment.assignedAt).toLocaleDateString()}</span>
+                  {due && (
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 tabular-nums",
+                        overdue && "font-medium text-brand-coral",
+                      )}
+                    >
+                      <AlarmClockIcon className="size-3" />
+                      {overdue ? "Overdue" : `Due ${due}`}
+                    </span>
+                  )}
+                  {assignment.estimatedMinutes != null && (
+                    <span className="inline-flex items-center gap-1 tabular-nums">
+                      <ClockIcon className="size-3" />~{assignment.estimatedMinutes} min
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Badge variant={assignmentStatusVariant(assignment.status)}>
@@ -147,65 +135,42 @@ function AssignmentList({
 }
 
 /**
- * Employee "tests left" list (Doc Pack PRD §7). Defaults to the signed-in member's
- * employee row; admins can still switch "viewing as" for demos.
+ * Employee "tracks left" list (Doc Pack PRD §7). Identity is always the signed-in
+ * member's own employee row, resolved server-side from the Clerk session — there is
+ * deliberately no admin "view as" override here (that would be impersonation).
  */
 export function EmployeePackList() {
   const meQuery = useMe();
-  const { isAdmin } = useAppRole();
-  const employeesQuery = useEmployees({ enabled: isAdmin });
-  const [employeeId, setEmployeeId] = useState("");
+  const employeeId = meQuery.data?.employeeId ?? "";
   const assignmentsQuery = useEmployeeAssignments(employeeId);
-  const packsQuery = useDocPacks({ enabled: isAdmin });
-
-  useEffect(() => {
-    if (employeeId) return;
-    if (meQuery.data?.employeeId) {
-      setEmployeeId(meQuery.data.employeeId);
-    }
-  }, [employeeId, meQuery.data?.employeeId]);
 
   const assignments = assignmentsQuery.data ?? [];
-  const packById = new Map((packsQuery.data ?? []).map((p) => [p.id, p]));
   const testsLeft = assignments.filter((a) => a.status !== "passed").length;
+
+  const ready = Boolean(employeeId);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          Assigned packs
-          {employeeId && !assignmentsQuery.isLoading && <TestsLeftBadge testsLeft={testsLeft} />}
+          Your tracks
+          {ready && !assignmentsQuery.isLoading && <TestsLeftBadge testsLeft={testsLeft} />}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isAdmin && employeesQuery.isLoading && <Skeleton className="h-9 w-full" />}
-        {isAdmin && employeesQuery.isError && (
-          <p className="text-sm text-muted-foreground">
-            Could not load employees. Start the FastAPI service and refresh.
-          </p>
-        )}
-
-        {isAdmin && !employeesQuery.isLoading && !employeesQuery.isError && (
-          <ViewingAsPicker
-            employees={employeesQuery.data ?? []}
-            employeeId={employeeId}
-            onSelect={setEmployeeId}
-          />
-        )}
-
-        {employeeId && assignmentsQuery.isLoading && (
+        {(!ready || assignmentsQuery.isLoading) && (
           <div className="space-y-2">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
         )}
 
-        {employeeId && assignmentsQuery.isError && (
-          <p className="text-sm text-muted-foreground">Could not load assignments.</p>
+        {ready && assignmentsQuery.isError && (
+          <p className="text-sm text-muted-foreground">Could not load your tracks.</p>
         )}
 
-        {employeeId && !assignmentsQuery.isLoading && !assignmentsQuery.isError && (
-          <AssignmentList assignments={assignments} packById={packById} />
+        {ready && !assignmentsQuery.isLoading && !assignmentsQuery.isError && (
+          <AssignmentList assignments={assignments} />
         )}
       </CardContent>
     </Card>

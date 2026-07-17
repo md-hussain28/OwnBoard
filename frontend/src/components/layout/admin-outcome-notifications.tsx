@@ -52,7 +52,7 @@ function OutcomeRow({
   return (
     <li>
       <Link
-        href={`/app/doc-packs/${outcome.docPackId}`}
+        href={`/app/tracks/${outcome.docPackId}`}
         onClick={onNavigate}
         className={cn(
           "flex gap-3 rounded-lg px-3 py-2.5 transition-[background-color,transform] duration-200",
@@ -121,11 +121,11 @@ function OutcomesBody({
           </p>
         </div>
         <Link
-          href="/app/doc-packs"
+          href="/app/tracks"
           onClick={onClose}
           className="text-xs font-medium text-brand-teal transition-colors hover:text-brand-teal/80"
         >
-          Quiz packs
+          Tracks
         </Link>
       </div>
 

@@ -1,4 +1,6 @@
 import asyncio
+import json
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +12,7 @@ from onboard.dao.doc_chunk_dao import DocChunkContent, DocChunkDAO
 from onboard.dao.doc_pack_dao import DocPackDAO
 from onboard.dao.models.doc_pack import DocPackStatus, DocumentStatus, PackAssignmentStatus
 from onboard.dao.models.employee import Employee
+from onboard.dao.models.notification import NotificationType
 from onboard.dao.models.quiz_attempt import QuizAttempt
 from onboard.dao.models.quiz_question import QuestionFormat, QuizQuestion
 from onboard.dao.models.quiz_template import QuizTemplate, QuizType
@@ -17,6 +20,7 @@ from onboard.dao.pack_assignment_dao import PackAssignmentDAO
 from onboard.dao.quiz_attempt_dao import QuizAttemptDAO
 from onboard.dao.quiz_question_dao import QuizQuestionDAO
 from onboard.dao.quiz_template_dao import QuizTemplateDAO
+from onboard.services.notification.notification_service import NotificationService
 from onboard.services.quiz.generation_graph import (
     ChunkForPlanning,
     DocumentForPlanning,
@@ -26,6 +30,56 @@ from onboard.services.quiz.generation_graph import (
     run_generation_graph,
     run_regeneration_graph,
 )
+
+
+def _stored_correct_answer(fmt: QuestionFormat | None, correct_answer: str | list[str]) -> str:
+    """Serialize a curated answer for storage. multi_select → JSON array of option texts; else the
+    single option text (a list is collapsed to its first entry for single-select formats)."""
+    if fmt == QuestionFormat.multi_select:
+        values = correct_answer if isinstance(correct_answer, list) else [correct_answer]
+        cleaned = [str(v) for v in values if str(v).strip()]
+        return json.dumps(cleaned)
+    if isinstance(correct_answer, list):
+        return str(correct_answer[0]) if correct_answer else ""
+    return str(correct_answer)
+
+
+@dataclass
+class QuestionGradeResult:
+    question_id: str
+    question_text: str
+    correct: bool
+    source_citation: str | None = None
+
+
+@dataclass
+class GradeResult:
+    attempt: QuizAttempt
+    score: float
+    passed: bool
+    pass_pct: int
+    correct_count: int
+    total_count: int
+    results: list[QuestionGradeResult] = field(default_factory=list)
+
+
+def _grade_question(question: QuizQuestion, given: str | list[str] | None) -> bool:
+    """True if `given` matches the stored correct answer. multi_select is exact set-match."""
+    if given is None:
+        return False
+    if question.format == QuestionFormat.multi_select:
+        try:
+            parsed = json.loads(question.correct_answer)
+        except (ValueError, TypeError):
+            parsed = [question.correct_answer]
+        correct_set = {str(c).strip().lower() for c in (parsed if isinstance(parsed, list) else [parsed])}
+        given_list = given if isinstance(given, list) else [given]
+        given_set = {str(g).strip().lower() for g in given_list}
+        return bool(correct_set) and given_set == correct_set
+    given_value = given[0] if isinstance(given, list) and given else given
+    if not isinstance(given_value, str):
+        return False
+    return given_value.strip().lower() == question.correct_answer.strip().lower()
 
 
 class QuizService:
@@ -226,44 +280,67 @@ class QuizService:
         return template
 
     async def save_curated_quiz(
-        self, org_id: str, pack_id: str, curation: list[dict], *, open_book: bool = False
+        self, org_id: str, pack_id: str, curation: list[dict], *, open_book: bool = False, pass_pct: int = 100
     ) -> QuizTemplate:
-        """Publish the admin's curated question set (Doc Pack PRD §5.5/§5.6, E1 §10.12)."""
+        """Publish (or re-publish) the admin's curated question set (Doc Pack PRD §5.5/§5.6, E1 §10.12).
+
+        The curation list is the full desired question set: items whose id matches an existing question
+        are edited in place, items with an unknown id (e.g. a client temp id) are created as manually
+        authored questions, and existing questions absent from the list are dropped. Works on both an
+        unpublished draft and an already-published quiz, so admins can keep editing after go-live.
+        """
         pack = await self.doc_pack_dao.get_by_id_for_org(org_id, pack_id)
         if pack is None:
             raise NotFoundError(f"Doc pack {pack_id} not found")
 
-        draft = await self.template_dao.get_latest_for_source(pack_id, QuizType.doc_pack)
-        if draft is None or draft.is_published:
-            raise ValidationError("No unpublished quiz draft to save — generate a quiz first")
+        template = await self.template_dao.get_latest_for_source(pack_id, QuizType.doc_pack)
+        if template is None:
+            raise ValidationError("No quiz to save — generate a quiz first")
 
-        by_id = {q.id: q for q in draft.questions}
-        keep_ids = {item["id"] for item in curation}
-        missing = keep_ids - by_id.keys()
-        if missing:
-            raise NotFoundError(f"Question(s) not found in the current draft: {', '.join(sorted(missing))}")
+        by_id = {q.id: q for q in template.questions}
+        keep_ids = {item["id"] for item in curation if item["id"] in by_id}
 
-        drop_ids = [q.id for q in draft.questions if q.id not in keep_ids]
+        drop_ids = [q.id for q in template.questions if q.id not in keep_ids]
         if drop_ids:
             await self.question_dao.delete_many(drop_ids)
 
         for item in curation:
-            question = by_id[item["id"]]
-            fields = {
-                "question_text": item["question_text"],
-                "options": item["options"],
-                "correct_answer": item["correct_answer"],
-                "source_citation": item.get("source_citation") or question.source_citation,
-            }
-            if item.get("format"):
-                fields["format"] = QuestionFormat(item["format"])
-            await self.question_dao.update(question.id, **fields)
+            fmt = QuestionFormat(item["format"]) if item.get("format") else None
+            stored_answer = _stored_correct_answer(fmt, item["correct_answer"])
+            if not stored_answer:
+                raise ValidationError(f"Question '{item['question_text'][:48]}' needs a correct answer")
 
-        await self.template_dao.update(draft.id, is_published=True, open_book=open_book)
-        await self.pack_assignment_dao.repoint_pending_assignments(pack_id, draft.id)
-        await self.doc_pack_dao.update(pack.id, status=DocPackStatus.active, review_note=None)
+            existing = by_id.get(item["id"])
+            if existing is not None:
+                fields: dict = {
+                    "question_text": item["question_text"],
+                    "options": item["options"],
+                    "correct_answer": stored_answer,
+                    "source_citation": item.get("source_citation") or existing.source_citation,
+                }
+                if fmt is not None:
+                    fields["format"] = fmt
+                await self.question_dao.update(existing.id, **fields)
+            else:
+                await self.question_dao.bulk_create(
+                    [
+                        {
+                            "quiz_template_id": template.id,
+                            "question_text": item["question_text"],
+                            "options": item["options"],
+                            "correct_answer": stored_answer,
+                            "source_citation": item.get("source_citation"),
+                            "format": fmt or QuestionFormat.mcq_4,
+                            "source_document_id": None,
+                        }
+                    ]
+                )
 
-        refreshed = await self.template_dao.get_with_questions(draft.id)
+        await self.template_dao.update(template.id, is_published=True, open_book=open_book)
+        await self.pack_assignment_dao.repoint_pending_assignments(pack_id, template.id)
+        await self.doc_pack_dao.update(pack.id, status=DocPackStatus.active, review_note=None, pass_pct=pass_pct)
+
+        refreshed = await self.template_dao.get_with_questions(template.id)
         assert refreshed is not None
         return refreshed
 
@@ -273,10 +350,10 @@ class QuizService:
         self,
         org_id: str,
         quiz_attempt_id: str,
-        answers: dict[str, str],
+        answers: dict[str, str | list[str]],
         *,
         actor: Employee | None = None,
-    ) -> QuizAttempt:
+    ) -> GradeResult:
         attempt = await self.attempt_dao.get_by_id_for_org(org_id, quiz_attempt_id)
         if attempt is None:
             raise NotFoundError(f"Quiz attempt {quiz_attempt_id} not found")
@@ -289,14 +366,29 @@ class QuizService:
         if not questions:
             raise ValidationError("Quiz template has no questions")
 
-        correct = sum(
-            1
-            for question in questions
-            if (given := answers.get(question.id)) is not None
-            and given.strip().lower() == question.correct_answer.strip().lower()
-        )
-        score = correct / len(questions)
-        passed = score >= 1.0  # Doc Pack PRD §10.6 — pass bar is 100%, no partial credit.
+        results = [
+            QuestionGradeResult(
+                question_id=q.id,
+                question_text=q.question_text,
+                correct=_grade_question(q, answers.get(q.id)),
+                source_citation=q.source_citation,
+            )
+            for q in questions
+        ]
+        correct = sum(1 for r in results if r.correct)
+        total = len(questions)
+        score = correct / total
+
+        # Configurable pass bar (Doc Pack PRD §10.6) — the pack's `pass_pct`, defaulting to 100%. Integer
+        # comparison avoids float rounding (e.g. 2/3 vs a 66% bar).
+        pack = None
+        pass_pct = 100
+        template = await self.template_dao.get_by_id(attempt.quiz_template_id)
+        if template is not None:
+            pack = await self.doc_pack_dao.get_by_id_for_org(org_id, template.source_ref)
+            if pack is not None:
+                pass_pct = pack.pass_pct
+        passed = correct * 100 >= pass_pct * total
 
         now = datetime.now(UTC)
         updated = await self.attempt_dao.update(attempt.id, score=score, passed=passed, completed_at=now)
@@ -313,4 +405,29 @@ class QuizService:
                 fields["completed_at"] = now
             await self.pack_assignment_dao.update(assignment.id, **fields)
 
-        return updated
+            # Outcome notification for the employee (Track PRD §notifications).
+            pack_name = pack.name if pack is not None else "your quiz"
+            if passed:
+                title = f"Passed: {pack_name} ✓"
+                body = f"You scored {round(score * 100)}% and cleared this track."
+            else:
+                title = f"Not passed yet: {pack_name}"
+                body = f"You scored {round(score * 100)}% (need {pass_pct}%). Review the missed topics and retake it."
+            await NotificationService(self.session).emit(
+                org_id,
+                attempt.employee_id,
+                NotificationType.outcome,
+                title,
+                body=body,
+                link=f"/app/onboarding/packs/{assignment.id}",
+            )
+
+        return GradeResult(
+            attempt=updated,
+            score=score,
+            passed=passed,
+            pass_pct=pass_pct,
+            correct_count=correct,
+            total_count=total,
+            results=results,
+        )

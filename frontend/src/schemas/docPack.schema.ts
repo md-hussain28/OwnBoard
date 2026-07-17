@@ -33,6 +33,13 @@ const docPackBase = {
   created_at: z.string(),
   domain_id: z.string().nullable().optional(),
   domain_name: z.string().nullable().optional(),
+  assign_to_all: z.boolean().optional().default(false),
+  audience_domain_ids: z.array(z.string()).optional().default([]),
+  audience_domain_names: z.array(z.string()).optional().default([]),
+  sequence_order: z.number().optional().default(0),
+  estimated_minutes: z.number().nullable().optional().default(null),
+  due_offset_days: z.number().nullable().optional().default(null),
+  pass_pct: z.number().optional().default(100),
 };
 
 export const docPackListItemSchema = z.object(docPackBase).transform((p) => ({
@@ -44,6 +51,13 @@ export const docPackListItemSchema = z.object(docPackBase).transform((p) => ({
   createdAt: p.created_at,
   domainId: p.domain_id ?? null,
   domainName: p.domain_name ?? null,
+  assignToAll: p.assign_to_all,
+  audienceDomainIds: p.audience_domain_ids,
+  audienceDomainNames: p.audience_domain_names,
+  sequenceOrder: p.sequence_order,
+  estimatedMinutes: p.estimated_minutes,
+  dueOffsetDays: p.due_offset_days,
+  passPct: p.pass_pct,
 }));
 
 export const docPackSchema = z
@@ -57,6 +71,13 @@ export const docPackSchema = z
     createdAt: p.created_at,
     domainId: p.domain_id ?? null,
     domainName: p.domain_name ?? null,
+    assignToAll: p.assign_to_all,
+    audienceDomainIds: p.audience_domain_ids,
+    audienceDomainNames: p.audience_domain_names,
+    sequenceOrder: p.sequence_order,
+    estimatedMinutes: p.estimated_minutes,
+    dueOffsetDays: p.due_offset_days,
+    passPct: p.pass_pct,
     documents: p.documents,
   }));
 
@@ -99,8 +120,19 @@ export const docPackIngestStatusSchema = z
     documents: s.documents,
   }));
 
+export const audiencePreviewSchema = z
+  .object({
+    count: z.number(),
+    sample_names: z.array(z.string()),
+  })
+  .transform((a) => ({
+    count: a.count,
+    sampleNames: a.sample_names,
+  }));
+
 export type DocPackDocument = z.infer<typeof docPackDocumentSchema>;
 export type DocPackListItem = z.infer<typeof docPackListItemSchema>;
 export type DocPack = z.infer<typeof docPackSchema>;
 export type DocumentIngestStatusItem = z.infer<typeof documentIngestStatusItemSchema>;
 export type DocPackIngestStatus = z.infer<typeof docPackIngestStatusSchema>;
+export type AudiencePreview = z.infer<typeof audiencePreviewSchema>;

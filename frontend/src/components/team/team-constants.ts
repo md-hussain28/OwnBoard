@@ -26,12 +26,12 @@ export const ROLE_META: Record<
 > = {
   admin: {
     label: "Admin",
-    description: "Manage quizzes, repos, and invitations",
+    description: "Manage tracks, repos, and invitations",
     Icon: ShieldIcon,
   },
   member: {
     label: "Employee",
-    description: "Take quizzes and use the workspace",
+    description: "Take onboarding tracks and use the workspace",
     Icon: UserIcon,
   },
 };

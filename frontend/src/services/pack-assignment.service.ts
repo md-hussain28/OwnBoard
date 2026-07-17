@@ -1,5 +1,6 @@
 import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { type CohortDashboard, cohortDashboardSchema } from "@/schemas/cohort.schema";
 import {
   type AssignmentDetail,
   type AssignmentDocumentContent,
@@ -35,6 +36,12 @@ export const packAssignmentService = {
   async listOutcomes(): Promise<AssignmentOutcome[]> {
     const { data } = await getApiClient().get(API_ENDPOINTS.assignmentOutcomes);
     return assignmentOutcomeListSchema.parse(data);
+  },
+
+  /** Admin cohort matrix: employees × tracks with aggregate onboarding stats. */
+  async getCohort(): Promise<CohortDashboard> {
+    const { data } = await getApiClient().get(API_ENDPOINTS.onboardingCohort);
+    return cohortDashboardSchema.parse(data);
   },
 
   async getDetail(assignmentId: string): Promise<AssignmentDetail> {

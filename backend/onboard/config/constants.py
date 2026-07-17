@@ -8,7 +8,7 @@ EMBEDDING_BATCH_SIZE = 64
 # Cap concurrent OpenAI chat calls during quiz draft/verify (avoids rate-limit storms).
 QUIZ_LLM_CONCURRENCY = 8
 
-ALLOWED_DOC_PACK_EXTENSIONS = frozenset({"pdf", "docx", "txt", "md", "markdown"})
+ALLOWED_DOC_PACK_EXTENSIONS = frozenset({"pdf"})
 
 # Ingestion runs as an in-process background task, so a host restart mid-ingest strands the
 # document in `uploaded`/`processing` forever. The status poll self-heals: any document that

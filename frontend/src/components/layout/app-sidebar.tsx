@@ -13,6 +13,7 @@ import {
 } from "@/components/layout/nav-config";
 import { SidebarAccountFooter } from "@/components/layout/sidebar-account-footer";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
+import { appPath } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,

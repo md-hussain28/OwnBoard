@@ -1,9 +1,10 @@
 "use client";
 
-import { FileTextIcon, Loader2Icon } from "lucide-react";
+import { DownloadIcon, FileTextIcon, Loader2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAssignmentDocumentContent } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { cn } from "@/lib/utils";
+import { Button } from "@/ui/button";
 import { Skeleton } from "@/ui/skeleton";
 
 function isPdf(fileType: string) {
@@ -14,6 +15,25 @@ function isPdf(fileType: string) {
 function viewOnlyPdfSrc(fileUrl: string) {
   const base = fileUrl.split("#")[0] ?? fileUrl;
   return `${base}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`;
+}
+
+function ReaderToolbar({ fileType, fileUrl }: { fileType: string; fileUrl: string | null }) {
+  return (
+    <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-background/70 px-4 py-2">
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <FileTextIcon className="size-3.5" />
+        {fileType.toUpperCase()}
+      </span>
+      {fileUrl && (
+        <Button asChild size="sm" variant="ghost" className="h-7 gap-1.5 px-2 text-xs">
+          <a href={fileUrl} download target="_blank" rel="noopener noreferrer">
+            <DownloadIcon className="size-3.5" />
+            Download
+          </a>
+        </Button>
+      )}
+    </div>
+  );
 }
 
 export function AssignmentDocumentReader({
@@ -68,38 +88,38 @@ export function AssignmentDocumentReader({
         </div>
       )}
 
-      {showPdf && data?.fileUrl && (
+      {data && (
         <>
-          {!iframeReady && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-muted/40">
-              <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Opening document…</p>
+          <ReaderToolbar fileType={data.fileType} fileUrl={data.fileUrl} />
+
+          {showPdf && data.fileUrl ? (
+            <div className="relative flex-1">
+              {!iframeReady && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-muted/40">
+                  <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Opening document…</p>
+                </div>
+              )}
+              <iframe
+                key={documentId}
+                title={title}
+                src={viewOnlyPdfSrc(data.fileUrl)}
+                className={cn(
+                  "absolute inset-0 size-full border-0 bg-background transition-opacity duration-300",
+                  iframeReady ? "opacity-100" : "opacity-0",
+                )}
+                onLoad={() => setIframeReady(true)}
+                onContextMenu={(event) => event.preventDefault()}
+              />
+            </div>
+          ) : (
+            <div className="max-h-[min(68vh,38rem)] flex-1 overflow-y-auto px-6 py-5">
+              <p className="max-w-prose whitespace-pre-wrap text-sm leading-relaxed text-pretty">
+                {data.content}
+              </p>
             </div>
           )}
-          <iframe
-            key={documentId}
-            title={title}
-            src={viewOnlyPdfSrc(data.fileUrl)}
-            className={cn(
-              "h-[min(72vh,40rem)] w-full flex-1 border-0 bg-background transition-opacity duration-300",
-              iframeReady ? "opacity-100" : "opacity-0",
-            )}
-            onLoad={() => setIframeReady(true)}
-            onContextMenu={(event) => event.preventDefault()}
-          />
         </>
-      )}
-
-      {data && !showPdf && (
-        <div className="max-h-[min(72vh,40rem)] flex-1 overflow-y-auto px-6 py-5">
-          <div className="mb-4 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <FileTextIcon className="size-3.5" />
-            {data.fileType.toUpperCase()}
-          </div>
-          <p className="max-w-prose whitespace-pre-wrap text-sm leading-relaxed text-pretty">
-            {data.content}
-          </p>
-        </div>
       )}
     </div>
   );

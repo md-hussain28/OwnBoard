@@ -72,3 +72,25 @@ class QuizAttemptResponse(BaseModel):
     passed: bool | None
     started_at: datetime | None
     completed_at: datetime | None
+
+
+class QuestionGradeResultResponse(BaseModel):
+    """Per-question outcome for the post-submit review — never leaks the correct answer (retakes stay honest)."""
+
+    question_id: str
+    question_text: str
+    correct: bool
+    # Citation to send the employee back to for anything they missed ("review these topics").
+    source_citation: str | None = None
+
+
+class GradeAttemptResponse(BaseModel):
+    """Grade result: the attempt plus a per-question breakdown so the UI can show what to review on a fail."""
+
+    attempt: QuizAttemptResponse
+    score: float
+    passed: bool
+    pass_pct: int
+    correct_count: int
+    total_count: int
+    results: list[QuestionGradeResultResponse] = []

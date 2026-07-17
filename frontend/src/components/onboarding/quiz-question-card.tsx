@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckIcon } from "lucide-react";
 import type { ClipboardEvent, MouseEvent } from "react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -7,13 +8,17 @@ import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 
+type Selection = string | string[] | null;
+
 interface QuizQuestionCardProps {
   questionText: string;
   options: string[];
   sourceCitation?: string | null;
-  /** Currently selected option text (answers are option strings, matching the backend grade API). */
-  selected?: string | null;
-  onSelect?: (option: string) => void;
+  /** "Select all that apply" — renders multi-select and emits a `string[]` selection. */
+  multiple?: boolean;
+  /** Current selection: option string (single) or option strings (multiple). */
+  selected?: Selection;
+  onSelect?: (value: string | string[]) => void;
   /** When true (default), blocks select/copy so questions are harder to paste into an LLM. */
   protectText?: boolean;
 }
@@ -26,21 +31,35 @@ function blockContextMenu(event: MouseEvent) {
   event.preventDefault();
 }
 
+function isChosen(selected: Selection, option: string): boolean {
+  return Array.isArray(selected) ? selected.includes(option) : selected === option;
+}
+
 export function QuizQuestionCard({
   questionText,
   options,
   sourceCitation,
+  multiple = false,
   selected: controlledSelected,
   onSelect,
   protectText = true,
 }: QuizQuestionCardProps) {
   // Uncontrolled fallback keeps demo/mock usages interactive without wiring state.
-  const [internalSelected, setInternalSelected] = useState<string | null>(null);
+  const [internalSelected, setInternalSelected] = useState<Selection>(multiple ? [] : null);
   const selected = controlledSelected !== undefined ? controlledSelected : internalSelected;
 
   function handleSelect(option: string) {
-    setInternalSelected(option);
-    onSelect?.(option);
+    if (multiple) {
+      const current = Array.isArray(selected) ? selected : [];
+      const next = current.includes(option)
+        ? current.filter((o) => o !== option)
+        : [...current, option];
+      setInternalSelected(next);
+      onSelect?.(next);
+    } else {
+      setInternalSelected(option);
+      onSelect?.(option);
+    }
   }
 
   return (
@@ -53,20 +72,38 @@ export function QuizQuestionCard({
       <Card>
         <CardHeader>
           <CardTitle className="select-none text-base font-normal">{questionText}</CardTitle>
+          {multiple && (
+            <p className="select-none text-xs text-muted-foreground">Select all that apply.</p>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            {options.map((option) => (
-              <Button
-                key={option}
-                type="button"
-                variant={selected === option ? "default" : "outline"}
-                className="h-auto w-full justify-start whitespace-normal py-2 text-left select-none"
-                onClick={() => handleSelect(option)}
-              >
-                {option}
-              </Button>
-            ))}
+            {options.map((option) => {
+              const chosen = isChosen(selected, option);
+              return (
+                <Button
+                  key={option}
+                  type="button"
+                  variant={chosen ? "default" : "outline"}
+                  className="h-auto w-full justify-start gap-2 whitespace-normal py-2 text-left select-none"
+                  aria-pressed={chosen}
+                  onClick={() => handleSelect(option)}
+                >
+                  {multiple && (
+                    <span
+                      className={cn(
+                        "flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border",
+                        chosen ? "border-current bg-current/20" : "border-muted-foreground/40",
+                      )}
+                      aria-hidden
+                    >
+                      {chosen && <CheckIcon className="size-3" />}
+                    </span>
+                  )}
+                  {option}
+                </Button>
+              );
+            })}
           </div>
           {sourceCitation && (
             <Badge variant="secondary" className="w-fit select-none">

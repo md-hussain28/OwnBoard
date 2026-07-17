@@ -10,25 +10,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 type AssignmentQuizPaneProps = {
   status: string;
   allAcked: boolean;
+  passPct?: number;
   activeQuiz: { attempt: QuizAttempt; template: QuizTemplate } | null;
-  answers: Record<string, string>;
+  answers: Record<string, string | string[]>;
   startPending: boolean;
   gradePending: boolean;
   onStart: () => void;
-  onAnswer: (questionId: string, option: string) => void;
+  onAnswer: (questionId: string, value: string | string[]) => void;
   onSubmit: () => void;
 };
 
+function isAnswered(answer: string | string[] | undefined): boolean {
+  return Array.isArray(answer) ? answer.length > 0 : Boolean(answer);
+}
+
 function QuizStartPrompt({
   allAcked,
+  passPct,
   startPending,
   onStart,
-}: Pick<AssignmentQuizPaneProps, "allAcked" | "startPending" | "onStart">) {
+}: Pick<AssignmentQuizPaneProps, "allAcked" | "passPct" | "startPending" | "onStart">) {
   return (
     <>
       <p className="text-sm text-muted-foreground">
         {allAcked
-          ? "All documents acknowledged — the quiz is unlocked. You need 100% to pass, with unlimited retakes. Whether reading stays available depends on how your admin published this quiz."
+          ? `All documents acknowledged — the quiz is unlocked. You need ${passPct ?? 100}% to pass, with unlimited retakes. Whether reading stays available depends on how your admin published this quiz.`
           : "Mark every document as read to unlock the quiz."}
       </p>
       <Button type="button" disabled={!allAcked || startPending} onClick={onStart}>
@@ -55,7 +61,7 @@ function QuizQuestionsForm({
   questions: QuizTemplate["questions"];
   openBook: boolean;
 }) {
-  const allAnswered = questions.length > 0 && questions.every((q) => answers[q.id]);
+  const allAnswered = questions.length > 0 && questions.every((q) => isAnswered(answers[q.id]));
 
   return (
     <div className="space-y-4">
@@ -72,8 +78,9 @@ function QuizQuestionsForm({
           <QuizQuestionCard
             questionText={question.questionText}
             options={question.options}
-            selected={answers[question.id] ?? null}
-            onSelect={(option) => onAnswer(question.id, option)}
+            multiple={question.format === "multi_select"}
+            selected={answers[question.id] ?? (question.format === "multi_select" ? [] : null)}
+            onSelect={(value) => onAnswer(question.id, value)}
           />
         </div>
       ))}
@@ -105,6 +112,7 @@ function QuizPaneBody(props: AssignmentQuizPaneProps) {
     return (
       <QuizStartPrompt
         allAcked={props.allAcked}
+        passPct={props.passPct}
         startPending={props.startPending}
         onStart={props.onStart}
       />

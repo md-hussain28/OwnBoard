@@ -25,7 +25,9 @@ ID_PREFIXES = frozenset(
         "exav",  # expertise_availability
         "fexp",  # file_expertise
         "note",  # institutional_memory_note
+        "ntf",  # notification
         "pack",  # doc_pack
+        "paud",  # doc_pack_audience_domain
         "pol",  # policy_doc
         "qdom",  # quiz_domain (Policy, Holiday, …)
         "ques",  # quiz_question

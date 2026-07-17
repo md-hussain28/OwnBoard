@@ -4,7 +4,12 @@ from onboard.api.dependency.rbac import CurrentEmployee, RequireAdmin
 from onboard.api.dependency.service_container import ServiceContainer, get_service_container
 from onboard.api.dependency.tenancy import CurrentOrgId
 from onboard.api.schema.quiz.request import GenerateCodebaseQuizRequest, GeneratePolicyQuizRequest, GradeAttemptRequest
-from onboard.api.schema.quiz.response import QuizAttemptResponse, QuizTemplateResponse
+from onboard.api.schema.quiz.response import (
+    GradeAttemptResponse,
+    QuestionGradeResultResponse,
+    QuizAttemptResponse,
+    QuizTemplateResponse,
+)
 
 router = APIRouter(prefix="/quizzes", tags=["quiz"])
 
@@ -29,7 +34,7 @@ async def generate_policy_quiz(
     return await services.quiz.generate_policy_quiz(payload.policy_doc_id, payload.custom_instructions)
 
 
-@router.post("/attempts/{quiz_attempt_id}/grade", response_model=QuizAttemptResponse)
+@router.post("/attempts/{quiz_attempt_id}/grade", response_model=GradeAttemptResponse)
 async def grade_attempt(
     quiz_attempt_id: str,
     payload: GradeAttemptRequest,
@@ -37,5 +42,26 @@ async def grade_attempt(
     actor: CurrentEmployee,
     services: ServiceContainer = Depends(get_service_container),
 ):
-    """Grade a completed quiz attempt; members may only grade their own attempts."""
-    return await services.quiz.grade_attempt(org_id, quiz_attempt_id, payload.answers, actor=actor)
+    """Grade a completed quiz attempt; members may only grade their own attempts.
+
+    Returns the attempt plus a per-question breakdown (correct/incorrect + citation) so the UI can point
+    the employee at what to review on a fail — without revealing the correct answers (retakes stay honest).
+    """
+    result = await services.quiz.grade_attempt(org_id, quiz_attempt_id, payload.answers, actor=actor)
+    return GradeAttemptResponse(
+        attempt=QuizAttemptResponse.model_validate(result.attempt),
+        score=result.score,
+        passed=result.passed,
+        pass_pct=result.pass_pct,
+        correct_count=result.correct_count,
+        total_count=result.total_count,
+        results=[
+            QuestionGradeResultResponse(
+                question_id=r.question_id,
+                question_text=r.question_text,
+                correct=r.correct,
+                source_citation=r.source_citation,
+            )
+            for r in result.results
+        ],
+    )

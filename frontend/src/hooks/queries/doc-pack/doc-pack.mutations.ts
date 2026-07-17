@@ -7,24 +7,46 @@ import type { QuizQuestionCurationItem } from "@/schemas/quiz.schema";
 import { docPackService } from "@/services/doc-pack.service";
 import { useUploadStore } from "@/stores/upload-store";
 
+/** Project a full pack into the leaner list-item shape held in the `all` cache. */
+function toListItem(pack: DocPack): DocPackListItem {
+  return {
+    id: pack.id,
+    name: pack.name,
+    description: pack.description,
+    status: pack.status,
+    createdBy: pack.createdBy,
+    createdAt: pack.createdAt,
+    domainId: pack.domainId,
+    domainName: pack.domainName,
+    assignToAll: pack.assignToAll,
+    audienceDomainIds: pack.audienceDomainIds,
+    audienceDomainNames: pack.audienceDomainNames,
+    sequenceOrder: pack.sequenceOrder,
+    estimatedMinutes: pack.estimatedMinutes,
+    dueOffsetDays: pack.dueOffsetDays,
+    passPct: pack.passPct,
+  };
+}
+
+type CreateDocPackInput = {
+  name: string;
+  description?: string;
+  domain_id?: string | null;
+  assign_to_all?: boolean;
+  audience_domain_ids?: string[];
+  sequence_order?: number;
+  estimated_minutes?: number | null;
+  due_offset_days?: number | null;
+};
+
 export function useCreateDocPack() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; description?: string; domain_id?: string | null }) =>
-      docPackService.create(input),
+    mutationFn: (input: CreateDocPackInput) => docPackService.create(input),
     onSuccess: (pack) => {
       queryClient.setQueryData(docPackKeys.detail(pack.id), pack);
       queryClient.setQueryData<DocPackListItem[]>(docPackKeys.all, (prev) => {
-        const item: DocPackListItem = {
-          id: pack.id,
-          name: pack.name,
-          description: pack.description,
-          status: pack.status,
-          createdBy: pack.createdBy,
-          createdAt: pack.createdAt,
-          domainId: pack.domainId,
-          domainName: pack.domainName,
-        };
+        const item = toListItem(pack);
         return prev ? [item, ...prev.filter((p) => p.id !== pack.id)] : [item];
       });
     },
@@ -34,18 +56,28 @@ export function useCreateDocPack() {
   });
 }
 
-type UpdateDocPackInput = { name?: string; description?: string; domain_id?: string | null };
+type UpdateDocPackInput = {
+  name?: string;
+  description?: string;
+  domain_id?: string | null;
+  assign_to_all?: boolean;
+  audience_domain_ids?: string[];
+  sequence_order?: number;
+  estimated_minutes?: number | null;
+  due_offset_days?: number | null;
+};
 
 /** Fields of a cached pack an update payload touches — undefined input fields keep their current value. */
 function docPackPatch(
-  current: Pick<DocPack, "name" | "description" | "domainId">,
+  current: Pick<DocPack, "name" | "description" | "domainId" | "assignToAll">,
   input: UpdateDocPackInput,
-): Pick<DocPack, "name" | "description" | "domainId"> {
+): Pick<DocPack, "name" | "description" | "domainId" | "assignToAll"> {
   return {
     name: input.name ?? current.name,
     description:
       input.description !== undefined ? (input.description ?? null) : current.description,
     domainId: input.domain_id !== undefined ? input.domain_id : current.domainId,
+    assignToAll: input.assign_to_all !== undefined ? input.assign_to_all : current.assignToAll,
   };
 }
 
@@ -73,20 +105,7 @@ export function useUpdateDocPack(packId: string) {
     onSuccess: (pack) => {
       queryClient.setQueryData(docPackKeys.detail(packId), pack);
       queryClient.setQueryData<DocPackListItem[]>(docPackKeys.all, (prev) =>
-        prev?.map((p) =>
-          p.id === packId
-            ? {
-                id: pack.id,
-                name: pack.name,
-                description: pack.description,
-                status: pack.status,
-                createdBy: pack.createdBy,
-                createdAt: pack.createdAt,
-                domainId: pack.domainId,
-                domainName: pack.domainName,
-              }
-            : p,
-        ),
+        prev?.map((p) => (p.id === packId ? toListItem(pack) : p)),
       );
     },
     onSettled: () => {
@@ -165,12 +184,27 @@ export function useGenerateQuiz(packId: string) {
 export function useSaveQuiz(packId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { questions: QuizQuestionCurationItem[]; openBook: boolean }) =>
-      docPackService.saveQuiz(packId, input.questions, input.openBook),
+    mutationFn: (input: {
+      questions: QuizQuestionCurationItem[];
+      openBook: boolean;
+      passPct?: number;
+    }) => docPackService.saveQuiz(packId, input.questions, input.openBook, input.passPct ?? 100),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: docPackKeys.quiz(packId) });
       void queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
     },
+  });
+}
+
+/**
+ * Dry-run preview of how many employees an audience selection resolves to.
+ * A POST mutation (not a query) since it has no stable cache identity — call `mutateAsync`
+ * with `{ assign_to_all, audience_domain_ids }` and read `{ count, sampleNames }` from the result.
+ */
+export function useAudiencePreview() {
+  return useMutation({
+    mutationFn: (input: { assign_to_all: boolean; audience_domain_ids: string[] }) =>
+      docPackService.audiencePreview(input),
   });
 }
 

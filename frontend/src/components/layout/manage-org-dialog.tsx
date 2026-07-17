@@ -157,7 +157,7 @@ export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
               aria-label="Change organization logo"
             >
               {showPreview ? (
-                {/* Org logo preview — remote Clerk URL */}
+                // Org logo preview — remote Clerk URL
                 <img src={previewUrl} alt="" className="size-full object-cover" />
               ) : (
                 orgInitials(name || organization?.name || "?")

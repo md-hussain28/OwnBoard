@@ -134,7 +134,7 @@ export function AppSidebar() {
               <Link href={appRole === "member" ? "/onboarding/packs" : "/"}>
                 <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient text-[0.6875rem] font-bold leading-none tracking-tight text-white shadow-button">
                   {showLogo ? (
-                    {/* Custom org logos from Clerk */}
+                    // Custom org logos from Clerk
                     <img src={organization!.imageUrl} alt="" className="size-full object-cover" />
                   ) : orgLoaded ? (
                     orgInitials(orgName)

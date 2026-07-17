@@ -20,6 +20,7 @@ semantic dedup are batched into a single OpenAI request per verify wave.
 from __future__ import annotations
 
 import asyncio
+import json
 import math
 from dataclasses import dataclass, field
 from typing import Any, TypedDict
@@ -46,13 +47,17 @@ class DraftOutput(BaseModel):
 
     question_text: str
     options: list[str]
-    correct_answer: str
+    # Single-select (mcq_4 / true_false): the one correct option text.
+    correct_answer: str = ""
+    # multi_select only: every correct option text (2 or more). Ignored for single-select formats.
+    correct_answers: list[str] = []
 
 
 class VerifyOutput(BaseModel):
     """Structured-output schema for the independent verification pass."""
 
-    answer: str  # exact text of the option believed correct, or "UNANSWERABLE"
+    answer: str = ""  # single-select: exact text of the option believed correct, or "UNANSWERABLE"
+    answers: list[str] = []  # multi_select: every option the verifier believes is correct
 
 
 @dataclass
@@ -192,7 +197,10 @@ _DRAFT_SYSTEM_PROMPT = (
     "- Do not quote the passage verbatim as the question stem; paraphrase and force comprehension.\n\n"
     'Format: for true/false, `options` must be exactly ["True", "False"] and `correct_answer` must be '
     'exactly "True" or "False". For mcq_4, `options` must contain exactly 4 distinct, plausible strings '
-    "and `correct_answer` must be an exact copy of one of them."
+    "and `correct_answer` must be an exact copy of one of them. For multi_select, `options` must contain "
+    "exactly 4 distinct plausible strings, and `correct_answers` must list every correct option (2 or 3 of "
+    "them) as exact copies — the remaining options must be genuinely incorrect near-misses. Leave "
+    "`correct_answer` empty for multi_select; leave `correct_answers` empty otherwise."
 )
 
 
@@ -224,6 +232,22 @@ def _validate_draft(output: DraftOutput | None, format: QuestionFormat) -> Draft
     if not question_text:
         return None
     options = [o.strip() for o in output.options if o and o.strip()]
+
+    if format == QuestionFormat.multi_select:
+        # 4 distinct options; 2..3 correct, each an exact copy of an option; correct_answer stored as a
+        # JSON array so grading (_grade_question) set-matches it, matching manually-authored multi_select.
+        if len(options) != 4 or len({o.lower() for o in options}) != 4:
+            return None
+        by_lower = {o.lower(): o for o in options}
+        matched: list[str] = []
+        for candidate in output.correct_answers:
+            hit = by_lower.get(candidate.strip().lower())
+            if hit is not None and hit not in matched:
+                matched.append(hit)
+        if not (2 <= len(matched) <= 3):
+            return None
+        return DraftedQuestion(question_text=question_text, options=options, correct_answer=json.dumps(matched))
+
     correct_answer = output.correct_answer.strip()
     if not correct_answer:
         return None
@@ -247,15 +271,21 @@ def _validate_draft(output: DraftOutput | None, format: QuestionFormat) -> Draft
 
 _VERIFY_SYSTEM_PROMPT = (
     "You are a strict fact-checker. You will be given a passage, a question, and its answer options. "
-    "Answer the question using ONLY the passage — never outside knowledge. Reply with ONLY the exact text "
-    "of the option you believe is correct, or the single word UNANSWERABLE if the passage does not clearly "
-    "support any one option."
+    "Answer the question using ONLY the passage — never outside knowledge. For a single-answer question, "
+    "reply with ONLY the exact text of the option you believe is correct in `answer`, or the single word "
+    "UNANSWERABLE if the passage does not clearly support any one option. For a multiple-answer question "
+    "(you'll be told), put EVERY correct option's exact text in `answers`, or leave it empty if the passage "
+    "doesn't clearly support a specific set."
 )
 
 
 async def _verify_answerable(llm: LLMClient, slot: SlotPlan, draft: DraftedQuestion) -> tuple[bool, str]:
     options_block = "\n".join(f"- {o}" for o in draft.options)
-    user_prompt = f"Passage:\n{slot.chunk_content}\n\nQuestion: {draft.question_text}\nOptions:\n{options_block}"
+    is_multi = slot.format == QuestionFormat.multi_select
+    kind = "This is a MULTIPLE-answer question." if is_multi else "This is a single-answer question."
+    user_prompt = (
+        f"{kind}\nPassage:\n{slot.chunk_content}\n\nQuestion: {draft.question_text}\nOptions:\n{options_block}"
+    )
     result = await llm.parse(
         [
             {"role": "system", "content": _VERIFY_SYSTEM_PROMPT},
@@ -265,6 +295,19 @@ async def _verify_answerable(llm: LLMClient, slot: SlotPlan, draft: DraftedQuest
     )
     if result is None:
         return False, "verification pass returned no answer"
+
+    if is_multi:
+        try:
+            expected = {str(c).strip().lower() for c in json.loads(draft.correct_answer)}
+        except (ValueError, TypeError):
+            expected = set()
+        got = {a.strip().strip('"').strip().lower() for a in result.answers if a and a.strip()}
+        if not got:
+            return False, "not answerable strictly from the cited passage"
+        if got != expected:
+            return False, "independent verification pass selected a different set of correct options"
+        return True, ""
+
     answer = result.answer.strip().strip('"').strip()
     if answer.upper().startswith("UNANSWERABLE"):
         return False, "not answerable strictly from the cited passage"

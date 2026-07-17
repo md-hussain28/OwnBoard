@@ -16,8 +16,17 @@ from onboard.core.common.exceptions import ForbiddenError, NotFoundError, Valida
 from onboard.dao.employee_dao import EmployeeDAO
 from onboard.dao.models.employee import Employee
 from onboard.dao.org_domain_dao import OrgDomainDAO
+from onboard.services.pack_assignment.auto_assign import assign_matching_packs_to_employee
 
 logger = logging.getLogger(__name__)
+
+
+async def _safe_auto_assign(session, org_id: str, employee_id: str) -> None:
+    """Fan published tracks out to a new/updated hire; never let it break the employee mutation."""
+    try:
+        await assign_matching_packs_to_employee(session, org_id, employee_id)
+    except Exception:
+        logger.exception("auto_assign_on_employee_failed org=%s employee=%s", org_id, employee_id)
 
 
 def _member_display_name(
@@ -113,6 +122,7 @@ class EmployeeService:
     """
 
     def __init__(self, session: AsyncSession):
+        self.session = session
         self.employee_dao = EmployeeDAO(session)
         self.domain_dao = OrgDomainDAO(session)
 
@@ -129,7 +139,7 @@ class EmployeeService:
     ) -> Employee:
         normalized = _normalize_app_role(app_role) or APP_ROLE_MEMBER
         resolved_domain_id = await self._resolve_domain_id(org_id, domain_id)
-        return await self.employee_dao.create(
+        employee = await self.employee_dao.create(
             org_id=org_id,
             name=name,
             role=_normalize_job_title(role),
@@ -138,6 +148,8 @@ class EmployeeService:
             clerk_user_id=clerk_user_id,
             domain_id=resolved_domain_id,
         )
+        await _safe_auto_assign(self.session, org_id, employee.id)
+        return employee
 
     async def get_employee(self, org_id: str, employee_id: str) -> Employee:
         employee = await self.employee_dao.get_by_id_for_org(org_id, employee_id)
@@ -190,9 +202,13 @@ class EmployeeService:
         if not fields:
             return employee
 
+        domain_changed = "domain_id" in fields and fields["domain_id"] != employee.domain_id
         updated = await self.employee_dao.update(employee.id, **fields)
         if updated is None:
             raise NotFoundError(f"Employee {employee_id} not found")
+        # A hire moving into a domain should pick up that domain's published tracks.
+        if domain_changed:
+            await _safe_auto_assign(self.session, org_id, updated.id)
         # Reload with domain relationship for response hydration.
         return await self.get_employee(org_id, updated.id)
 
@@ -423,6 +439,8 @@ class EmployeeService:
             github_handle=profile.get("github_handle"),
             domain_id=resolved_domain_id,
         )
+        # First sign-in of an invited hire: hand them their domain's published tracks immediately.
+        await _safe_auto_assign(self.session, org_id, created.id)
         return await self._maybe_bootstrap_admin(org_id, created)
 
     async def _maybe_bootstrap_admin(self, org_id: str, employee: Employee) -> Employee:
@@ -502,7 +520,7 @@ class EmployeeService:
 
                     existing = await self.employee_dao.get_by_clerk_user_id(org_id, clerk_user_id)
                     if existing is None:
-                        await self.employee_dao.create(
+                        created = await self.employee_dao.create(
                             org_id=org_id,
                             clerk_user_id=clerk_user_id,
                             name=name,
@@ -511,6 +529,7 @@ class EmployeeService:
                             github_handle=profile.get("github_handle"),
                             domain_id=resolved_domain_id,
                         )
+                        await _safe_auto_assign(self.session, org_id, created.id)
                         upserted += 1
                     else:
                         patch: dict[str, Any] = {}

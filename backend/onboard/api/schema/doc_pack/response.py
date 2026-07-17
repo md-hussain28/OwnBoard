@@ -57,6 +57,13 @@ class DocPackResponse(BaseModel):
     updated_at: datetime
     domain_id: str | None = None
     domain_name: str | None = None
+    assign_to_all: bool = False
+    audience_domain_ids: list[str] = []
+    audience_domain_names: list[str] = []
+    sequence_order: int = 0
+    estimated_minutes: int | None = None
+    due_offset_days: int | None = None
+    pass_pct: int = 100
     documents: list[DocPackDocumentResponse] = []
 
 
@@ -73,6 +80,20 @@ class DocPackListItemResponse(BaseModel):
     updated_at: datetime
     domain_id: str | None = None
     domain_name: str | None = None
+    assign_to_all: bool = False
+    audience_domain_ids: list[str] = []
+    audience_domain_names: list[str] = []
+    sequence_order: int = 0
+    estimated_minutes: int | None = None
+    due_offset_days: int | None = None
+    pass_pct: int = 100
+
+
+class AudiencePreviewResponse(BaseModel):
+    """Dry-run result for the assignment preview — count plus a few sample names for the admin UI."""
+
+    count: int
+    sample_names: list[str] = []
 
 
 class RetrievedDocChunkResponse(BaseModel):

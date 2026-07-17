@@ -5,6 +5,7 @@ from onboard.dao.models.contributor import Contributor
 from onboard.dao.models.doc_pack import (
     DocChunk,
     DocPack,
+    DocPackAudienceDomain,
     DocPackDocument,
     DocPackStatus,
     DocumentStatus,
@@ -16,6 +17,7 @@ from onboard.dao.models.employee import Employee
 from onboard.dao.models.expertise_availability import ExpertiseAvailability
 from onboard.dao.models.file_expertise import FileExpertise
 from onboard.dao.models.institutional_memory_note import InstitutionalMemoryNote
+from onboard.dao.models.notification import Notification, NotificationType
 from onboard.dao.models.org_domain import OrgDomain
 from onboard.dao.models.organization import Organization
 from onboard.dao.models.policy_doc import PolicyDoc
@@ -32,6 +34,7 @@ __all__ = [
     "Contributor",
     "DocChunk",
     "DocPack",
+    "DocPackAudienceDomain",
     "DocPackDocument",
     "DocPackStatus",
     "DocumentStatus",
@@ -39,6 +42,8 @@ __all__ = [
     "ExpertiseAvailability",
     "FileExpertise",
     "InstitutionalMemoryNote",
+    "Notification",
+    "NotificationType",
     "OrgDomain",
     "Organization",
     "PackAssignment",

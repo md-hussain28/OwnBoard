@@ -1,8 +1,15 @@
-from sqlalchemy import select, update
+from datetime import datetime
+
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import selectinload
 
 from onboard.dao.base_dao import BaseDAO
 from onboard.dao.models.doc_pack import PackAssignment, PackAssignmentAck, PackAssignmentStatus
+
+# Statuses that count as "done" for progress/overdue math — the employee has cleared the track.
+_TERMINAL_DONE = (PackAssignmentStatus.passed,)
+# Statuses that mean the employee hasn't opened the track yet.
+_NOT_STARTED = (PackAssignmentStatus.assigned,)
 
 
 class PackAssignmentDAO(BaseDAO[PackAssignment]):
@@ -32,6 +39,13 @@ class PackAssignmentDAO(BaseDAO[PackAssignment]):
             .order_by(PackAssignment.assigned_at.desc())
         )
         return list(result.scalars().all())
+
+    async def list_assigned_employee_ids(self, doc_pack_id: str) -> set[str]:
+        """Employee ids that already have an assignment for this pack — used to dedupe auto-assign."""
+        result = await self.session.execute(
+            select(PackAssignment.employee_id).where(PackAssignment.doc_pack_id == doc_pack_id)
+        )
+        return set(result.scalars().all())
 
     async def list_for_employee(self, org_id: str, employee_id: str) -> list[PackAssignment]:
         result = await self.session.execute(
@@ -85,6 +99,43 @@ class PackAssignmentDAO(BaseDAO[PackAssignment]):
             .values(quiz_template_id=quiz_template_id)
         )
         await self.session.commit()
+
+    async def list_overdue_for_employee(self, org_id: str, employee_id: str, now: datetime) -> list[PackAssignment]:
+        """Assignments past their due date the employee still hasn't passed — drives overdue nudges."""
+        result = await self.session.execute(
+            select(PackAssignment)
+            .where(
+                PackAssignment.org_id == org_id,
+                PackAssignment.employee_id == employee_id,
+                PackAssignment.due_at.is_not(None),
+                PackAssignment.due_at < now,
+                PackAssignment.status.notin_(_TERMINAL_DONE),
+            )
+            .options(selectinload(PackAssignment.doc_pack))
+        )
+        return list(result.scalars().all())
+
+    async def count_stalled_for_org(self, org_id: str, now: datetime) -> int:
+        """Org-wide count of assignments that are overdue or never started — the admin digest number."""
+        result = await self.session.execute(
+            select(func.count(PackAssignment.id)).where(
+                PackAssignment.org_id == org_id,
+                PackAssignment.status.notin_(_TERMINAL_DONE),
+                (PackAssignment.status.in_(_NOT_STARTED))
+                | ((PackAssignment.due_at.is_not(None)) & (PackAssignment.due_at < now)),
+            )
+        )
+        return int(result.scalar_one())
+
+    async def list_all_for_org(self, org_id: str) -> list[PackAssignment]:
+        """Every assignment in the org with pack + employee loaded — powers the cohort dashboard."""
+        result = await self.session.execute(
+            select(PackAssignment)
+            .where(PackAssignment.org_id == org_id)
+            .options(selectinload(PackAssignment.doc_pack), selectinload(PackAssignment.employee))
+            .order_by(PackAssignment.assigned_at.desc())
+        )
+        return list(result.scalars().all())
 
     async def get_active_for_quiz_template(self, quiz_template_id: str, employee_id: str) -> PackAssignment | None:
         """Find the assignment a just-graded attempt belongs to, so its status can be updated."""

@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from onboard.config.constants import EMBEDDING_DIMENSION
@@ -52,12 +52,49 @@ class DocPack(AuditBase):
     domain_id: Mapped[str | None] = mapped_column(
         String(64), ForeignKey("quiz_domain.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # Audience targeting for auto-assignment (Track PRD §auto-assign). When True, every employee in the
+    # org is auto-assigned this track once its quiz is published; otherwise the audience is the set of
+    # OrgDomains in `audience_domains`. Manual assignment via the roster still works regardless.
+    assign_to_all: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    # Pass bar as a percentage 1..100 (default 100 = the historical "must get everything right"). Grading
+    # compares the attempt score against this threshold instead of a hard-coded 1.0 (Doc Pack PRD §10.6).
+    pass_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=100, server_default="100")
+    # Position in the org's onboarding sequence (0-based). Tracks are surfaced to employees in this order and,
+    # when hard-locking is on, a track stays locked until every lower-ordered required track is passed.
+    sequence_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    # Estimated reading/quiz time in minutes — admin-set, else derived from page count on first render.
+    estimated_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Days after assignment that the track is due. Null = no due date. Snapshotted onto each assignment's
+    # `due_at` at assign time so later policy changes don't retroactively move an existing hire's deadline.
+    due_offset_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     organization: Mapped["Organization"] = relationship(back_populates="doc_packs")
     domain: Mapped["QuizDomain | None"] = relationship(back_populates="doc_packs")
     documents: Mapped[list["DocPackDocument"]] = relationship(back_populates="doc_pack", cascade="all, delete-orphan")
     chunks: Mapped[list["DocChunk"]] = relationship(back_populates="doc_pack", cascade="all, delete-orphan")
     assignments: Mapped[list["PackAssignment"]] = relationship(back_populates="doc_pack", cascade="all, delete-orphan")
+    audience_domains: Mapped[list["DocPackAudienceDomain"]] = relationship(
+        back_populates="doc_pack", cascade="all, delete-orphan"
+    )
+
+
+class DocPackAudienceDomain(AuditBase):
+    """Links a Doc Pack (Track) to an employee OrgDomain it should auto-assign to (Track PRD §auto-assign)."""
+
+    __tablename__ = "doc_pack_audience_domain"
+    __id_prefix__ = "paud"
+    __table_args__ = (UniqueConstraint("doc_pack_id", "org_domain_id", name="uq_pack_audience_pack_domain"),)
+
+    org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
+    doc_pack_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("doc_pack.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    org_domain_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("org_domain.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    doc_pack: Mapped["DocPack"] = relationship(back_populates="audience_domains")
+    org_domain: Mapped["OrgDomain"] = relationship()
 
 
 class DocPackDocument(AuditBase):
@@ -127,7 +164,11 @@ class PackAssignment(AuditBase):
         String(64), ForeignKey("employee.id", ondelete="CASCADE"), nullable=False, index=True
     )
     assigned_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # True when created by the domain/everyone auto-assignment engine rather than the manual roster.
+    auto_assigned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    # Deadline snapshot, computed from the track's `due_offset_days` at assign time. Null = no due date.
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[PackAssignmentStatus] = mapped_column(
         Enum(PackAssignmentStatus, name="pack_assignment_status"),
         nullable=False,

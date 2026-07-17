@@ -9,6 +9,9 @@ from onboard.dao.models.base import AuditBase
 class QuestionFormat(str, enum.Enum):
     mcq_4 = "mcq_4"
     true_false = "true_false"
+    # Multiple correct options; `correct_answer` holds a JSON array of the correct option texts and
+    # grading is exact set-match. Manually authored only — the generation pipeline emits single-select.
+    multi_select = "multi_select"
 
 
 class QuizQuestion(AuditBase):

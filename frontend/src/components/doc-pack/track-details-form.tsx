@@ -67,11 +67,11 @@ export function TrackDetailsForm({
       },
       {
         onSuccess: () => {
-          notify.success("Track updated", { id: `pack-update:${pack.id}` });
+          notify.success("Module updated", { id: `pack-update:${pack.id}` });
           onSaved?.();
         },
         onError: (err) => {
-          notify.apiError(err, "Could not update track", { id: `pack-update-error:${pack.id}` });
+          notify.apiError(err, "Could not update module", { id: `pack-update-error:${pack.id}` });
         },
       },
     );
@@ -84,7 +84,7 @@ export function TrackDetailsForm({
     >
       <div className="space-y-2">
         <label htmlFor="track-name" className="text-sm font-medium">
-          Track name
+          Module name
         </label>
         <Input id="track-name" value={name} onChange={(e) => setName(e.target.value)} required />
       </div>
@@ -127,7 +127,7 @@ export function TrackDetailsForm({
               onChange={(e) => setSequenceOrder(e.target.value)}
             />
             <p className="text-xs text-muted-foreground text-pretty">
-              Tracks are shown to employees in this order; a track stays locked until earlier ones
+              Modules are shown to employees in this order; a module stays locked until earlier ones
               are passed.
             </p>
           </div>
@@ -167,7 +167,7 @@ export function TrackDetailsForm({
               onChange={(e) => setDueOffsetDays(e.target.value)}
             />
             <p className="text-xs text-muted-foreground text-pretty">
-              Days after assignment the track is due. Leave blank for no due date.
+              Days after assignment the module is due. Leave blank for no due date.
             </p>
           </div>
         </div>

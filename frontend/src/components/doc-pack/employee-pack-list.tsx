@@ -55,7 +55,7 @@ function ctaLabel(status: PackAssignment["status"]): string {
 
 function AssignmentList({ assignments }: { assignments: PackAssignment[] }) {
   if (assignments.length === 0) {
-    return <p className="text-sm text-muted-foreground">No tracks assigned yet.</p>;
+    return <p className="text-sm text-muted-foreground">No modules assigned yet.</p>;
   }
 
   const sorted = [...assignments].sort((a, b) => {
@@ -86,7 +86,7 @@ function AssignmentList({ assignments }: { assignments: PackAssignment[] }) {
             >
               <div className="min-w-0">
                 <p className="flex items-center gap-2 font-medium">
-                  <span className="truncate">{assignment.docPackName ?? "Track"}</span>
+                  <span className="truncate">{assignment.docPackName ?? "Module"}</span>
                   {isNew && (
                     <Badge variant="warning" className="h-5 shrink-0 px-1.5 text-[0.65rem]">
                       New
@@ -153,7 +153,7 @@ export function EmployeePackList() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          Your tracks
+          Your modules
           {ready && !assignmentsQuery.isLoading && <TestsLeftBadge testsLeft={testsLeft} />}
         </CardTitle>
       </CardHeader>
@@ -166,7 +166,7 @@ export function EmployeePackList() {
         )}
 
         {ready && assignmentsQuery.isError && (
-          <p className="text-sm text-muted-foreground">Could not load your tracks.</p>
+          <p className="text-sm text-muted-foreground">Could not load your modules.</p>
         )}
 
         {ready && !assignmentsQuery.isLoading && !assignmentsQuery.isError && (

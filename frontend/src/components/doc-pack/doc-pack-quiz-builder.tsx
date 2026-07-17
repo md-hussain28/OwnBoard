@@ -298,7 +298,7 @@ export function DocPackQuizBuilder({
         {!quizQuery.isLoading && !template && (
           <p className="text-sm text-muted-foreground">
             No quiz generated yet. Once documents are processed, generate one above, curate the
-            questions, then save to make the track assignable.
+            questions, then save to make the module assignable.
           </p>
         )}
 

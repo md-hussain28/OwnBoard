@@ -25,7 +25,7 @@ export default function DocPackDetailPage({ params }: { params: Promise<{ id: st
       <div className="rounded-xl border border-border px-5 py-8 text-center">
         <p className="font-medium">Admins only</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Only organization admins can edit tracks.
+          Only organization admins can edit modules.
         </p>
         <Button className="mt-4" variant="outline" asChild>
           <Link href="/app/onboarding/packs">Go to assigned reading</Link>

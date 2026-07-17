@@ -47,7 +47,7 @@ export const WORKSPACE_NAV: NavGroup = {
     },
     {
       href: appPath("tracks"),
-      label: "Tracks",
+      label: "Onboarding",
       description: "Assign & track",
       icon: BookOpenCheckIcon,
       matchPrefix: true,
@@ -55,7 +55,7 @@ export const WORKSPACE_NAV: NavGroup = {
     },
     {
       href: appPath("onboarding", "packs"),
-      label: "My tracks",
+      label: "My modules",
       description: "Assigned onboarding",
       icon: ClipboardCheckIcon,
       matchPrefix: true,

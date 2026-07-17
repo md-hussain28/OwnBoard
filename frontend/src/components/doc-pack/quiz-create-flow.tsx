@@ -40,14 +40,14 @@ export function QuizCreateFlow() {
       },
       {
         onSuccess: (pack) => {
-          notify.success("Track created", {
+          notify.success("Module created", {
             description: pack.name,
             id: `pack:${pack.id}`,
           });
           router.push(`/app/tracks/${pack.id}`);
         },
         onError: (err) => {
-          notify.apiError(err, "Could not create track", { id: "pack-create-error" });
+          notify.apiError(err, "Could not create module", { id: "pack-create-error" });
         },
       },
     );
@@ -56,7 +56,7 @@ export function QuizCreateFlow() {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance">Create a track</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">Create a module</h1>
         <p className="text-sm text-muted-foreground text-pretty">
           Name it, choose who it&apos;s for, upload the reading, then generate and publish a cited
           quiz — all in one flow.
@@ -98,7 +98,7 @@ export function QuizCreateFlow() {
       >
         <div className="space-y-2">
           <label htmlFor="quiz-name" className="text-sm font-medium">
-            Track name
+            Module name
           </label>
           <Input
             id="quiz-name"
@@ -125,7 +125,7 @@ export function QuizCreateFlow() {
           </label>
           <Textarea
             id="quiz-description"
-            placeholder="What should hires learn from this track?"
+            placeholder="What should hires learn from this module?"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}

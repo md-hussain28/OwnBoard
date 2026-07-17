@@ -23,10 +23,10 @@ export default function NewQuizPage() {
       <div className="rounded-xl border border-border px-5 py-8 text-center">
         <p className="font-medium">Admins only</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Only organization admins can create tracks.
+          Only organization admins can create modules.
         </p>
         <Button className="mt-4" variant="outline" asChild>
-          <Link href="/app/tracks">Back to tracks</Link>
+          <Link href="/app/tracks">Back to modules</Link>
         </Button>
       </div>
     );

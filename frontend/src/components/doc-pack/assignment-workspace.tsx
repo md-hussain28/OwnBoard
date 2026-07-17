@@ -291,10 +291,10 @@ function AssignmentWorkspaceLoaded({
     return (
       <div className="space-y-6">
         <WorkspaceHeader detail={detail} />
-        <LockedCard title="Track locked" icon={<LockIcon className="size-4" />}>
+        <LockedCard title="Module locked" icon={<LockIcon className="size-4" />}>
           {detail.lockedByName
-            ? `Finish “${detail.lockedByName}” first before starting this track.`
-            : "Finish the earlier track in your sequence before starting this one."}
+            ? `Finish “${detail.lockedByName}” first before starting this module.`
+            : "Finish the earlier module in your sequence before starting this one."}
         </LockedCard>
       </div>
     );

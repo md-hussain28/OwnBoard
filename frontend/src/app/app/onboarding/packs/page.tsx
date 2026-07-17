@@ -6,10 +6,10 @@ export default function EmployeePacksPage() {
   return (
     <div className="max-w-3xl space-y-6">
       <div className="space-y-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance">My tracks</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">My modules</h1>
         <p className="text-pretty text-muted-foreground">
-          Read every document in a track, then pass its quiz at 100% to complete it. New assignments
-          also show up on the bell in the top right.
+          Read every document in a module, then pass its quiz at 100% to complete it. New
+          assignments also show up on the bell in the top right.
         </p>
       </div>
       <EmployeePackList />

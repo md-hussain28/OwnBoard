@@ -134,7 +134,7 @@ function TrackMarker({
 }
 
 function TrackLockBadge({ lockedByName }: { lockedByName: string | null }) {
-  const hint = lockedByName ? `Finish "${lockedByName}" first` : "Finish the earlier track first";
+  const hint = lockedByName ? `Finish "${lockedByName}" first` : "Finish the earlier module first";
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -215,7 +215,7 @@ function TrackRow({
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-medium tabular-nums text-muted-foreground">
-              Track {index + 1}
+              Module {index + 1}
             </span>
             <Badge variant={primary ? "default" : assignmentStatusVariant(assignment.status)}>
               {primary ? "Up next" : ASSIGNMENT_STATUS_LABEL[assignment.status]}
@@ -223,7 +223,7 @@ function TrackRow({
             {locked && <TrackLockBadge lockedByName={assignment.lockedByName} />}
           </div>
           <p className="truncate font-medium text-foreground">
-            {assignment.docPackName ?? "Track"}
+            {assignment.docPackName ?? "Module"}
           </p>
           <TrackMeta assignment={assignment} />
         </div>
@@ -256,7 +256,7 @@ function TracksBody({
   if (isError) {
     return (
       <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground shadow-soft">
-        Could not load your tracks. Start the FastAPI service and refresh.
+        Could not load your modules. Start the FastAPI service and refresh.
       </div>
     );
   }
@@ -264,7 +264,7 @@ function TracksBody({
   if (ordered.length === 0) {
     return (
       <div className="rounded-xl border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
-        No tracks assigned yet. New assignments show up here and on the bell in the top right.
+        No modules assigned yet. New assignments show up here and on the bell in the top right.
       </div>
     );
   }
@@ -285,7 +285,7 @@ function TracksBody({
       <div className="flex justify-end">
         <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
           <Link href="/app/onboarding/packs">
-            View all tracks
+            View all modules
             <ArrowRightIcon className="size-3.5" />
           </Link>
         </Button>
@@ -305,7 +305,7 @@ function NextTrackHero({ assignment }: { assignment: PackAssignment }) {
           </Badge>
         </div>
         <p className="truncate text-lg font-semibold text-balance text-foreground">
-          {assignment.docPackName ?? "Track"}
+          {assignment.docPackName ?? "Module"}
         </p>
         <TrackMeta assignment={assignment} />
       </div>
@@ -343,12 +343,12 @@ function ReadingTracksSection() {
     <section className="space-y-3" aria-labelledby="tracks-heading">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="tracks-heading" className="text-sm font-medium text-muted-foreground">
-          Reading tracks
+          Reading modules
         </h2>
         {!loading && total > 0 && (
           <span className="text-xs tabular-nums text-muted-foreground">
             <span className="font-medium text-foreground">
-              {passedCount} of {total} tracks complete
+              {passedCount} of {total} modules complete
             </span>{" "}
             ({progressPct}%)
           </span>
@@ -356,7 +356,7 @@ function ReadingTracksSection() {
       </div>
 
       {!loading && total > 0 && (
-        <Progress value={progressPct} aria-label={`${progressPct}% of tracks complete`} />
+        <Progress value={progressPct} aria-label={`${progressPct}% of modules complete`} />
       )}
 
       {!loading && nextActionable && <NextTrackHero assignment={nextActionable} />}
@@ -524,7 +524,7 @@ export default function OnboardingPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-balance">Your onboarding</h1>
         <p className="max-w-prose text-pretty text-muted-foreground">
           Everything your admin assigned, in the order to work through it. Finish your reading
-          tracks and gate quizzes to unlock repo access.
+          modules and gate quizzes to unlock repo access.
         </p>
       </header>
 

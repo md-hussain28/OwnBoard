@@ -132,7 +132,7 @@ export function AudienceField({
           Audience <span className="font-normal text-muted-foreground">(auto-assign)</span>
         </h2>
         <p className="text-xs text-muted-foreground text-pretty">
-          Once this track&apos;s quiz is published, everyone here is assigned automatically —
+          Once this module&apos;s quiz is published, everyone here is assigned automatically —
           including new hires who join a matching domain later. You can still assign extra people by
           hand.
         </p>
@@ -224,8 +224,8 @@ export function AudienceField({
           )}
           {!domainsQuery.isLoading && domains.length > 0 && domainIds.length === 0 && (
             <p className="text-xs text-muted-foreground">
-              Pick at least one domain, or switch to “Everyone”. With nothing selected this track is
-              manual-assign only.
+              Pick at least one domain, or switch to “Everyone”. With nothing selected this module
+              is manual-assign only.
             </p>
           )}
         </div>

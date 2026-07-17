@@ -125,7 +125,7 @@ function OutcomesBody({
           onClick={onClose}
           className="text-xs font-medium text-brand-teal transition-colors hover:text-brand-teal/80"
         >
-          Tracks
+          Modules
         </Link>
       </div>
 

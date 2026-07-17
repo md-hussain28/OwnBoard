@@ -27,9 +27,11 @@ export const API_ENDPOINTS = {
   docPackQuiz: (id: string) => `/doc-packs/${id}/quiz`,
   docPackRegenerateQuestions: (id: string) => `/doc-packs/${id}/quiz/regenerate-questions`,
   docPackAssignments: (id: string) => `/doc-packs/${id}/assignments`,
+  docPackAudiencePreview: "/doc-packs/audience-preview",
 
   // Assignments (Doc Pack PRD §6)
   assignmentOutcomes: "/assignments/outcomes",
+  onboardingCohort: "/onboarding/cohort",
   assignment: (id: string) => `/assignments/${id}`,
   assignmentDocumentContent: (id: string, documentId: string) =>
     `/assignments/${id}/documents/${documentId}/content`,
@@ -39,6 +41,12 @@ export const API_ENDPOINTS = {
 
   // Quiz grading — reused across policy/codebase/doc_pack (fixes PRD §9 path mismatch)
   gradeAttempt: (attemptId: string) => `/quizzes/attempts/${attemptId}/grade`,
+
+  // Notifications
+  notifications: "/notifications",
+  notificationsUnreadCount: "/notifications/unread-count",
+  notificationRead: (id: string) => `/notifications/${id}/read`,
+  notificationsReadAll: "/notifications/read-all",
 
   chat: "/chat",
   experts: "/experts",

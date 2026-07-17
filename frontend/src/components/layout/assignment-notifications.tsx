@@ -47,7 +47,7 @@ function sortActionable(assignments: PackAssignment[]) {
 function statusHint(status: PackAssignmentStatus): string {
   switch (status) {
     case "assigned":
-      return "New quiz pack — start reading";
+      return "New track — start reading";
     case "reading":
       return "Keep reading to unlock the quiz";
     case "ready_for_quiz":
@@ -55,7 +55,7 @@ function statusHint(status: PackAssignmentStatus): string {
     case "quiz_in_progress":
       return "Quiz in progress — finish when ready";
     case "failed":
-      return "Retry the quiz to complete this pack";
+      return "Retry the quiz to complete this track";
     default:
       return ASSIGNMENT_STATUS_LABEL[status];
   }
@@ -70,7 +70,7 @@ function AssignmentRow({
   isNew: boolean;
   onNavigate: () => void;
 }) {
-  const title = assignment.docPackName ?? "Quiz pack";
+  const title = assignment.docPackName ?? "Track";
   const Icon = assignment.status === "ready_for_quiz" ? ClipboardCheck : BookOpen;
 
   return (
@@ -139,7 +139,7 @@ function NotificationsBody({
     <>
       <div className="flex items-center justify-between border-b border-border/70 px-3.5 py-2.5">
         <div>
-          <p className="text-sm font-semibold text-balance">Your quizzes</p>
+          <p className="text-sm font-semibold text-balance">Your tracks</p>
           <p className="text-xs text-muted-foreground">
             {actionable.length === 0
               ? "You're all caught up"
@@ -173,9 +173,9 @@ function NotificationsBody({
           <span className="flex size-10 items-center justify-center rounded-xl bg-brand-moss-soft text-brand-moss">
             <ClipboardCheck className="size-4" />
           </span>
-          <p className="text-sm font-medium">No open quizzes</p>
+          <p className="text-sm font-medium">No open tracks</p>
           <p className="text-xs text-pretty text-muted-foreground">
-            When a pack is assigned to you, it shows up here.
+            When a track is assigned to you, it shows up here.
           </p>
         </div>
       )}
@@ -253,8 +253,8 @@ export function AssignmentNotifications() {
           className="relative text-muted-foreground hover:text-foreground"
           aria-label={
             newCount > 0
-              ? `${newCount} new quiz assignment${newCount === 1 ? "" : "s"}`
-              : "Quiz assignments"
+              ? `${newCount} new track assignment${newCount === 1 ? "" : "s"}`
+              : "Track assignments"
           }
         >
           <ClipboardCheck className="size-4" />

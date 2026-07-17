@@ -29,6 +29,20 @@ class PackAssignmentResponse(BaseModel):
     doc_pack_name: str | None = None
 
 
+class AssignmentOutcomeResponse(BaseModel):
+    """One pass/fail event for the org-admin inbox."""
+
+    id: str
+    doc_pack_id: str
+    doc_pack_name: str
+    employee_id: str
+    employee_name: str
+    status: PackAssignmentStatus
+    assigned_at: datetime
+    completed_at: datetime | None
+    updated_at: datetime
+
+
 class AssignmentDocumentStatusResponse(BaseModel):
     """One document in an assignment's reading list, with the employee's ack state (PRD §4/§6)."""
 
@@ -62,9 +76,14 @@ class StartQuizResponse(BaseModel):
 
 
 class AssignmentDocumentContentResponse(BaseModel):
-    """Open-book reading text for one document in an assignment (PRD §4)."""
+    """Open-book reading payload for one document in an assignment (PRD §4).
+
+    `content` is extracted plain text (always). `file_url` is a short-lived signed
+    URL to the original file so PDFs can be shown in a browser viewer.
+    """
 
     document_id: str
     title: str
     file_type: str
     content: str
+    file_url: str | None = None

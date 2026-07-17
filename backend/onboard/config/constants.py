@@ -21,8 +21,8 @@ MAX_DOC_INGEST_ATTEMPTS = 3
 MAX_DOC_PACK_FILE_SIZE_BYTES = 20 * 1024 * 1024  # 20 MB per file
 MAX_DOC_PACK_FILES_PER_UPLOAD = 10
 
-APP_TITLE = "Onboard API"
-APP_DESCRIPTION = "Backend for Onboard - onboarding quizzes, repo readiness gating, skill-graph bus-factor detection"
+APP_TITLE = "OwnBoard API"
+APP_DESCRIPTION = "Backend for OwnBoard - onboarding quizzes, repo readiness gating, skill-graph bus-factor detection"
 
 # OwnBoard org RBAC — Clerk membership is auth/tenancy only; access lives on employee.app_role.
 APP_ROLE_ADMIN = "admin"

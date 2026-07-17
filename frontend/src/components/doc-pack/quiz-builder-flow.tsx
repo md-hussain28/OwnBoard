@@ -4,16 +4,11 @@ import { ArrowRightIcon, CheckIcon } from "lucide-react";
 import Link from "next/link";
 import { DocPackDocuments } from "@/components/doc-pack/doc-pack-documents";
 import { DocPackQuizBuilder } from "@/components/doc-pack/doc-pack-quiz-builder";
-import { useUpdateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
 import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { useQuizDomains } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import type { DocPack } from "@/schemas/docPack.schema";
-import type { QuizDomain } from "@/schemas/quiz-domain.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Skeleton } from "@/ui/skeleton";
 
 const STEPS = [
@@ -21,8 +16,6 @@ const STEPS = [
   { id: 2, label: "Documents", key: "documents" },
   { id: 3, label: "Quiz", key: "quiz" },
 ] as const;
-
-const NONE_DOMAIN = "__none__";
 
 const PACK_STATUS_BADGE: Record<
   DocPack["status"],
@@ -34,23 +27,7 @@ const PACK_STATUS_BADGE: Record<
   archived: { variant: "outline", label: "Archived" },
 };
 
-function PackHeader({
-  pack,
-  domains,
-  quizPublished,
-  domainPending,
-  domainError,
-  domainIsError,
-  onDomainChange,
-}: {
-  pack: DocPack;
-  domains: QuizDomain[];
-  quizPublished: boolean;
-  domainPending: boolean;
-  domainError: unknown;
-  domainIsError: boolean;
-  onDomainChange: (value: string) => void;
-}) {
+function PackHeader({ pack, quizPublished }: { pack: DocPack; quizPublished: boolean }) {
   const statusBadge = PACK_STATUS_BADGE[pack.status];
 
   return (
@@ -64,38 +41,13 @@ function PackHeader({
         {pack.description && (
           <p className="text-muted-foreground text-pretty">{pack.description}</p>
         )}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <label htmlFor="pack-domain" className="text-sm text-muted-foreground">
-            Domain
-          </label>
-          <Select
-            value={pack.domainId ?? NONE_DOMAIN}
-            onValueChange={onDomainChange}
-            disabled={domainPending}
-          >
-            <SelectTrigger id="pack-domain" size="sm" className="w-[11rem]">
-              <SelectValue placeholder="No domain" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NONE_DOMAIN}>No domain</SelectItem>
-              {domains.map((domain) => (
-                <SelectItem key={domain.id} value={domain.id}>
-                  {domain.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {domainIsError && (
-            <p className="text-sm text-destructive">{getApiErrorMessage(domainError)}</p>
-          )}
-        </div>
         <p className="text-sm text-muted-foreground">
           Finish documents and quiz here, then assign from the Quizzes desk.
         </p>
       </div>
       {quizPublished && (
         <Button size="sm" asChild>
-          <Link href={`/doc-packs?assign=${pack.id}`}>
+          <Link href={`/app/doc-packs?assign=${pack.id}`}>
             Assign & track
             <ArrowRightIcon className="size-3.5" />
           </Link>
@@ -194,7 +146,7 @@ function PublishCta({ quizPublished, packId }: { quizPublished: boolean; packId:
         This pack is ready to assign. Track who has read and passed from the Quizzes desk.
       </p>
       <Button className="mt-3" size="sm" asChild>
-        <Link href={`/doc-packs?assign=${packId}`}>
+        <Link href={`/app/doc-packs?assign=${packId}`}>
           Go to assign & track
           <ArrowRightIcon className="size-3.5" />
         </Link>
@@ -206,8 +158,6 @@ function PublishCta({ quizPublished, packId }: { quizPublished: boolean; packId:
 export function QuizBuilderFlow({ packId }: { packId: string }) {
   const { data: pack, isLoading, isError } = useDocPack(packId);
   const quizQuery = useDocPackQuiz(packId);
-  const domainsQuery = useQuizDomains();
-  const updatePack = useUpdateDocPack(packId);
 
   const hasDocuments = (pack?.documents ?? []).length > 0;
   const hasProcessedDocuments = (pack?.documents ?? []).some((d) => d.status === "processed");
@@ -215,13 +165,6 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
   const hasQuizDraft = Boolean(quizQuery.data);
 
   const currentStep = quizPublished || hasQuizDraft || hasDocuments ? 3 : 2;
-  const domains = domainsQuery.data ?? [];
-
-  function handleDomainChange(value: string) {
-    updatePack.mutate({
-      domain_id: value === NONE_DOMAIN ? null : value,
-    });
-  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -235,17 +178,7 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
           </p>
         )}
 
-        {pack && (
-          <PackHeader
-            pack={pack}
-            domains={domains}
-            quizPublished={quizPublished}
-            domainPending={updatePack.isPending}
-            domainError={updatePack.error}
-            domainIsError={updatePack.isError}
-            onDomainChange={handleDomainChange}
-          />
-        )}
+        {pack && <PackHeader pack={pack} quizPublished={quizPublished} />}
       </div>
 
       {pack && (

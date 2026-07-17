@@ -69,6 +69,31 @@ export const mockEmployees = [
   },
 ];
 
+export const mockPendingInvitations = [
+  {
+    id: "inv_a1b2c3d4e5f6g7h8i9",
+    email_address: "jordan.lee@example.com",
+    app_role: "member",
+    status: "pending",
+    role: "Product Designer",
+    github_handle: "jlee",
+    domain_id: "dom_design",
+    domain_name: "Design",
+    created_at: "2026-07-16T10:00:00Z",
+  },
+  {
+    id: "inv_b2c3d4e5f6g7h8i9j0",
+    email_address: "sam.okafor@example.com",
+    app_role: "admin",
+    status: "pending",
+    role: null,
+    github_handle: null,
+    domain_id: null,
+    domain_name: null,
+    created_at: "2026-07-17T08:30:00Z",
+  },
+];
+
 export const mockOrgDomains = [
   { id: "dom_developer", org_id: "org_demo", name: "Developer", is_default: true },
   { id: "dom_marketing", org_id: "org_demo", name: "Marketing", is_default: true },
@@ -193,6 +218,18 @@ export const mockAssignments = [
     acks: [{ document_id: "doc_a1b2c3d4e5f6g7h8i9", acknowledged_at: "2026-07-06T11:00:00Z" }],
   },
   {
+    id: "asg_c3d4e5f6g7h8i9j0k1",
+    doc_pack_id: "pack_b2c3d4e5f6g7h8i9j0",
+    doc_pack_name: "Engineering Handbook",
+    employee_id: "emp_a1b2c3d4e5f6g7h8i9",
+    assigned_by: "emp_b2c3d4e5f6g7h8i9j0",
+    assigned_at: "2026-07-16T14:00:00Z",
+    status: "assigned",
+    quiz_template_id: null,
+    completed_at: null,
+    acks: [],
+  },
+  {
     id: "asg_b2c3d4e5f6g7h8i9j0",
     doc_pack_id: "pack_a1b2c3d4e5f6g7h8i9",
     doc_pack_name: "Security & Compliance",
@@ -203,6 +240,32 @@ export const mockAssignments = [
     quiz_template_id: "qt_a1b2c3d4e5f6g7h8i9",
     completed_at: "2026-07-07T16:45:00Z",
     acks: [],
+  },
+];
+
+/** Admin inbox — passed/failed only (GET /assignments/outcomes). */
+export const mockAssignmentOutcomes = [
+  {
+    id: "asg_b2c3d4e5f6g7h8i9j0",
+    doc_pack_id: "pack_a1b2c3d4e5f6g7h8i9",
+    doc_pack_name: "Security & Compliance",
+    employee_id: "emp_b2c3d4e5f6g7h8i9j0",
+    employee_name: "Diego Alvarez",
+    status: "passed",
+    assigned_at: "2026-07-04T09:00:00Z",
+    completed_at: "2026-07-07T16:45:00Z",
+    updated_at: "2026-07-07T16:45:00Z",
+  },
+  {
+    id: "asg_d4e5f6g7h8i9j0k1l2",
+    doc_pack_id: "pack_b2c3d4e5f6g7h8i9j0",
+    doc_pack_name: "Engineering Handbook",
+    employee_id: "emp_a1b2c3d4e5f6g7h8i9",
+    employee_name: "Priya Sharma",
+    status: "failed",
+    assigned_at: "2026-07-10T10:00:00Z",
+    completed_at: null,
+    updated_at: "2026-07-16T11:20:00Z",
   },
 ];
 
@@ -240,6 +303,8 @@ export const mockAssignmentDocumentContent = {
   file_type: "pdf",
   content:
     "# Incident Response Runbook\n\n1. Page the on-call engineer within 5 minutes of a SEV-1.\n2. Open a dedicated incident channel and appoint an incident commander.\n3. Customer-visible impact must be posted to the status page within 30 minutes.\n4. A blameless postmortem is due within 5 business days.",
+  // Storybook has no real storage — empty file_url falls back to extracted text in the reader.
+  file_url: null,
 };
 
 // --- Quizzes (quiz.schema.ts — snake_case, admin shape includes correct_answer) ---

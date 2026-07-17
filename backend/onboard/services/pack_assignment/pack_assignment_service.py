@@ -33,6 +33,7 @@ class DocumentContent:
     title: str
     file_type: str
     content: str
+    file_url: str | None = None
 
 
 class PackAssignmentService:
@@ -80,11 +81,14 @@ class PackAssignmentService:
         storage = await self._storage_client()
         raw = await storage.download(document.storage_path)
         extracted = extract_document(raw, document.file_type)
+        # Signed URL lets the employee viewer embed the original PDF (not just extracted text).
+        file_url = await storage.signed_url(document.storage_path, expires_in_seconds=3600)
         return DocumentContent(
             document_id=document.id,
             title=document.title,
             file_type=document.file_type,
             content=extracted.full_text,
+            file_url=file_url,
         )
 
     async def create_assignments(
@@ -142,6 +146,10 @@ class PackAssignmentService:
         return [
             (assignment, assignment.doc_pack.name if assignment.doc_pack else "Doc pack") for assignment in assignments
         ]
+
+    async def list_recent_outcomes(self, org_id: str, *, limit: int = 50) -> list[PackAssignment]:
+        """Org-admin inbox of recent quiz pass/fail outcomes."""
+        return await self.assignment_dao.list_recent_outcomes(org_id, limit=limit)
 
     async def get_assignment_detail(self, org_id: str, assignment_id: str, *, actor: Employee) -> AssignmentDetail:
         assignment = await self.assignment_dao.get_by_id_for_org(org_id, assignment_id)

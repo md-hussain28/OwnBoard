@@ -3,6 +3,7 @@
 import { PencilIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { ViewPackDialog } from "@/components/doc-pack/view-pack-dialog";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
@@ -12,6 +13,7 @@ import {
 } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { useQuizDomains } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import { cn } from "@/lib/utils";
 import type { DocPackListItem } from "@/schemas/docPack.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
@@ -170,7 +172,7 @@ function EmptyPacksState({ isAdmin }: { isAdmin: boolean }) {
       </p>
       {isAdmin && (
         <Button asChild>
-          <Link href="/doc-packs/new">Create your first quiz</Link>
+          <Link href="/app/doc-packs/new">Create your first quiz</Link>
         </Button>
       )}
     </div>
@@ -221,9 +223,21 @@ function PackRow({
   progress: PackAssignmentProgress | undefined;
   onAssignPack: (packId: string) => void;
 }) {
+  const [viewOpen, setViewOpen] = useState(false);
+
   return (
-    <li className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5">
-      <div className="min-w-0 space-y-1.5">
+    <li
+      className={cn(
+        "flex flex-col gap-3 px-4 py-4 transition-colors duration-150 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5",
+        "hover:bg-muted/40",
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => setViewOpen(true)}
+        className="min-w-0 flex-1 space-y-1.5 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        aria-label={`View details for ${pack.name}`}
+      >
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate font-medium">{pack.name}</p>
           {pack.domainName && <Badge variant="outline">{pack.domainName}</Badge>}
@@ -233,7 +247,7 @@ function PackRow({
           <p className="truncate text-sm text-muted-foreground">{pack.description}</p>
         )}
         {isAdmin && <PackProgressLine progress={progress} />}
-      </div>
+      </button>
 
       {isAdmin && (
         <div className="flex shrink-0 items-center gap-2">
@@ -242,13 +256,22 @@ function PackRow({
             Assign
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/doc-packs/${pack.id}`}>
+            <Link href={`/app/doc-packs/${pack.id}`}>
               <PencilIcon className="size-3.5" />
               Edit
             </Link>
           </Button>
         </div>
       )}
+
+      <ViewPackDialog
+        pack={pack}
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+        progress={progress}
+        onAssign={() => onAssignPack(pack.id)}
+        isAdmin={isAdmin}
+      />
     </li>
   );
 }
@@ -313,7 +336,7 @@ export function QuizPackList({ onAssignPack }: { onAssignPack: (packId: string) 
         </div>
         {isAdmin && (
           <Button asChild>
-            <Link href="/doc-packs/new">
+            <Link href="/app/doc-packs/new">
               <PlusIcon className="size-4" />
               Create quiz
             </Link>

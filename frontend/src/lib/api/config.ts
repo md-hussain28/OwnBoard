@@ -7,7 +7,7 @@ const serverConfigSchema = z.object({
 });
 
 const publicConfigSchema = z.object({
-  NEXT_PUBLIC_APP_NAME: z.string().min(1).default("Onboard"),
+  NEXT_PUBLIC_APP_NAME: z.string().min(1).default("OwnBoard"),
 });
 
 // Empty string from Vercel env UI must not bypass `.default()` (zod only defaults on `undefined`).

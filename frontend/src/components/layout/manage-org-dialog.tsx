@@ -11,6 +11,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
 import {
@@ -258,7 +259,7 @@ function NameField({
 function ManageTeamLink({ onNavigate }: { onNavigate: () => void }) {
   return (
     <Link
-      href="/team"
+      href="/app/team"
       onClick={onNavigate}
       className={cn(
         "flex items-center gap-3 rounded-xl border border-border/80 bg-card px-3 py-2.5",
@@ -306,7 +307,7 @@ function SaveFooter({
   );
 }
 
-/** Rename + logo only — member management lives on /team. */
+/** Rename + logo only — member management lives on /app/team. */
 export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
   const { organization, isLoaded } = useOrganization();
   const [name, setName] = useState("");
@@ -336,9 +337,12 @@ export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
     setError(null);
     try {
       await persistOrgChanges(organization, trimmed, logo.logoFile, logo.removeLogo);
+      notify.success("Workspace updated", { id: "org-save" });
       onOpenChange(false);
     } catch (err) {
-      setError(saveErrorMessage(err));
+      const message = saveErrorMessage(err);
+      setError(message);
+      notify.error(message, { id: "org-save-error" });
     } finally {
       setSaving(false);
     }

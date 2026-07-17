@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { initialize, mswLoader } from "msw-storybook-addon";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { Toaster } from "../src/ui/sonner";
 import { handlers } from "./mocks/handlers";
 import "../src/app/globals.css";
 
@@ -43,7 +44,12 @@ function StoryThemeFrame({ theme, children }: { theme: string; children: React.R
     root.style.colorScheme = theme;
     document.body.classList.add("bg-background", "text-foreground", "antialiased");
   }, [theme]);
-  return <div className="bg-background font-sans text-foreground">{children}</div>;
+  return (
+    <div className="bg-background font-sans text-foreground">
+      {children}
+      <Toaster theme={theme === "dark" ? "dark" : "light"} />
+    </div>
+  );
 }
 
 const withTheme: Decorator = (Story, context) => (

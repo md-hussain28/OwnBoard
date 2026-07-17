@@ -2,13 +2,13 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { FileTextIcon, Loader2Icon, Trash2Icon, UploadIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   useBackgroundUpload,
   useDeleteDocument,
 } from "@/hooks/queries/doc-pack/doc-pack.mutations";
 import { docPackKeys, useDocPackIngestStatus } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
+import { notify } from "@/lib/toast";
 import type { DocPackDocument } from "@/schemas/docPack.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
@@ -46,7 +46,6 @@ export function DocPackDocuments({
   const startBackgroundUpload = useBackgroundUpload(packId, packName);
   const deleteDocument = useDeleteDocument(packId);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
 
   const hasPendingDocuments = documents.some(
     (d) => d.status === "uploaded" || d.status === "processing",
@@ -73,8 +72,30 @@ export function DocPackDocuments({
 
   function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
-    setValidationError(startBackgroundUpload(Array.from(fileList)));
+    const validationError = startBackgroundUpload(Array.from(fileList));
+    if (validationError) {
+      notify.error(validationError, { id: `upload-validation:${packId}` });
+    } else {
+      notify.info("Upload started", {
+        description: "Processing continues in the background.",
+        id: `upload-start:${packId}`,
+      });
+    }
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function handleDelete(doc: DocPackDocument) {
+    deleteDocument.mutate(doc.id, {
+      onSuccess: () => {
+        notify.success("Document removed", {
+          description: doc.title,
+          id: `doc-del:${doc.id}`,
+        });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Delete failed", { id: `doc-del-error:${doc.id}` });
+      },
+    });
   }
 
   return (
@@ -102,8 +123,6 @@ export function DocPackDocuments({
         <p className="text-xs text-muted-foreground">
           Uploads run in the background — you can keep working while documents process.
         </p>
-
-        {validationError && <p className="text-sm text-destructive">{validationError}</p>}
 
         {rows.length === 0 && (
           <p className="text-sm text-muted-foreground">
@@ -144,7 +163,7 @@ export function DocPackDocuments({
                     size="icon"
                     aria-label={`Delete ${doc.title}`}
                     disabled={deleteDocument.isPending}
-                    onClick={() => deleteDocument.mutate(doc.id)}
+                    onClick={() => handleDelete(doc)}
                   >
                     <Trash2Icon className="size-4 text-muted-foreground" />
                   </Button>
@@ -152,12 +171,6 @@ export function DocPackDocuments({
               </li>
             ))}
           </ul>
-        )}
-
-        {deleteDocument.isError && (
-          <p className="text-sm text-destructive">
-            {getApiErrorMessage(deleteDocument.error, "Delete failed.")}
-          </p>
         )}
       </CardContent>
     </Card>

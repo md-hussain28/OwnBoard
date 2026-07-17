@@ -11,6 +11,7 @@
   --font-sans: var(--font-plus-jakarta);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-plus-jakarta);
+  --font-brand: var(--font-fraunces), "Fraunces", ui-serif, Georgia, serif;
 
   /* Named brand primitives — use these for intentional color moments */
   --color-brand-honey: var(--brand-honey);
@@ -297,6 +298,111 @@
   }
 }
 
+/* Marketing landing — entrance choreography (opacity + transform only) */
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes landing-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) rotateX(6deg) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateX(0) scale(1);
+  }
+}
+
+@keyframes landing-cite-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand-teal) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in oklch, var(--brand-teal) 18%, transparent);
+  }
+}
+
+@layer components {
+  .landing-rise {
+    animation: landing-rise 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .landing-panel {
+    transform-style: preserve-3d;
+    animation: landing-panel-in 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+  }
+
+  .landing-cite-pulse {
+    animation: landing-cite-glow 3.2s ease-in-out 1.1s infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-rise,
+  .landing-panel,
+  .landing-cite-pulse {
+    animation: none;
+    filter: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Sonner — Evidence desk toast surface (top-right; upload widget stays bottom-right) */
+[data-sonner-toaster][data-y-position="top"] {
+  top: 1rem;
+}
+
+[data-sonner-toast] {
+  font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+[data-sonner-toast] [data-icon] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+}
+
+[data-sonner-toast][data-type="success"] [data-icon] {
+  background: color-mix(in oklch, var(--success) 12%, transparent);
+  color: var(--success);
+}
+
+[data-sonner-toast][data-type="error"] [data-icon] {
+  background: color-mix(in oklch, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+}
+
+[data-sonner-toast][data-type="warning"] [data-icon] {
+  background: color-mix(in oklch, var(--warning) 12%, transparent);
+  color: var(--warning);
+}
+
+[data-sonner-toast][data-type="info"] [data-icon] {
+  background: color-mix(in oklch, var(--info) 12%, transparent);
+  color: var(--info);
+}
+
+[data-sonner-toast][data-type="loading"] [data-icon] {
+  background: color-mix(in oklch, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -307,5 +413,11 @@
     animation-iteration-count: 1 !important;
     /* biome-ignore lint/complexity/noImportantStyles: intentional — reduced-motion must override all animation styles */
     transition-duration: 0.01ms !important;
+  }
+
+  [data-sonner-toast] {
+    --y: 0 !important;
+    animation: none !important;
+    transition: opacity 0.01ms !important;
   }
 }

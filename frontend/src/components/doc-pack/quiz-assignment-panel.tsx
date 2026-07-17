@@ -90,7 +90,7 @@ function QuizAssignmentPanelLoaded({ pack }: { pack: DocPackListItem }) {
             Finish and publish the quiz before assigning it to hires.
           </p>
           <Button className="mt-3" size="sm" asChild>
-            <Link href={`/doc-packs/${pack.id}`}>Open quiz builder</Link>
+            <Link href={`/app/doc-packs/${pack.id}`}>Open quiz builder</Link>
           </Button>
         </div>
       )}
@@ -105,7 +105,7 @@ function QuizAssignmentPanelLoaded({ pack }: { pack: DocPackListItem }) {
           emptyOrgHint={
             <>
               No organization members found. Invite people from{" "}
-              <Link href="/team" className="underline underline-offset-2">
+              <Link href="/app/team" className="underline underline-offset-2">
                 Team
               </Link>
               , then reopen Assign — members sync automatically.

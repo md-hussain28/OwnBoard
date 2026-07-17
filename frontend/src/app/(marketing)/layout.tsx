@@ -10,7 +10,7 @@ export default function MarketingLayout({
     <div className="relative flex min-h-svh flex-col bg-background">
       <AtmosphereBlobs />
       <MarketingHeader />
-      <main className="relative z-0 mx-auto w-full max-w-5xl flex-1 px-6 py-10">{children}</main>
+      <main className="relative z-0 flex-1">{children}</main>
     </div>
   );
 }

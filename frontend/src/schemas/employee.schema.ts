@@ -38,13 +38,25 @@ export const employeeInviteSchema = z
     email_address: z.string(),
     app_role: appRoleSchema,
     status: z.string(),
+    role: z.string().nullable().optional(),
+    github_handle: z.string().nullable().optional(),
+    domain_id: z.string().nullable().optional(),
+    domain_name: z.string().nullable().optional(),
+    created_at: z.string().nullable().optional(),
   })
   .transform((i) => ({
     id: i.id,
     emailAddress: i.email_address,
     appRole: i.app_role,
     status: i.status,
+    role: i.role ?? null,
+    githubHandle: i.github_handle ?? null,
+    domainId: i.domain_id ?? null,
+    domainName: i.domain_name ?? null,
+    createdAt: i.created_at ?? null,
   }));
+
+export const employeeInviteListSchema = z.array(employeeInviteSchema);
 
 export type EmployeeInvitation = z.infer<typeof employeeInviteSchema>;
 

@@ -24,3 +24,8 @@ class EmployeeInvitationResponse(BaseModel):
     email_address: str
     app_role: str
     status: str
+    role: str | None = None
+    github_handle: str | None = None
+    domain_id: str | None = None
+    domain_name: str | None = None
+    created_at: datetime | None = None

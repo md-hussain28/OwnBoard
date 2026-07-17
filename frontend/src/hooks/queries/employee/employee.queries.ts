@@ -4,6 +4,7 @@ import { employeeService } from "@/services/employee.service";
 export const employeeKeys = {
   all: ["employees"] as const,
   detail: (id: string) => ["employees", id] as const,
+  invitations: ["employees", "invitations"] as const,
 };
 
 export function useEmployees(options?: { enabled?: boolean }) {
@@ -19,5 +20,13 @@ export function useEmployee(id: string) {
     queryKey: employeeKeys.detail(id),
     queryFn: () => employeeService.get(id),
     enabled: Boolean(id),
+  });
+}
+
+export function usePendingInvitations(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: employeeKeys.invitations,
+    queryFn: employeeService.listInvitations,
+    enabled: options?.enabled ?? true,
   });
 }

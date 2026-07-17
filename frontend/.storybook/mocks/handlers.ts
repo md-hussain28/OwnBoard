@@ -3,6 +3,7 @@ import {
   mockAdminQuizTemplate,
   mockAssignmentDetail,
   mockAssignmentDocumentContent,
+  mockAssignmentOutcomes,
   mockAssignments,
   mockBusFactor,
   mockChatResponse,
@@ -13,6 +14,7 @@ import {
   mockExperts,
   mockMe,
   mockOrgDomains,
+  mockPendingInvitations,
   mockQuizAnalytics,
   mockQuizAttempt,
   mockQuizDomains,
@@ -58,17 +60,39 @@ export const employeeHandlers = [
   http.get("/api/me", () => HttpResponse.json(mockMe)),
   http.get("/api/employees", () => HttpResponse.json(mockEmployees)),
   http.get("/api/employees/:employeeId/assignments", () => HttpResponse.json(mockAssignments)),
+  http.get("/api/employees/invitations", () => HttpResponse.json(mockPendingInvitations)),
   http.post("/api/employees/invitations", async ({ request }) => {
-    const body = (await request.json()) as { email: string; app_role?: string };
+    const body = (await request.json()) as {
+      email: string;
+      app_role?: string;
+      role?: string | null;
+      github_handle?: string | null;
+      domain_id?: string | null;
+    };
+    const domain = findMockDomain(body.domain_id);
     return HttpResponse.json(
       {
-        id: "inv_storybook",
+        id: `inv_${Date.now()}`,
         email_address: body.email,
         app_role: body.app_role ?? "member",
         status: "pending",
+        role: body.role ?? null,
+        github_handle: body.github_handle ?? null,
+        domain_id: body.domain_id ?? null,
+        domain_name: domain?.name ?? null,
+        created_at: new Date().toISOString(),
       },
       { status: 201 },
     );
+  }),
+  http.delete("/api/employees/invitations/:id", ({ params }) => {
+    const existing =
+      mockPendingInvitations.find((invite) => invite.id === params.id) ?? mockPendingInvitations[0];
+    return HttpResponse.json({
+      ...existing,
+      id: String(params.id),
+      status: "revoked",
+    });
   }),
   http.patch("/api/employees/:id", async ({ params, request }) => {
     const body = (await request.json()) as {
@@ -175,6 +199,8 @@ export const docPackHandlers = [
 ];
 
 export const assignmentHandlers = [
+  // Must be before `/api/assignments/:id` so MSW doesn't treat "outcomes" as an id.
+  http.get("/api/assignments/outcomes", () => HttpResponse.json(mockAssignmentOutcomes)),
   http.get("/api/assignments/:id", () => HttpResponse.json(mockAssignmentDetail)),
   http.get("/api/assignments/:id/documents/:documentId/content", () =>
     HttpResponse.json(mockAssignmentDocumentContent),

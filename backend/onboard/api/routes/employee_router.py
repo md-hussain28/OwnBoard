@@ -73,6 +73,27 @@ async def invite_employee(
     )
 
 
+@router.get("/invitations", response_model=list[EmployeeInvitationResponse])
+async def list_pending_invitations(
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Admin-only list of Clerk invitations that have not been accepted yet."""
+    return await services.employee.list_pending_invitations(org_id)
+
+
+@router.delete("/invitations/{invitation_id}", response_model=EmployeeInvitationResponse)
+async def revoke_invitation(
+    invitation_id: str,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Cancel a pending Clerk organization invitation."""
+    return await services.employee.revoke_invitation(org_id, invitation_id)
+
+
 @router.get("/{employee_id}", response_model=EmployeeResponse)
 async def get_employee(
     employee_id: str,

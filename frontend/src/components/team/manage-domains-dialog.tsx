@@ -7,7 +7,7 @@ import {
   useDeleteOrgDomain,
   useUpdateOrgDomain,
 } from "@/hooks/queries/org-domain/org-domain.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
+import { notify } from "@/lib/toast";
 import type { OrgDomain } from "@/schemas/org-domain.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
@@ -113,8 +113,30 @@ function DomainRow({ domain }: { domain: OrgDomain }) {
     }
     updateDomain.mutate(
       { id: domain.id, input: { name: trimmed } },
-      { onSuccess: () => setEditing(false) },
+      {
+        onSuccess: () => {
+          notify.success("Domain renamed", { description: trimmed, id: `domain:${domain.id}` });
+          setEditing(false);
+        },
+        onError: (err) => {
+          notify.apiError(err, "Could not rename domain", { id: `domain-error:${domain.id}` });
+        },
+      },
     );
+  }
+
+  function handleDelete() {
+    deleteDomain.mutate(domain.id, {
+      onSuccess: () => {
+        notify.success("Domain removed", {
+          description: domain.name,
+          id: `domain-del:${domain.id}`,
+        });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Could not delete domain", { id: `domain-del-error:${domain.id}` });
+      },
+    });
   }
 
   return (
@@ -154,22 +176,12 @@ function DomainRow({ domain }: { domain: OrgDomain }) {
               aria-label={`Delete ${domain.name}`}
               className="text-muted-foreground hover:text-destructive"
               disabled={deleteDomain.isPending}
-              onClick={() => deleteDomain.mutate(domain.id)}
+              onClick={handleDelete}
             >
               <Trash2Icon className="size-3.5" />
             </Button>
           )}
         </>
-      )}
-      {updateDomain.isError && (
-        <p className="basis-full text-xs text-destructive">
-          {getApiErrorMessage(updateDomain.error)}
-        </p>
-      )}
-      {deleteDomain.isError && (
-        <p className="basis-full text-xs text-destructive">
-          {getApiErrorMessage(deleteDomain.error)}
-        </p>
       )}
     </li>
   );
@@ -200,7 +212,13 @@ export function ManageDomainsDialog({
     createDomain.mutate(
       { name: trimmed },
       {
-        onSuccess: () => setName(""),
+        onSuccess: () => {
+          notify.success("Domain added", { description: trimmed, id: `domain-add:${trimmed}` });
+          setName("");
+        },
+        onError: (err) => {
+          notify.apiError(err, "Could not add domain", { id: `domain-add-error:${trimmed}` });
+        },
       },
     );
   }
@@ -249,10 +267,6 @@ export function ManageDomainsDialog({
             {createDomain.isPending ? "Adding…" : "Add"}
           </Button>
         </form>
-
-        {createDomain.isError && (
-          <p className="text-sm text-destructive">{getApiErrorMessage(createDomain.error)}</p>
-        )}
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" fill="none" role="img" aria-label="OwnBoard">
+  <defs>
+    <linearGradient id="ob-board" x1="8" y1="4" x2="58" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E9A01C"/>
+      <stop offset="1" stop-color="#B85F18"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#ob-board)"/>
+  <circle cx="30" cy="33" r="15.5" stroke="#fff" stroke-width="6.5" fill="none"/>
+  <rect x="18" y="36" width="24" height="5.5" rx="2.75" fill="#fff"/>
+  <circle cx="46.5" cy="19.5" r="9" fill="#2A8A8E"/>
+  <path d="M42.6 19.7 45.3 22.4 51 16.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="80" y="42" fill="#3D3428" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="28" font-weight="800" letter-spacing="-0.04em">OwnBoard</text>
+</svg>

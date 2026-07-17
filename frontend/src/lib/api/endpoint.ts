@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
   employees: "/employees",
   employee: (id: string) => `/employees/${id}`,
   employeeInvitations: "/employees/invitations",
+  employeeInvitation: (id: string) => `/employees/invitations/${id}`,
   employeeAssignments: (employeeId: string) => `/employees/${employeeId}/assignments`,
 
   domains: "/domains",
@@ -28,6 +29,7 @@ export const API_ENDPOINTS = {
   docPackAssignments: (id: string) => `/doc-packs/${id}/assignments`,
 
   // Assignments (Doc Pack PRD §6)
+  assignmentOutcomes: "/assignments/outcomes",
   assignment: (id: string) => `/assignments/${id}`,
   assignmentDocumentContent: (id: string, documentId: string) =>
     `/assignments/${id}/documents/${documentId}/content`,

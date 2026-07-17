@@ -8,6 +8,7 @@ from onboard.api.schema.pack_assignment.request import CreateAssignmentsRequest
 from onboard.api.schema.pack_assignment.response import (
     AssignmentDocumentContentResponse,
     AssignmentDocumentStatusResponse,
+    AssignmentOutcomeResponse,
     PackAssignmentDetailResponse,
     PackAssignmentResponse,
     StartQuizResponse,
@@ -69,6 +70,30 @@ async def list_employee_assignments(
     ]
 
 
+@router.get("/assignments/outcomes", response_model=list[AssignmentOutcomeResponse])
+async def list_assignment_outcomes(
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Org-admin inbox — recent quiz pass/fail outcomes across the workspace."""
+    assignments = await services.pack_assignment.list_recent_outcomes(org_id)
+    return [
+        AssignmentOutcomeResponse(
+            id=a.id,
+            doc_pack_id=a.doc_pack_id,
+            doc_pack_name=a.doc_pack.name if a.doc_pack else "Quiz pack",
+            employee_id=a.employee_id,
+            employee_name=a.employee.name if a.employee else "Team member",
+            status=a.status,
+            assigned_at=a.assigned_at,
+            completed_at=a.completed_at,
+            updated_at=a.updated_at,
+        )
+        for a in assignments
+    ]
+
+
 @router.get("/assignments/{assignment_id}", response_model=PackAssignmentDetailResponse)
 async def get_assignment_detail(
     assignment_id: str,
@@ -112,13 +137,14 @@ async def get_assignment_document_content(
     actor: CurrentEmployee,
     services: ServiceContainer = Depends(get_service_container),
 ):
-    """Open-book reading text for one assigned document (Doc Pack PRD §4)."""
+    """Open-book reading payload for one assigned document (Doc Pack PRD §4)."""
     content = await services.pack_assignment.get_document_content(org_id, assignment_id, document_id, actor=actor)
     return AssignmentDocumentContentResponse(
         document_id=content.document_id,
         title=content.title,
         file_type=content.file_type,
         content=content.content,
+        file_url=content.file_url,
     )
 
 

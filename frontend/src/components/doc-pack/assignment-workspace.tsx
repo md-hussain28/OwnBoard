@@ -1,7 +1,7 @@
 "use client";
 
 import { BookOpenIcon, CheckCircle2Icon, Loader2Icon, XCircleIcon } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { AssignmentDocumentReader } from "@/components/doc-pack/assignment-document-reader";
 import { AssignmentQuizPane } from "@/components/doc-pack/assignment-quiz-pane";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/hooks/queries/pack-assignment/pack-assignment.mutations";
 import { useAssignmentDetail } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { useGradeAttempt } from "@/hooks/queries/quiz/quiz.mutations";
+import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { AssignmentDetail } from "@/schemas/packAssignment.schema";
 import type { QuizAttempt, QuizTemplate } from "@/schemas/quiz.schema";
@@ -64,24 +65,30 @@ function ReadingDocumentRow({
   assignmentId,
   doc,
   isOpen,
+  hasViewed,
   ackPending,
   onToggle,
+  onOpened,
   onAck,
 }: {
   assignmentId: string;
   doc: AssignmentDetail["documents"][number];
   isOpen: boolean;
+  hasViewed: boolean;
   ackPending: boolean;
   onToggle: () => void;
+  onOpened: (documentId: string) => void;
   onAck: () => void;
 }) {
+  const canAck = !doc.acknowledgedAt && hasViewed;
+
   return (
     <div className="space-y-2 rounded-xl border border-border p-3">
       <div className="flex items-center justify-between gap-2">
         <button type="button" className="min-w-0 flex-1 text-left" onClick={onToggle}>
           <p className="truncate font-medium">{doc.title}</p>
           <p className="text-xs text-muted-foreground">
-            {doc.fileType.toUpperCase()} · {isOpen ? "Hide" : "Open"}
+            {doc.fileType.toUpperCase()} · {isOpen ? "Hide" : "Open to read"}
           </p>
         </button>
         {doc.acknowledgedAt ? (
@@ -89,8 +96,15 @@ function ReadingDocumentRow({
             <CheckCircle2Icon className="size-3" /> Read
           </Badge>
         ) : (
-          <Button type="button" size="sm" variant="outline" disabled={ackPending} onClick={onAck}>
-            {ackPending ? <Loader2Icon className="size-4 animate-spin" /> : "Mark as read"}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={!canAck || ackPending}
+            onClick={onAck}
+          >
+            {ackPending && <Loader2Icon className="size-4 animate-spin" />}
+            {!ackPending && (hasViewed ? "Mark as read" : "Open first")}
           </Button>
         )}
       </div>
@@ -99,6 +113,7 @@ function ReadingDocumentRow({
           assignmentId={assignmentId}
           documentId={doc.id}
           title={doc.title}
+          onOpened={onOpened}
         />
       )}
     </div>
@@ -109,14 +124,19 @@ function ReadingCard({
   detail,
   allAcked,
   ackPending,
+  viewedIds,
+  onOpened,
   onAck,
 }: {
   detail: AssignmentDetail;
   allAcked: boolean;
   ackPending: boolean;
+  viewedIds: Set<string>;
+  onOpened: (documentId: string) => void;
   onAck: (documentId: string) => void;
 }) {
-  const [openDocumentId, setOpenDocumentId] = useState<string | null>(null);
+  const firstUnread = detail.documents.find((d) => !d.acknowledgedAt)?.id ?? null;
+  const [openDocumentId, setOpenDocumentId] = useState<string | null>(firstUnread);
   const ackedCount = detail.documents.filter((d) => d.acknowledgedAt).length;
 
   return (
@@ -130,6 +150,12 @@ function ReadingCard({
             {ackedCount}/{detail.documents.length} read
           </Badge>
         </CardTitle>
+        {!allAcked && (
+          <p className="text-sm font-normal text-muted-foreground">
+            Open each document (PDF opens in the viewer), then mark it as read. The quiz unlocks
+            only after every document is acknowledged.
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-3">
         {detail.documents.length === 0 && (
@@ -143,8 +169,10 @@ function ReadingCard({
               assignmentId={detail.id}
               doc={doc}
               isOpen={isOpen}
+              hasViewed={viewedIds.has(doc.id) || Boolean(doc.acknowledgedAt)}
               ackPending={ackPending}
               onToggle={() => setOpenDocumentId(isOpen ? null : doc.id)}
+              onOpened={onOpened}
               onAck={() => onAck(doc.id)}
             />
           );
@@ -166,6 +194,16 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
   } | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<QuizAttempt | null>(null);
+  const [viewedIds, setViewedIds] = useState<Set<string>>(() => new Set());
+
+  const markViewed = useCallback((documentId: string) => {
+    setViewedIds((prev) => {
+      if (prev.has(documentId)) return prev;
+      const next = new Set(prev);
+      next.add(documentId);
+      return next;
+    });
+  }, []);
 
   if (isLoading) {
     return (
@@ -187,12 +225,26 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
   const allAcked = detail.quizUnlocked;
   const questions = activeQuiz?.template.questions ?? [];
   const allAnswered = questions.length > 0 && questions.every((q) => answers[q.id]);
+  // Read-first: hide the quiz pane until every document is acknowledged (unless already in a quiz / passed).
+  const showQuizPane =
+    allAcked || Boolean(activeQuiz) || detail.status === "passed" || detail.status === "failed";
 
   function handleStartQuiz() {
     setResult(null);
     setAnswers({});
     startQuiz.mutate(undefined, {
-      onSuccess: (data) => setActiveQuiz(data),
+      onSuccess: (data) => {
+        setActiveQuiz(data);
+        notify.info("Quiz started", {
+          description: "Open-book — the reading pane stays available.",
+          id: `quiz-start:${assignmentId}`,
+        });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Could not start the quiz", {
+          id: `quiz-start-error:${assignmentId}`,
+        });
+      },
     });
   }
 
@@ -204,6 +256,20 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
         onSuccess: (graded) => {
           setResult(graded);
           setActiveQuiz(null);
+          if (graded.passed) {
+            notify.success("Quiz passed", {
+              description: "You are clear on this pack.",
+              id: `quiz-grade:${assignmentId}`,
+            });
+          } else {
+            notify.warning("Not quite — retake when ready", {
+              description: "You need 100% to pass. Unlimited retakes.",
+              id: `quiz-grade:${assignmentId}`,
+            });
+          }
+        },
+        onError: (err) => {
+          notify.apiError(err, "Grading failed", { id: `quiz-grade-error:${assignmentId}` });
         },
       },
     );
@@ -219,31 +285,52 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
         />
       )}
 
-      <div className={cn("grid gap-6", activeQuiz && "lg:grid-cols-2")}>
+      <div className={cn("grid gap-6", showQuizPane && activeQuiz && "lg:grid-cols-2")}>
         <ReadingCard
           detail={detail}
           allAcked={allAcked}
           ackPending={ack.isPending}
-          onAck={(documentId) => ack.mutate(documentId)}
+          viewedIds={viewedIds}
+          onOpened={markViewed}
+          onAck={(documentId) =>
+            ack.mutate(documentId, {
+              onSuccess: () => {
+                notify.success("Marked as read", { id: `ack:${documentId}` });
+              },
+              onError: (err) => {
+                notify.apiError(err, "Could not mark as read", { id: `ack-error:${documentId}` });
+              },
+            })
+          }
         />
 
-        <AssignmentQuizPane
-          status={detail.status}
-          allAcked={allAcked}
-          activeQuiz={activeQuiz}
-          answers={answers}
-          startPending={startQuiz.isPending}
-          startError={startQuiz.error}
-          startIsError={startQuiz.isError}
-          gradePending={grade.isPending}
-          gradeError={grade.error}
-          gradeIsError={grade.isError}
-          onStart={handleStartQuiz}
-          onAnswer={(questionId, option) =>
-            setAnswers((prev) => ({ ...prev, [questionId]: option }))
-          }
-          onSubmit={handleSubmit}
-        />
+        {showQuizPane ? (
+          <AssignmentQuizPane
+            status={detail.status}
+            allAcked={allAcked}
+            activeQuiz={activeQuiz}
+            answers={answers}
+            startPending={startQuiz.isPending}
+            gradePending={grade.isPending}
+            onStart={handleStartQuiz}
+            onAnswer={(questionId, option) =>
+              setAnswers((prev) => ({ ...prev, [questionId]: option }))
+            }
+            onSubmit={handleSubmit}
+          />
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Quiz</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Finish reading every document above. The quiz appears only after you’ve opened and
+                marked each one as read.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

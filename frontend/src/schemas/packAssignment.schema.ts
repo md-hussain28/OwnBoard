@@ -85,12 +85,14 @@ export const assignmentDocumentContentSchema = z
     title: z.string(),
     file_type: z.string(),
     content: z.string(),
+    file_url: z.string().nullable().optional(),
   })
   .transform((d) => ({
     documentId: d.document_id,
     title: d.title,
     fileType: d.file_type,
     content: d.content,
+    fileUrl: d.file_url ?? null,
   }));
 
 export const startQuizResponseSchema = z.object({
@@ -98,10 +100,36 @@ export const startQuizResponseSchema = z.object({
   template: quizTemplateSchema,
 });
 
+export const assignmentOutcomeSchema = z
+  .object({
+    id: z.string(),
+    doc_pack_id: z.string(),
+    doc_pack_name: z.string(),
+    employee_id: z.string(),
+    employee_name: z.string(),
+    status: packAssignmentStatusSchema,
+    assigned_at: z.string(),
+    completed_at: z.string().nullable(),
+    updated_at: z.string(),
+  })
+  .transform((o) => ({
+    id: o.id,
+    docPackId: o.doc_pack_id,
+    docPackName: o.doc_pack_name,
+    employeeId: o.employee_id,
+    employeeName: o.employee_name,
+    status: o.status,
+    assignedAt: o.assigned_at,
+    completedAt: o.completed_at,
+    updatedAt: o.updated_at,
+  }));
+
 export const packAssignmentListSchema = z.array(packAssignmentSchema);
+export const assignmentOutcomeListSchema = z.array(assignmentOutcomeSchema);
 
 export type PackAssignmentStatus = z.infer<typeof packAssignmentStatusSchema>;
 export type PackAssignment = z.infer<typeof packAssignmentSchema>;
 export type AssignmentDetail = z.infer<typeof assignmentDetailSchema>;
 export type AssignmentDocumentContent = z.infer<typeof assignmentDocumentContentSchema>;
 export type StartQuizResponse = z.infer<typeof startQuizResponseSchema>;
+export type AssignmentOutcome = z.infer<typeof assignmentOutcomeSchema>;

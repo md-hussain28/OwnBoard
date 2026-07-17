@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCreateTenant, useDeleteTenant } from "@/hooks/queries/admin/admin.mutations";
 import { useTenants } from "@/hooks/queries/admin/admin.queries";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import { notify } from "@/lib/toast";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
@@ -18,11 +19,9 @@ export function TenantAdminPanel() {
   const [name, setName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [slug, setSlug] = useState("");
-  const [formMessage, setFormMessage] = useState<string | null>(null);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setFormMessage(null);
     if (!name.trim() || !adminEmail.trim()) return;
 
     createTenant.mutate(
@@ -37,15 +36,19 @@ export function TenantAdminPanel() {
           setAdminEmail("");
           setSlug("");
           if (result.invitationError) {
-            setFormMessage(
-              `Tenant "${result.name}" created, but invite failed: ${result.invitationError}`,
-            );
+            notify.warning(`Tenant "${result.name}" created`, {
+              description: `Invite failed: ${result.invitationError}`,
+              id: `tenant-warn:${result.id}`,
+            });
           } else {
-            setFormMessage(`Tenant "${result.name}" created. Invite sent to ${result.adminEmail}.`);
+            notify.success(`Tenant "${result.name}" created`, {
+              description: `Invite sent to ${result.adminEmail}.`,
+              id: `tenant:${result.id}`,
+            });
           }
         },
         onError: (err) => {
-          setFormMessage(getApiErrorMessage(err, "Failed to create tenant"));
+          notify.apiError(err, "Failed to create tenant", { id: "tenant-create-error" });
         },
       },
     );
@@ -54,8 +57,11 @@ export function TenantAdminPanel() {
   function handleDelete(id: string, tenantName: string) {
     if (!window.confirm(`Delete tenant "${tenantName}"? This cannot be undone.`)) return;
     deleteTenant.mutate(id, {
+      onSuccess: () => {
+        notify.success("Tenant deleted", { description: tenantName, id: `tenant-del:${id}` });
+      },
       onError: (err) => {
-        setFormMessage(getApiErrorMessage(err, "Failed to delete tenant"));
+        notify.apiError(err, "Failed to delete tenant", { id: `tenant-del-error:${id}` });
       },
     });
   }
@@ -114,7 +120,6 @@ export function TenantAdminPanel() {
               </Button>
             </div>
           </form>
-          {formMessage && <p className="mt-3 text-sm text-muted-foreground">{formMessage}</p>}
         </CardContent>
       </Card>
 

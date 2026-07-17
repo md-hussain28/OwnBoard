@@ -6,6 +6,7 @@ import {
   NetworkIcon,
   SearchCodeIcon,
 } from "lucide-react";
+import { APP_HOME, appPath } from "@/lib/routes";
 import type { AppRole } from "@/schemas/employee.schema";
 
 export type NavItem = {
@@ -16,7 +17,7 @@ export type NavItem = {
   icon: LucideIcon;
   /** Backend still stubbed — show Incoming badge, keep route clickable for demos. */
   incoming?: boolean;
-  /** Match nested routes (e.g. /onboarding/policy-quiz). */
+  /** Match nested routes (e.g. /app/onboarding/policy-quiz). */
   matchPrefix?: boolean;
   /**
    * OwnBoard app_role gate. Omit = visible to every org member.
@@ -35,14 +36,14 @@ export const WORKSPACE_NAV: NavGroup = {
   label: "Evidence desk",
   items: [
     {
-      href: "/",
+      href: APP_HOME,
       label: "Codebases",
       description: "Connected repos",
       icon: FolderGit2Icon,
       roles: ["admin"],
     },
     {
-      href: "/doc-packs",
+      href: appPath("doc-packs"),
       label: "Quizzes",
       description: "Assign & track",
       icon: BookOpenCheckIcon,
@@ -50,7 +51,7 @@ export const WORKSPACE_NAV: NavGroup = {
       roles: ["admin"],
     },
     {
-      href: "/onboarding/packs",
+      href: appPath("onboarding", "packs"),
       label: "My quizzes",
       description: "Assigned reading",
       icon: ClipboardCheckIcon,
@@ -58,7 +59,7 @@ export const WORKSPACE_NAV: NavGroup = {
       roles: ["member"],
     },
     {
-      href: "/onboarding",
+      href: appPath("onboarding"),
       label: "Readiness",
       description: "Policy & code quizzes",
       icon: ClipboardCheckIcon,
@@ -67,7 +68,7 @@ export const WORKSPACE_NAV: NavGroup = {
       roles: ["admin"],
     },
     {
-      href: "/chat",
+      href: appPath("chat"),
       label: "Archaeology",
       description: "Ask why the code is",
       icon: SearchCodeIcon,
@@ -75,7 +76,7 @@ export const WORKSPACE_NAV: NavGroup = {
       roles: ["admin"],
     },
     {
-      href: "/dashboard",
+      href: appPath("dashboard"),
       label: "Skill map",
       description: "Who knows what",
       icon: NetworkIcon,
@@ -86,10 +87,10 @@ export const WORKSPACE_NAV: NavGroup = {
 };
 
 /**
- * Platform tenant admin — `/admin`, platform superadmins only.
+ * Platform tenant admin — `/app/admin`, platform superadmins only.
  * Reached by URL (not org settings); create-org is hidden in the switcher.
  */
-export const PLATFORM_ADMIN_HREF = "/admin";
+export const PLATFORM_ADMIN_HREF = appPath("admin");
 
 export function navItemsForRole(role: AppRole | null | undefined): NavItem[] {
   return WORKSPACE_NAV.items.filter((item) => {
@@ -100,8 +101,8 @@ export function navItemsForRole(role: AppRole | null | undefined): NavItem[] {
 }
 
 export function isNavItemActive(pathname: string, item: NavItem): boolean {
-  if (item.href === "/") {
-    return pathname === "/";
+  if (item.href === APP_HOME) {
+    return pathname === APP_HOME || pathname === `${APP_HOME}/`;
   }
   if (item.matchPrefix) {
     return pathname === item.href || pathname.startsWith(`${item.href}/`);

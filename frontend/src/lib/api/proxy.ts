@@ -31,6 +31,11 @@ export async function proxyRequest(
         ...(options.headers ?? {}),
       },
     });
+    // Backend DELETEs return 204 with an empty body. NextResponse.json(undefined/"" )
+    // throws or invents a body, which surfaces as a 500 to the browser.
+    if (response.status === 204 || response.data === "" || response.data == null) {
+      return new NextResponse(null, { status: response.status });
+    }
     return NextResponse.json(response.data, { status: response.status });
   } catch (error) {
     if (isAxiosError(error)) {

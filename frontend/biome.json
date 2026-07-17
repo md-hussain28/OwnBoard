@@ -53,18 +53,66 @@
         "useFocusableInteractive": "off",
         "noStaticElementInteractions": "off"
       },
-      "suspicious": {
-        "noArrayIndexKey": "off",
-        "noExplicitAny": "off",
-        "noDocumentCookie": "off"
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": {
+            "maxAllowedComplexity": 15
+          }
+        },
+        "noExcessiveLinesPerFunction": {
+          "level": "warn",
+          "options": {
+            "maxLines": 80,
+            "skipBlankLines": true
+          }
+        },
+        "noUselessStringConcat": "warn",
+        "noUselessTernary": "warn"
       },
       "correctness": {
         "useExhaustiveDependencies": "warn",
+        "useHookAtTopLevel": "error",
         "noUnusedImports": "warn",
         "noUnusedVariables": "warn"
       },
+      "performance": {
+        "noAccumulatingSpread": "warn",
+        "noBarrelFile": "warn"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "error"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noExplicitAny": "off",
+        "noDocumentCookie": "off",
+        "noConsole": "warn",
+        "noDebugger": "error"
+      },
       "style": {
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "noExcessiveLinesPerFile": {
+          "level": "error",
+          "options": {
+            "maxLines": 500,
+            "skipBlankLines": true
+          }
+        },
+        "noDefaultExport": "warn",
+        "noNestedTernary": "warn",
+        "useCollapsedElseIf": "warn",
+        "useFilenamingConvention": {
+          "level": "warn",
+          "options": {
+            "strictCase": true,
+            "requireAscii": true,
+            "filenameCases": ["kebab-case", "camelCase"]
+          }
+        },
+        "useSelfClosingElements": "warn",
+        "useTemplate": "warn",
+        "useObjectSpread": "warn"
       }
     }
   },
@@ -87,7 +135,37 @@
             "noStaticElementInteractions": "off"
           },
           "complexity": {
-            "noImportantStyles": "off"
+            "noImportantStyles": "off",
+            "noExcessiveLinesPerFunction": "off",
+            "noExcessiveCognitiveComplexity": "off"
+          },
+          "style": {
+            "noExcessiveLinesPerFile": "off",
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "**/page.tsx",
+        "**/layout.tsx",
+        "**/loading.tsx",
+        "**/error.tsx",
+        "**/not-found.tsx",
+        "**/template.tsx",
+        "**/default.tsx",
+        "**/middleware.ts",
+        "**/opengraph-image.tsx",
+        "**/icon.tsx",
+        "**/*.config.ts",
+        "**/*.config.mjs",
+        "**/*.config.js"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
           }
         }
       }
@@ -97,7 +175,16 @@
       "linter": {
         "rules": {
           "suspicious": {
-            "noExplicitAny": "off"
+            "noExplicitAny": "off",
+            "noConsole": "off"
+          },
+          "style": {
+            "noDefaultExport": "off",
+            "noExcessiveLinesPerFile": "off"
+          },
+          "complexity": {
+            "noExcessiveLinesPerFunction": "off",
+            "noExcessiveCognitiveComplexity": "off"
           }
         }
       }

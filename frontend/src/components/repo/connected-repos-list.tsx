@@ -11,6 +11,7 @@ import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Input } from "@/ui/input";
 import { Skeleton } from "@/ui/skeleton";
+import { Spinner } from "@/ui/spinner";
 
 export function ConnectedReposList() {
   const { isAdmin } = useAppRole();
@@ -51,6 +52,7 @@ export function ConnectedReposList() {
             <Input placeholder="Repo name" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Repo URL" value={url} onChange={(e) => setUrl(e.target.value)} />
             <Button type="submit" disabled={createRepo.isPending}>
+              {createRepo.isPending && <Spinner />}
               {createRepo.isPending ? "Adding..." : "Add repo"}
             </Button>
           </form>

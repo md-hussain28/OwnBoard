@@ -166,7 +166,11 @@ export function DocPackDocuments({
                     disabled={deleteDocument.isPending}
                     onClick={() => handleDelete(doc)}
                   >
-                    <Trash2Icon className="size-4 text-muted-foreground" />
+                    {deleteDocument.isPending && deleteDocument.variables === doc.id ? (
+                      <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Trash2Icon className="size-4 text-muted-foreground" />
+                    )}
                   </Button>
                 </div>
               </li>

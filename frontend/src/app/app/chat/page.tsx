@@ -7,9 +7,11 @@ import { IncomingBadge } from "@/components/layout/incoming-feature";
 import { DEMO_REPO_ID } from "@/constants/app";
 import { useSendChatMessage } from "@/hooks/queries/chat/chat.mutations";
 import { isNotImplementedError } from "@/lib/api/errors";
+import { ID_PREFIXES, typedId } from "@/lib/ids";
 import type { ChatMessage as ChatMessageType, ExpertRouting } from "@/schemas/chat.schema";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
+import { Spinner } from "@/ui/spinner";
 
 const WELCOME_MESSAGE: ChatMessageType = {
   id: "welcome",
@@ -30,7 +32,7 @@ export default function ChatPage() {
     if (!trimmed) return;
 
     const userMessage: ChatMessageType = {
-      id: crypto.randomUUID(),
+      id: typedId(ID_PREFIXES.message),
       role: "user",
       content: trimmed,
     };
@@ -49,7 +51,7 @@ export default function ChatPage() {
           setMessages((prev) => [
             ...prev,
             {
-              id: crypto.randomUUID(),
+              id: typedId(ID_PREFIXES.message),
               role: "assistant",
               content: isNotImplementedError(error)
                 ? "Archaeology Q&A is still being built. Once it's wired up, answers will appear here with a commit citation."
@@ -77,6 +79,12 @@ export default function ChatPage() {
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message} />
         ))}
+        {sendMessage.isPending && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Spinner className="text-brand-teal" />
+            Searching commits for a cited answer…
+          </div>
+        )}
       </div>
 
       {expertRouting && <ExpertIntroCard routing={expertRouting} />}
@@ -88,6 +96,7 @@ export default function ChatPage() {
           placeholder="Why is this retry loop here?"
         />
         <Button type="submit" disabled={sendMessage.isPending}>
+          {sendMessage.isPending && <Spinner />}
           {sendMessage.isPending ? "Asking..." : "Ask"}
         </Button>
       </form>

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import { ID_PREFIXES, typedId } from "@/lib/ids";
 import { docPackService } from "@/services/doc-pack.service";
 
 // Mirror the backend limits (backend/onboard/config/constants.py) so bad batches fail
@@ -82,7 +83,7 @@ export const useUploadStore = create<UploadStore>()((set, get) => ({
   },
 
   startUpload: ({ packId, packName, files, onUploaded }) => {
-    const jobId = crypto.randomUUID();
+    const jobId = typedId(ID_PREFIXES.uploadJob);
     set((state) => ({
       minimized: false,
       jobs: [

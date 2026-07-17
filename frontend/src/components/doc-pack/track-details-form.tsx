@@ -8,6 +8,7 @@ import { notify } from "@/lib/toast";
 import type { DocPack } from "@/schemas/docPack.schema";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
+import { Spinner } from "@/ui/spinner";
 import { Textarea } from "@/ui/textarea";
 
 /** Parse a required non-negative count field, defaulting blanks/garbage to 0. */
@@ -174,6 +175,7 @@ export function TrackDetailsForm({
 
       <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
         <Button type="submit" disabled={update.isPending || !name.trim()}>
+          {update.isPending && <Spinner />}
           {update.isPending ? "Saving…" : onSaved ? "Save & continue" : "Save changes"}
         </Button>
       </div>

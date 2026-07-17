@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { EmployeeInvitation } from "@/schemas/employee.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
+import { Spinner } from "@/ui/spinner";
 
 function inviteSubtitle(invitation: EmployeeInvitation): string {
   const domain = invitation.domainName?.trim() || null;
@@ -88,6 +89,7 @@ export function PendingInvitationRow({ invitation }: { invitation: EmployeeInvit
           disabled={revoke.isPending}
           className="text-muted-foreground hover:text-destructive"
         >
+          {revoke.isPending && <Spinner className="size-3.5" />}
           Revoke
         </Button>
       </div>

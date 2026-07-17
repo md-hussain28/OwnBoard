@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusIcon, Trash2Icon } from "lucide-react";
+import { Loader2Icon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import {
   useCreateQuizDomain,
@@ -159,7 +159,11 @@ export function QuizDomainsField({ value, onChange }: QuizDomainsFieldProps) {
           disabled={createDomain.isPending || !name.trim()}
           onClick={handleCreate}
         >
-          <PlusIcon className="size-4" />
+          {createDomain.isPending ? (
+            <Loader2Icon className="size-4 animate-spin" />
+          ) : (
+            <PlusIcon className="size-4" />
+          )}
           {createDomain.isPending ? "Adding…" : "Add domain"}
         </Button>
       </div>

@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  GaugeIcon,
-  PencilIcon,
-  PlusIcon,
-  SearchIcon,
-  UserPlusIcon,
-} from "lucide-react";
+import { GaugeIcon, PencilIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { FilterSelect } from "@/components/shared/filter-select";

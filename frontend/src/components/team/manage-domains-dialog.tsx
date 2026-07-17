@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/ui/dialog";
 import { Input } from "@/ui/input";
+import { Spinner } from "@/ui/spinner";
 
 /** Inline rename controls for a domain row: input + save/cancel buttons. */
 function DomainNameEditor({
@@ -67,7 +68,7 @@ function DomainNameEditor({
         disabled={pending || !draft.trim()}
         onClick={onSave}
       >
-        <CheckIcon className="size-3.5" />
+        {pending ? <Spinner className="size-3.5" /> : <CheckIcon className="size-3.5" />}
       </Button>
       <Button
         type="button"
@@ -178,7 +179,11 @@ function DomainRow({ domain }: { domain: OrgDomain }) {
               disabled={deleteDomain.isPending}
               onClick={handleDelete}
             >
-              <Trash2Icon className="size-3.5" />
+              {deleteDomain.isPending ? (
+                <Spinner className="size-3.5" />
+              ) : (
+                <Trash2Icon className="size-3.5" />
+              )}
             </Button>
           )}
         </>
@@ -263,7 +268,7 @@ export function ManageDomainsDialog({
             size="sm"
             disabled={createDomain.isPending || !name.trim()}
           >
-            <PlusIcon className="size-4" />
+            {createDomain.isPending ? <Spinner /> : <PlusIcon className="size-4" />}
             {createDomain.isPending ? "Adding…" : "Add"}
           </Button>
         </form>

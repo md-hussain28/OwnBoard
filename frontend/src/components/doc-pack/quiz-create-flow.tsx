@@ -9,6 +9,7 @@ import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
+import { Spinner } from "@/ui/spinner";
 import { Textarea } from "@/ui/textarea";
 
 const STEPS = [
@@ -136,6 +137,7 @@ export function QuizCreateFlow() {
             Next: upload documents, then generate the quiz.
           </p>
           <Button type="submit" disabled={createPack.isPending || !name.trim()}>
+            {createPack.isPending && <Spinner />}
             {createPack.isPending ? "Creating…" : "Continue to documents"}
           </Button>
         </div>

@@ -10,6 +10,7 @@ import {
   useSaveQuiz,
 } from "@/hooks/queries/doc-pack/doc-pack.mutations";
 import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { ID_PREFIXES, typedId } from "@/lib/ids";
 import { notify } from "@/lib/toast";
 import type { AdminQuizTemplate, QuizQuestionCurationItem } from "@/schemas/quiz.schema";
 import { Badge } from "@/ui/badge";
@@ -35,7 +36,7 @@ function toEditable(template: AdminQuizTemplate): EditableQuestion[] {
 
 function newBlankQuestion(): EditableQuestion {
   return {
-    id: `new_${crypto.randomUUID()}`,
+    id: typedId(ID_PREFIXES.draft),
     questionText: "",
     options: ["", "", "", ""],
     format: "mcq_4",

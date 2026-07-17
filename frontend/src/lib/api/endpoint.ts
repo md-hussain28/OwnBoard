@@ -14,6 +14,14 @@ export const API_ENDPOINTS = {
   domains: "/domains",
   domain: (id: string) => `/domains/${id}`,
 
+  // Projects (Projects PRD §1)
+  projects: "/projects",
+  myProjects: "/projects/mine",
+  project: (id: string) => `/projects/${id}`,
+  projectMembers: (id: string) => `/projects/${id}/members`,
+  projectMember: (id: string, employeeId: string) => `/projects/${id}/members/${employeeId}`,
+  projectTracks: (id: string) => `/projects/${id}/tracks`,
+
   quizDomains: "/quiz-domains",
   quizDomain: (id: string) => `/quiz-domains/${id}`,
 

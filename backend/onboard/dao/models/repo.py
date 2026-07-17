@@ -22,3 +22,5 @@ class Repo(AuditBase):
     )
     commit_records: Mapped[list["CommitRecord"]] = relationship(back_populates="repo", cascade="all, delete-orphan")
     code_chunks: Mapped[list["CodeChunk"]] = relationship(back_populates="repo", cascade="all, delete-orphan")
+    # Projects linking to this repo; repo delete sets project.repo_id NULL (SET NULL), it does not delete them.
+    projects: Mapped[list["Project"]] = relationship(back_populates="repo")

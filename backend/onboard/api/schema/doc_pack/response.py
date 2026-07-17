@@ -55,6 +55,7 @@ class DocPackResponse(BaseModel):
     created_by: str | None
     created_at: datetime
     updated_at: datetime
+    project_id: str | None = None
     domain_id: str | None = None
     domain_name: str | None = None
     assign_to_all: bool = False
@@ -78,6 +79,7 @@ class DocPackListItemResponse(BaseModel):
     created_by: str | None
     created_at: datetime
     updated_at: datetime
+    project_id: str | None = None
     domain_id: str | None = None
     domain_name: str | None = None
     assign_to_all: bool = False

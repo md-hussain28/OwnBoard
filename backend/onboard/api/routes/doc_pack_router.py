@@ -49,6 +49,7 @@ def _pack_list_item(pack: DocPack) -> DocPackListItemResponse:
     return DocPackListItemResponse(
         id=pack.id,
         org_id=pack.org_id,
+        project_id=pack.project_id,
         name=pack.name,
         description=pack.description,
         status=pack.status,
@@ -71,6 +72,7 @@ def _pack_response(pack: DocPack) -> DocPackResponse:
     return DocPackResponse(
         id=pack.id,
         org_id=pack.org_id,
+        project_id=pack.project_id,
         name=pack.name,
         description=pack.description,
         status=pack.status,
@@ -109,6 +111,7 @@ async def create_doc_pack(
         sequence_order=payload.sequence_order,
         estimated_minutes=payload.estimated_minutes,
         due_offset_days=payload.due_offset_days,
+        project_id=payload.project_id,
     )
     return _pack_response(pack)
 

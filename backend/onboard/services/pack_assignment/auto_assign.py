@@ -49,7 +49,7 @@ async def assign_pack_to_audience(session: AsyncSession, org_id: str, pack_id: s
         return 0  # Manual-only track.
 
     employees = await employee_dao.list_for_org(org_id, limit=1000)
-    if is_project_track:
+    if pack.project_id is not None:
         # Project tracks target the project's members, not a domain/everyone audience.
         member_ids = await ProjectMemberDAO(session).list_employee_ids_for_project(pack.project_id)
         targets = [e for e in employees if e.id in member_ids]

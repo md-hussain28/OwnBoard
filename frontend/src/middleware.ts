@@ -1,5 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 const isPublicRoute = createRouteMatcher(["/", "/sign-in(.*)", "/sign-up(.*)"]);
 const isOrgSelectionRoute = createRouteMatcher(["/select-organization(.*)"]);
@@ -17,9 +17,8 @@ const LEGACY_APP_PREFIXES = [
   "/settings",
 ] as const;
 
-export default clerkMiddleware(async (auth, request) => {
+function redirectLegacyAppPath(request: NextRequest): NextResponse | null {
   const { pathname } = request.nextUrl;
-
   for (const prefix of LEGACY_APP_PREFIXES) {
     if (pathname === prefix || pathname.startsWith(`${prefix}/`)) {
       const url = request.nextUrl.clone();
@@ -27,16 +26,32 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(url);
     }
   }
+  return null;
+}
+
+function redirectIfMissingOrg(
+  request: NextRequest,
+  orgId: string | null | undefined,
+): NextResponse | null {
+  if (orgId || isOrgSelectionRoute(request)) {
+    return null;
+  }
+  return NextResponse.redirect(new URL("/select-organization", request.url));
+}
+
+export default clerkMiddleware(async (auth, request) => {
+  const legacy = redirectLegacyAppPath(request);
+  if (legacy) {
+    return legacy;
+  }
 
   if (isPublicRoute(request)) {
     return;
   }
 
-  const isApiRoute = pathname.startsWith("/api");
-
   // API callers expect JSON. `auth.protect()` rewrites unauthenticated API hits to the HTML
   // 404 page (x-clerk-auth-reason: protect-rewrite), which looks like a missing route.
-  if (isApiRoute) {
+  if (request.nextUrl.pathname.startsWith("/api")) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -54,10 +69,7 @@ export default clerkMiddleware(async (auth, request) => {
     if (isPlatformAdminRoute(request)) {
       return;
     }
-    if (!orgId && !isOrgSelectionRoute(request)) {
-      return NextResponse.redirect(new URL("/select-organization", request.url));
-    }
-    return;
+    return redirectIfMissingOrg(request, orgId) ?? undefined;
   }
 
   const { orgId } = await auth.protect();
@@ -69,9 +81,7 @@ export default clerkMiddleware(async (auth, request) => {
 
   // Every domain in this app (policies, quizzes, assignments) is scoped to a Clerk organization, so a signed-in
   // user with no active org can't get any further than picking/creating one.
-  if (!orgId && !isOrgSelectionRoute(request)) {
-    return NextResponse.redirect(new URL("/select-organization", request.url));
-  }
+  return redirectIfMissingOrg(request, orgId) ?? undefined;
 });
 
 export const config = {

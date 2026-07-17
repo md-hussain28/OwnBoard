@@ -13,6 +13,18 @@ const MOCK_ORG = {
   id: "org_2abcDEFghiJKLmno",
   name: "Acme Robotics",
   imageUrl: null as string | null,
+  update: async (params: { name?: string }) => {
+    if (params.name) MOCK_ORG.name = params.name;
+    return MOCK_ORG;
+  },
+  setLogo: async (params: { file: Blob | File | string | null }) => {
+    if (params.file instanceof Blob) {
+      MOCK_ORG.imageUrl = URL.createObjectURL(params.file);
+    } else if (params.file === null) {
+      MOCK_ORG.imageUrl = null;
+    }
+    return MOCK_ORG;
+  },
 };
 
 export function useAuth() {

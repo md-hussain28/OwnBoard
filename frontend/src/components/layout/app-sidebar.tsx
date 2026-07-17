@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useOrganization } from "@clerk/nextjs";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +26,19 @@ import { SidebarAccountFooter } from "@/components/layout/sidebar-account-footer
 import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { Skeleton } from "@/ui/skeleton";
 import { cn } from "@/lib/utils";
+
+/** Clerk's auto-generated default logos encode `"type":"default"` in the path. */
+function isClerkDefaultLogo(url?: string | null) {
+  if (!url) return true;
+  return url.includes("ZGVmYXVsdA"); // base64url fragment of `"type":"default"`
+}
+
+function orgInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "Ob";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+}
 
 function NavItems({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
@@ -100,7 +114,12 @@ function NavItems({ items }: { items: NavItem[] }) {
 
 export function AppSidebar() {
   const { appRole, isLoading } = useAppRole();
+  const { organization, isLoaded: orgLoaded } = useOrganization();
   const items = navItemsForRole(appRole);
+
+  const orgName = organization?.name?.trim() || "OwnBoard";
+  const showLogo =
+    !!organization?.imageUrl && !isClerkDefaultLogo(organization.imageUrl);
 
   return (
     <Sidebar collapsible="icon" variant="sidebar" className="font-sans">
@@ -110,15 +129,24 @@ export function AppSidebar() {
             <SidebarMenuButton
               asChild
               size="lg"
-              tooltip="OwnBoard"
+              tooltip={orgName}
               className="h-8 gap-2.5 px-1 hover:bg-sidebar-accent group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
             >
               <Link href={appRole === "member" ? "/onboarding/packs" : "/"}>
-                <span className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-brand-gradient text-[0.6875rem] font-bold leading-none tracking-tight text-white shadow-button">
-                  Ob
+                <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient text-[0.6875rem] font-bold leading-none tracking-tight text-white shadow-button">
+                  {showLogo ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- custom org logos only
+                    <img
+                      src={organization!.imageUrl}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    orgLoaded ? orgInitials(orgName) : "Ob"
+                  )}
                 </span>
                 <span className="truncate text-[0.9375rem] font-semibold leading-none tracking-tight text-sidebar-foreground group-data-[collapsible=icon]:hidden">
-                  OwnBoard
+                  {orgName}
                 </span>
               </Link>
             </SidebarMenuButton>

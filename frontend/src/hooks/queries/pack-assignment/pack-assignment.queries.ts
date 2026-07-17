@@ -8,6 +8,7 @@ export const packAssignmentKeys = {
   forPack: (packId: string) => [...packAssignmentKeys.all, "pack", packId] as const,
   forEmployee: (employeeId: string) => [...packAssignmentKeys.all, "employee", employeeId] as const,
   outcomes: () => [...packAssignmentKeys.all, "outcomes"] as const,
+  cohort: () => [...packAssignmentKeys.all, "cohort"] as const,
   detail: (id: string) => [...packAssignmentKeys.all, "detail", id] as const,
   documentContent: (id: string, documentId: string) =>
     [...packAssignmentKeys.all, "detail", id, "document", documentId] as const,
@@ -40,6 +41,18 @@ export function useAssignmentOutcomes(options?: {
   return useQuery({
     queryKey: packAssignmentKeys.outcomes(),
     queryFn: () => packAssignmentService.listOutcomes(),
+    enabled: options?.enabled ?? true,
+    refetchInterval: options?.refetchInterval,
+  });
+}
+
+export function useCohortDashboard(options?: {
+  enabled?: boolean;
+  refetchInterval?: number | false;
+}) {
+  return useQuery({
+    queryKey: packAssignmentKeys.cohort(),
+    queryFn: () => packAssignmentService.getCohort(),
     enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval,
   });

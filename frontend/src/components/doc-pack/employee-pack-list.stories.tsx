@@ -11,7 +11,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Pick a "viewing as" employee to load their assignments (global handlers). */
+/** The signed-in member's own tracks, resolved from the Clerk session (global handlers). */
 export const Interactive: Story = {};
 
 export const AllPassed: Story = {
@@ -32,6 +32,7 @@ export const AllPassed: Story = {
               quiz_template_id: "qt_a1b2c3d4e5f6g7h8i9",
               completed_at: "2026-07-07T16:45:00Z",
               acks: [],
+              doc_pack_name: "Company Policy",
             },
           ]),
         ),
@@ -40,10 +41,14 @@ export const AllPassed: Story = {
   },
 };
 
-export const NoEmployees: Story = {
+export const Empty: Story = {
   parameters: {
     msw: {
-      handlers: [...docPackHandlers, http.get("/api/employees", () => HttpResponse.json([]))],
+      handlers: [
+        ...employeeHandlers.filter((h) => !h.info.path.toString().includes("assignments")),
+        ...docPackHandlers,
+        http.get("/api/employees/:employeeId/assignments", () => HttpResponse.json([])),
+      ],
     },
   },
 };

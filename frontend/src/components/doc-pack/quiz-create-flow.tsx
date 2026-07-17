@@ -3,20 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
-import {
-  useCreateQuizDomain,
-  useQuizDomains,
-} from "@/hooks/queries/quiz-domain/quiz-domain.queries";
+import { QuizDomainsField } from "@/components/doc-pack/quiz-domains-field";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Textarea } from "@/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/ui/select";
 import { cn } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/api/errors";
 
@@ -26,42 +16,12 @@ const STEPS = [
   { id: 3, label: "Quiz" },
 ] as const;
 
-const NONE_DOMAIN = "__none__";
-const ADD_DOMAIN = "__add__";
-
 export function QuizCreateFlow() {
   const router = useRouter();
   const createPack = useCreateDocPack();
-  const domainsQuery = useQuizDomains();
-  const createDomain = useCreateQuizDomain();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [domainId, setDomainId] = useState<string>(NONE_DOMAIN);
-  const [addingDomain, setAddingDomain] = useState(false);
-  const [newDomainName, setNewDomainName] = useState("");
-
-  function handleDomainChange(value: string) {
-    if (value === ADD_DOMAIN) {
-      setAddingDomain(true);
-      return;
-    }
-    setDomainId(value);
-  }
-
-  function submitNewDomain() {
-    const trimmed = newDomainName.trim();
-    if (!trimmed) return;
-    createDomain.mutate(
-      { name: trimmed },
-      {
-        onSuccess: (domain) => {
-          setDomainId(domain.id);
-          setNewDomainName("");
-          setAddingDomain(false);
-        },
-      },
-    );
-  }
+  const [domainId, setDomainId] = useState<string | null>(null);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -70,7 +30,7 @@ export function QuizCreateFlow() {
       {
         name: name.trim(),
         description: description.trim() || undefined,
-        domain_id: domainId === NONE_DOMAIN ? null : domainId,
+        domain_id: domainId,
       },
       {
         onSuccess: (pack) => {
@@ -79,8 +39,6 @@ export function QuizCreateFlow() {
       },
     );
   }
-
-  const domains = domainsQuery.data ?? [];
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8">
@@ -141,62 +99,7 @@ export function QuizCreateFlow() {
           />
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="quiz-domain" className="text-sm font-medium">
-            Domain <span className="font-normal text-muted-foreground">(optional)</span>
-          </label>
-          <Select value={domainId} onValueChange={handleDomainChange}>
-            <SelectTrigger id="quiz-domain" className="w-full">
-              <SelectValue placeholder="Select a domain" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NONE_DOMAIN}>No domain</SelectItem>
-              {domains.map((domain) => (
-                <SelectItem key={domain.id} value={domain.id}>
-                  {domain.name}
-                </SelectItem>
-              ))}
-              <SelectItem value={ADD_DOMAIN}>Add domain…</SelectItem>
-            </SelectContent>
-          </Select>
-          {addingDomain && (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Input
-                value={newDomainName}
-                onChange={(e) => setNewDomainName(e.target.value)}
-                placeholder="e.g. Holiday"
-                aria-label="New domain name"
-                className="sm:flex-1"
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={createDomain.isPending || !newDomainName.trim()}
-                  onClick={submitNewDomain}
-                >
-                  {createDomain.isPending ? "Adding…" : "Add"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setAddingDomain(false);
-                    setNewDomainName("");
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-          {createDomain.isError && (
-            <p className="text-sm text-destructive">{getApiErrorMessage(createDomain.error)}</p>
-          )}
-        </div>
+        <QuizDomainsField value={domainId} onChange={setDomainId} />
 
         <div className="space-y-2">
           <label htmlFor="quiz-description" className="text-sm font-medium">

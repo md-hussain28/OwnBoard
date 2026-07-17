@@ -3,15 +3,11 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQueries } from "@tanstack/react-query";
-import { PencilIcon, PlusIcon, SearchIcon, Trash2Icon, UserPlusIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
 import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { packAssignmentKeys } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import {
-  useCreateQuizDomain,
-  useDeleteQuizDomain,
-  useQuizDomains,
-} from "@/hooks/queries/quiz-domain/quiz-domain.queries";
+import { useQuizDomains } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
 import { packAssignmentService } from "@/services/pack-assignment.service";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
@@ -27,7 +23,6 @@ import {
 import { cn } from "@/lib/utils";
 import type { DocPackListItem } from "@/schemas/docPack.schema";
 import type { PackAssignment, PackAssignmentStatus } from "@/schemas/packAssignment.schema";
-import type { QuizDomain } from "@/schemas/quiz-domain.schema";
 import { getApiErrorMessage } from "@/lib/api/errors";
 
 type PackStatus = DocPackListItem["status"];
@@ -126,86 +121,6 @@ function summarizeProgress(assignments: PackAssignment[]): string {
   return PROGRESS_ORDER.filter((s) => (counts.get(s) ?? 0) > 0)
     .map((s) => `${counts.get(s)} ${PROGRESS_SHORT[s]}`)
     .join(" · ");
-}
-
-function QuizDomainsManager({ domains }: { domains: QuizDomain[] }) {
-  const createDomain = useCreateQuizDomain();
-  const deleteDomain = useDeleteQuizDomain();
-  const [name, setName] = useState("");
-
-  function handleCreate(event: React.FormEvent) {
-    event.preventDefault();
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    createDomain.mutate(
-      { name: trimmed },
-      {
-        onSuccess: () => setName(""),
-      },
-    );
-  }
-
-  return (
-    <section
-      className="space-y-3 rounded-xl border border-border bg-card/40 px-4 py-3.5"
-      aria-labelledby="quiz-domains-heading"
-    >
-      <div className="space-y-0.5">
-        <h2 id="quiz-domains-heading" className="text-sm font-semibold">
-          Domains
-        </h2>
-        <p className="text-xs text-muted-foreground text-pretty">
-          Label quizzes by topic (Policy, Holiday, …). Built-ins stay; add custom ones anytime.
-        </p>
-      </div>
-
-      <ul className="flex flex-wrap gap-2">
-        {domains.map((domain) => (
-          <li key={domain.id}>
-            <span className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1 text-sm">
-              {domain.name}
-              {domain.isDefault ? (
-                <Badge variant="secondary" className="ml-0.5 h-4 px-1.5 text-[0.625rem]">
-                  Default
-                </Badge>
-              ) : (
-                <button
-                  type="button"
-                  aria-label={`Delete ${domain.name}`}
-                  className="ml-0.5 rounded-md p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive disabled:opacity-50"
-                  disabled={deleteDomain.isPending}
-                  onClick={() => deleteDomain.mutate(domain.id)}
-                >
-                  <Trash2Icon className="size-3.5" />
-                </button>
-              )}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <form onSubmit={handleCreate} className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <Input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Add a domain…"
-          aria-label="New quiz domain name"
-          className="sm:flex-1"
-        />
-        <Button type="submit" variant="outline" size="sm" disabled={createDomain.isPending || !name.trim()}>
-          <PlusIcon className="size-4" />
-          {createDomain.isPending ? "Adding…" : "Add domain"}
-        </Button>
-      </form>
-
-      {createDomain.isError && (
-        <p className="text-sm text-destructive">{getApiErrorMessage(createDomain.error)}</p>
-      )}
-      {deleteDomain.isError && (
-        <p className="text-sm text-destructive">{getApiErrorMessage(deleteDomain.error)}</p>
-      )}
-    </section>
-  );
 }
 
 export function QuizPackList({
@@ -328,9 +243,6 @@ export function QuizPackList({
           </Button>
         )}
       </div>
-
-      {isAdmin && !domainsQuery.isLoading && <QuizDomainsManager domains={domains} />}
-      {isAdmin && domainsQuery.isLoading && <Skeleton className="h-24 w-full rounded-xl" />}
 
       {!isLoading && !isError && (packs?.length ?? 0) > 0 && (
         <div className="flex flex-wrap items-center gap-2">

@@ -111,14 +111,24 @@ async def test_modules_function_autoassign_and_team_lead(db_session):
 
         # An active module targeting Frontend.
         module = await service.create_module(
-            org_id, project_id, admin,
-            name="Frontend architecture", description=None, content="How the UI is laid out.",
-            resource_links=None, function_type_ids=[frontend.id], sequence_order=0,
-            estimated_minutes=15, status="active", created_by=admin.id,
+            org_id,
+            project_id,
+            admin,
+            name="Frontend architecture",
+            description=None,
+            content="How the UI is laid out.",
+            resource_links=None,
+            function_type_ids=[frontend.id],
+            sequence_order=0,
+            estimated_minutes=15,
+            status="active",
+            created_by=admin.id,
         )
 
         # Adding a Frontend member auto-assigns the Frontend module; a Backend member does not get it.
-        await service.add_members(org_id, project_id, [fe.id], added_by=admin.id, viewer=admin, function_type_id=frontend.id)
+        await service.add_members(
+            org_id, project_id, [fe.id], added_by=admin.id, viewer=admin, function_type_id=frontend.id
+        )
         await service.add_members(org_id, project_id, [be.id], added_by=admin.id, viewer=admin)
         assert await service.module_assignment_dao.get_for_module_and_employee(module.id, fe.id) is not None
         assert await service.module_assignment_dao.get_for_module_and_employee(module.id, be.id) is None

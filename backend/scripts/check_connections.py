@@ -36,9 +36,7 @@ async def check_postgres() -> bool:
             one = (await conn.execute(text("SELECT 1"))).scalar_one()
             print(f"SELECT 1 → {one}")
             vec = (
-                await conn.execute(
-                    text("SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector')")
-                )
+                await conn.execute(text("SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector')"))
             ).scalar_one()
             print(f"pgvector extension installed: {vec}")
             if not vec:
@@ -80,6 +78,7 @@ async def check_supabase() -> bool:
         print(f"Supabase Storage: FAIL — {type(e).__name__}: {e}")
         print("HINT: if mime error, allow more types on the bucket or keep PDF-only for now.")
         return False
+
 
 async def main() -> None:
     s = get_settings()

@@ -1,9 +1,12 @@
+from datetime import UTC, datetime, timedelta
 from pathlib import PurePosixPath
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from onboard.config.constants import (
     ALLOWED_DOC_PACK_EXTENSIONS,
+    DOC_INGEST_STALE_AFTER_SECONDS,
+    MAX_DOC_INGEST_ATTEMPTS,
     MAX_DOC_PACK_FILE_SIZE_BYTES,
     MAX_DOC_PACK_FILES_PER_UPLOAD,
 )
@@ -149,11 +152,45 @@ class DocPackService:
 
         return created
 
-    async def get_ingest_status(self, org_id: str, pack_id: str) -> list:
-        """Lightweight status rows for polling — see `DocPackDocumentDAO.list_status_for_pack`."""
+    async def get_ingest_status(self, org_id: str, pack_id: str) -> tuple[list, list[str]]:
+        """Lightweight status rows for polling, plus ids of stale documents to requeue.
+
+        Ingestion runs as an in-process background task, so a host restart/OOM mid-ingest strands
+        the document in `uploaded`/`processing` with nothing to resume it. Since this endpoint is
+        polled anyway, it doubles as the recovery loop: documents that haven't moved within the
+        stale window are re-claimed here (bumping `updated_at` so concurrent polls don't double
+        -requeue) and returned for the router to reschedule; documents that already burned
+        `MAX_DOC_INGEST_ATTEMPTS` are marked failed so the UI stops showing them as in-progress.
+        """
         if not await self.pack_dao.exists_for_org(org_id, pack_id):
             raise NotFoundError(f"Doc pack {pack_id} not found")
-        return await self.document_dao.list_status_for_pack(org_id, pack_id)
+        rows = await self.document_dao.list_status_for_pack(org_id, pack_id)
+
+        cutoff = datetime.now(UTC) - timedelta(seconds=DOC_INGEST_STALE_AFTER_SECONDS)
+        stale = [
+            row
+            for row in rows
+            if row.status in (DocumentStatus.uploaded, DocumentStatus.processing) and row.updated_at < cutoff
+        ]
+        if not stale:
+            return rows, []
+
+        requeue_ids: list[str] = []
+        for row in stale:
+            if row.ingest_attempts >= MAX_DOC_INGEST_ATTEMPTS:
+                await self.document_dao.update(
+                    row.id,
+                    status=DocumentStatus.failed,
+                    error_message="Ingestion was interrupted repeatedly — delete this document and re-upload it.",
+                )
+                logger.warning("doc_ingest_gave_up document_id=%s attempts=%s", row.id, row.ingest_attempts)
+            else:
+                await self.document_dao.update(row.id, status=DocumentStatus.processing)
+                requeue_ids.append(row.id)
+                logger.info("doc_ingest_requeued document_id=%s attempts=%s", row.id, row.ingest_attempts)
+
+        rows = await self.document_dao.list_status_for_pack(org_id, pack_id)
+        return rows, requeue_ids
 
     async def delete_document(self, org_id: str, pack_id: str, document_id: str) -> None:
         pack = await self.get_pack(org_id, pack_id)
@@ -176,13 +213,24 @@ class DocPackService:
 async def ingest_document_background(org_id: str, document_id: str) -> None:
     """Background entrypoint: opens its own DB session (request session is already closed)."""
     factory = get_session_factory()
+    error: str | None = None
     async with factory() as session:
         service = DocPackService(session)
         try:
             count = await service.ingest_document(org_id, document_id)
             logger.info("doc_ingest_ok document_id=%s chunks=%s", document_id, count)
-        except Exception:
+            return
+        except Exception as exc:
             logger.exception("doc_ingest_failed document_id=%s", document_id)
+            error = str(exc)[:2000]
+
+    # Backstop: if the ingest session was too broken to record the failure itself, mark the
+    # document failed from a fresh session so it can't sit in `processing` forever.
+    try:
+        async with factory() as session:
+            await DocPackDocumentDAO(session).update(document_id, status=DocumentStatus.failed, error_message=error)
+    except Exception:
+        logger.exception("doc_ingest_mark_failed_failed document_id=%s", document_id)
 
 
 def _extension_for(filename: str) -> str:

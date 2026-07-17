@@ -58,6 +58,8 @@ class DocPackDocumentDAO(BaseDAO[DocPackDocument]):
                 DocPackDocument.status,
                 DocPackDocument.page_count,
                 DocPackDocument.error_message,
+                DocPackDocument.ingest_attempts,
+                DocPackDocument.updated_at,
             )
             .join(DocPack, DocPack.id == DocPackDocument.doc_pack_id)
             .where(DocPackDocument.doc_pack_id == pack_id, DocPack.org_id == org_id)

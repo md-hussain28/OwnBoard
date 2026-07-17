@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,13 +58,21 @@ class RAGService:
         if pack is None:
             raise NotFoundError(f"Doc pack {document.doc_pack_id} not found")
 
-        await self.document_dao.update(document.id, status=DocumentStatus.processing, error_message=None)
+        await self.document_dao.update(
+            document.id,
+            status=DocumentStatus.processing,
+            error_message=None,
+            ingest_attempts=document.ingest_attempts + 1,
+        )
 
         try:
             storage = await self._storage_client()
             raw = await storage.download(document.storage_path)
-            extracted = extract_document(raw, document.file_type)
-            drafts = chunk_extracted_document(extracted)
+            # PDF/DOCX parsing and token-counting are CPU-bound; run them off the event loop so
+            # the (single-worker, 0.1-CPU) host keeps answering health checks during ingestion —
+            # a blocked loop gets the instance restarted, killing the ingest task mid-flight.
+            extracted = await asyncio.to_thread(extract_document, raw, document.file_type)
+            drafts = await asyncio.to_thread(chunk_extracted_document, extracted)
             if not drafts:
                 raise ValidationError("No chunks produced from document")
 
@@ -92,8 +101,13 @@ class RAGService:
             )
             return len(chunks)
         except Exception as exc:
+            # If the failure was a DB error the session holds a poisoned transaction — roll it
+            # back first or this status write would raise too, stranding the doc in `processing`.
+            # Use the plain `document_id` arg: rollback expires the ORM instance, and touching
+            # `document.id` after it would trigger a sync lazy-load that fails under asyncio.
+            await self.session.rollback()
             await self.document_dao.update(
-                document.id,
+                document_id,
                 status=DocumentStatus.failed,
                 error_message=str(exc)[:2000],
             )

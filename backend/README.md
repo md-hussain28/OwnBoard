@@ -5,7 +5,9 @@ FastAPI API for OwnBoard. Serves on **http://localhost:8000**.
 ## Prerequisites
 
 - [uv](https://docs.astral.sh/uv/) (Python 3.12+)
-- [Docker](https://docs.docker.com/get-docker/) (Postgres + pgvector)
+- Homebrew [PostgreSQL](https://formulae.brew.sh/formula/postgresql@18) + [pgvector](https://github.com/pgvector/pgvector#installation)
+
+Expected local DB: `postgresql://onboard:onboard@localhost:5432/onboard` (role + database named `onboard`, with `CREATE EXTENSION vector`).
 
 ## Run locally
 
@@ -28,7 +30,7 @@ Or from the **repo root**: `make backend` (or `make dev` for backend + frontend)
 
 1. Copies `.env.example` → `.env` (if missing)
 2. `uv sync` — install Python deps
-3. `docker compose up -d` — Postgres on port **5432**
+3. Checks local Postgres on port **5432** (`make db-up`)
 4. `alembic upgrade head` — run migrations
 
 ### Env file
@@ -42,7 +44,7 @@ cp .env.example .env
 | Variable | Notes |
 |----------|--------|
 | `ENVIRONMENT` | `local` (default) or `prod` / `production` |
-| `DATABASE_URL_LOCAL` | Docker Postgres; used when `ENVIRONMENT=local` |
+| `DATABASE_URL_LOCAL` | Local Homebrew Postgres; used when `ENVIRONMENT=local` |
 | `DATABASE_URL_PROD` | Neon (or other cloud); used when `ENVIRONMENT=prod` |
 | `API_PORT` | `8000` |
 | `CORS_ALLOWED_ORIGINS` | Include `http://localhost:3000` for the frontend |
@@ -54,12 +56,12 @@ cp .env.example .env
 ```bash
 uv sync
 cp .env.example .env
-docker compose up -d
+# ensure brew postgres is running: brew services start postgresql@18
 uv run alembic upgrade head
 uv run dev
 ```
 
-`docker compose down` stops Postgres without deleting data. `docker compose down -v` wipes the DB volume.
+Optional Docker Postgres (conflicts with Brew if both use `:5432`): `make db-docker-up` / `make db-docker-down`. Prefer one or the other — not both.
 
 ## Tests & lint
 

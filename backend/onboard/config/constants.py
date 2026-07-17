@@ -10,6 +10,12 @@ QUIZ_LLM_CONCURRENCY = 8
 
 ALLOWED_DOC_PACK_EXTENSIONS = frozenset({"pdf", "docx", "txt", "md", "markdown"})
 
+# Ingestion runs as an in-process background task, so a host restart mid-ingest strands the
+# document in `uploaded`/`processing` forever. The status poll self-heals: any document that
+# hasn't moved within the stale window is requeued, up to the attempt cap, then marked failed.
+DOC_INGEST_STALE_AFTER_SECONDS = 10 * 60
+MAX_DOC_INGEST_ATTEMPTS = 3
+
 # Uploads are buffered in memory before hitting Supabase Storage — keep this conservative,
 # the API runs on a 512MB instance.
 MAX_DOC_PACK_FILE_SIZE_BYTES = 20 * 1024 * 1024  # 20 MB per file

@@ -75,6 +75,7 @@ class DocPackDocument(AuditBase):
     )
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ingest_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     doc_pack: Mapped["DocPack"] = relationship(back_populates="documents")

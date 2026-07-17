@@ -3,6 +3,7 @@
 import { SignInButton, SignUpButton, useAuth } from "@clerk/nextjs";
 import { ArrowRight, Check, GitCommitHorizontal } from "lucide-react";
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand/brand-mark";
 import { APP_HOME } from "@/lib/routes";
 import { Button } from "@/ui/button";
 
@@ -81,12 +82,12 @@ export function LandingPage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,color-mix(in_oklch,var(--brand-honey)_14%,transparent),transparent_55%),radial-gradient(ellipse_at_90%_40%,color-mix(in_oklch,var(--brand-teal)_10%,transparent),transparent_50%)]" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 pb-16 pt-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16 lg:pb-24 lg:pt-16">
           <div className="space-y-7">
-            <p
-              className="landing-rise text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl"
-              style={{ animationDelay: "0ms" }}
-            >
-              OwnBoard
-            </p>
+            <div className="landing-rise" style={{ animationDelay: "0ms" }}>
+              <BrandLogo
+                markClassName="size-11 rounded-[0.85rem] sm:size-12 sm:rounded-[0.95rem]"
+                wordmarkClassName="text-2xl sm:text-3xl"
+              />
+            </div>
             <h1
               className="landing-rise max-w-[14ch] text-[clamp(2.35rem,5.5vw,3.75rem)] font-extrabold leading-[1.05] tracking-[-0.03em] text-foreground"
               style={{ animationDelay: "80ms" }}
@@ -361,9 +362,10 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="mx-auto mt-16 max-w-6xl px-6 text-center">
+      <footer className="mx-auto mt-16 flex max-w-6xl flex-col items-center gap-3 px-6 text-center">
+        <BrandLogo markClassName="size-7 rounded-[0.5rem]" wordmarkClassName="text-sm font-bold" />
         <p className="font-mono text-[0.6875rem] text-muted-foreground">
-          OwnBoard · verifiable engineering onboarding
+          Verifiable engineering onboarding
         </p>
       </footer>
     </div>

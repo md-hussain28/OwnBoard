@@ -21,6 +21,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: publicConfig.NEXT_PUBLIC_APP_NAME,
   description: "Onboard: cited, commit-grounded engineering onboarding.",
+  icons: {
+    icon: [
+      { url: "/brand/ownboard-mark.svg", type: "image/svg+xml" },
+      { url: "/brand/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  manifest: "/brand/site.webmanifest",
 };
 
 export default function RootLayout({

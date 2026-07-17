@@ -4,6 +4,7 @@ import { useOrganization } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandMark } from "@/components/brand/brand-mark";
 import {
   isNavItemActive,
   type NavItem,
@@ -135,7 +136,12 @@ export function AppSidebar() {
               className="h-8 gap-2.5 px-1 hover:bg-sidebar-accent group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
             >
               <Link href={appRole === "member" ? "/app/onboarding/packs" : "/app"}>
-                <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient text-[0.6875rem] font-bold leading-none tracking-tight text-white shadow-button">
+                <span
+                  className={cn(
+                    "flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg text-[0.6875rem] font-bold leading-none tracking-tight text-white shadow-button",
+                    logoUrl || !organization ? "bg-transparent" : "bg-brand-gradient",
+                  )}
+                >
                   {logoUrl ? (
                     // Custom org logos from Clerk
                     <Image
@@ -145,6 +151,8 @@ export function AppSidebar() {
                       height={32}
                       className="size-full object-cover"
                     />
+                  ) : !organization ? (
+                    <BrandMark className="size-full" />
                   ) : (
                     fallbackMark
                   )}

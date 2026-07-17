@@ -100,6 +100,7 @@ export async function POST(request: Request) {
       inviterUserId: admin.userId,
       emailAddress: adminEmail.toLowerCase(),
       role: "org:admin",
+      publicMetadata: { app_role: "admin" },
       redirectUrl: `${origin}/sign-in`,
     });
     invitationId = invitation.id;

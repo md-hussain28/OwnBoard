@@ -1,6 +1,7 @@
 from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from onboard.config.constants import APP_ROLE_MEMBER
 from onboard.dao.models.base import AuditBase
 
 
@@ -13,7 +14,12 @@ class Employee(AuditBase):
     # Clerk user id when this row was synced from an organization membership.
     clerk_user_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Free-form job title (not Clerk / not OwnBoard access role).
     role: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # OwnBoard RBAC: admin | member. Source of truth for product access.
+    app_role: Mapped[str] = mapped_column(
+        String(32), nullable=False, default=APP_ROLE_MEMBER, server_default=APP_ROLE_MEMBER
+    )
     github_handle: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     organization: Mapped["Organization"] = relationship(back_populates="employees")

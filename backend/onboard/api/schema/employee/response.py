@@ -11,6 +11,14 @@ class EmployeeResponse(BaseModel):
     clerk_user_id: str | None = None
     name: str
     role: str | None
+    app_role: str
     github_handle: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class EmployeeInvitationResponse(BaseModel):
+    id: str
+    email_address: str
+    app_role: str
+    status: str

@@ -136,8 +136,11 @@ function QuizAssignmentPanelLoaded({ pack }: { pack: DocPackListItem }) {
 
             {assignableEmployees.length === 0 && assignments.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                No organization members found. Invite people in Clerk (Organization
-                switcher → Members), then reopen Assign — members sync automatically.
+                No organization members found. Invite people from{" "}
+                <Link href="/team" className="underline underline-offset-2">
+                  Team
+                </Link>
+                , then reopen Assign — members sync automatically.
               </p>
             )}
 

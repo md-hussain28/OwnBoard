@@ -37,10 +37,38 @@ export const mockQuizAnalytics = {
 
 // --- Employees (employee.schema.ts — snake_case) ---
 export const mockEmployees = [
-  { id: "emp_a1b2c3d4e5f6g7h8i9", org_id: "org_demo", name: "Priya Sharma", role: "Backend Engineer", github_handle: "priyash" },
-  { id: "emp_b2c3d4e5f6g7h8i9j0", org_id: "org_demo", name: "Diego Alvarez", role: "Frontend Engineer", github_handle: "dalvarez" },
-  { id: "emp_c3d4e5f6g7h8i9j0k1", org_id: "org_demo", name: "Mei Lin", role: null, github_handle: null },
+  {
+    id: "emp_a1b2c3d4e5f6g7h8i9",
+    org_id: "org_demo",
+    name: "Priya Sharma",
+    role: "Backend Engineer",
+    app_role: "admin",
+    github_handle: "priyash",
+  },
+  {
+    id: "emp_b2c3d4e5f6g7h8i9j0",
+    org_id: "org_demo",
+    name: "Diego Alvarez",
+    role: "Frontend Engineer",
+    app_role: "member",
+    github_handle: "dalvarez",
+  },
+  {
+    id: "emp_c3d4e5f6g7h8i9j0k1",
+    org_id: "org_demo",
+    name: "Mei Lin",
+    role: null,
+    app_role: "member",
+    github_handle: null,
+  },
 ];
+
+export const mockMe = {
+  user_id: "user_storybook",
+  org_id: "org_2abcDEFghiJKLmno",
+  employee_id: "emp_a1b2c3d4e5f6g7h8i9",
+  app_role: "admin",
+};
 
 // --- Doc packs (docPack.schema.ts — snake_case) ---
 export const mockDocPacks = [

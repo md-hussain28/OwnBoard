@@ -1,6 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
 
 from onboard.api.dependency.auth import ClerkOrgId, ClerkUserId
+from onboard.api.dependency.rbac import RequireAdmin
 from onboard.api.dependency.service_container import ServiceContainer, get_service_container
 from onboard.api.dependency.tenancy import CurrentOrgId
 from onboard.api.schema.doc_pack.request import DocPackCreateRequest, DocPackRetrieveRequest, DocPackUpdateRequest
@@ -34,6 +35,7 @@ async def create_doc_pack(
     payload: DocPackCreateRequest,
     org_id: CurrentOrgId,
     user_id: ClerkUserId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     pack = await services.doc_pack.create_pack(
@@ -57,6 +59,7 @@ async def update_doc_pack(
     pack_id: str,
     payload: DocPackUpdateRequest,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     return await services.doc_pack.update_pack(org_id, pack_id, name=payload.name, description=payload.description)
@@ -67,6 +70,7 @@ async def upload_documents(
     pack_id: str,
     org_id: CurrentOrgId,
     user_id: ClerkUserId,
+    _admin: RequireAdmin,
     background_tasks: BackgroundTasks,
     files: list[UploadFile] = File(...),
     services: ServiceContainer = Depends(get_service_container),
@@ -122,6 +126,7 @@ async def delete_document(
     pack_id: str,
     document_id: str,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     await services.doc_pack.delete_document(org_id, pack_id, document_id)
@@ -163,6 +168,7 @@ async def generate_doc_pack_quiz(
     pack_id: str,
     payload: GenerateDocPackQuizRequest,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     """Doc Pack PRD §5 — coverage_plan → draft → verify pipeline; returns a curation-ready draft."""
@@ -184,6 +190,7 @@ async def regenerate_quiz_questions(
     pack_id: str,
     payload: RegenerateQuestionsRequest,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     """Doc Pack PRD §2.1/§6 — regenerate specific dropped question slots within the current draft."""
@@ -192,7 +199,10 @@ async def regenerate_quiz_questions(
 
 @router.get("/{pack_id}/quiz", response_model=QuizTemplateAdminResponse)
 async def get_doc_pack_quiz(
-    pack_id: str, org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)
+    pack_id: str,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
 ):
     """Admin view of the latest generated/saved questions, including correct answers (Doc Pack PRD §6)."""
     return await services.quiz.get_admin_quiz(org_id, pack_id)
@@ -203,6 +213,7 @@ async def save_doc_pack_quiz(
     pack_id: str,
     payload: SaveDocPackQuizRequest,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     """Doc Pack PRD §5.5/§5.6 — publish the admin's curated set; pack becomes assignable."""

@@ -32,6 +32,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   admin: "Admin",
   settings: "Settings",
   organization: "Organization",
+  team: "Team",
 };
 
 function navLabelForPath(pathname: string): string | null {

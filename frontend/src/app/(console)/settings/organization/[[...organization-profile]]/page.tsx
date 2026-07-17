@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Org profile is Clerk's modal from the sidebar switcher — no custom page. */
+/** Org profile moved to OwnBoard Team page (custom RBAC). */
 export default function OrganizationSettingsRedirect() {
-  redirect("/");
+  redirect("/team");
 }

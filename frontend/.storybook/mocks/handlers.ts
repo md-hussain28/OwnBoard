@@ -11,6 +11,7 @@ import {
   mockDocPacks,
   mockEmployees,
   mockExperts,
+  mockMe,
   mockQuizAnalytics,
   mockQuizAttempt,
   mockQuizTemplate,
@@ -43,8 +44,30 @@ export const dashboardHandlers = [
 ];
 
 export const employeeHandlers = [
+  http.get("/api/me", () => HttpResponse.json(mockMe)),
   http.get("/api/employees", () => HttpResponse.json(mockEmployees)),
   http.get("/api/employees/:employeeId/assignments", () => HttpResponse.json(mockAssignments)),
+  http.post("/api/employees/invitations", async ({ request }) => {
+    const body = (await request.json()) as { email: string; app_role?: string };
+    return HttpResponse.json(
+      {
+        id: "inv_storybook",
+        email_address: body.email,
+        app_role: body.app_role ?? "member",
+        status: "pending",
+      },
+      { status: 201 },
+    );
+  }),
+  http.patch("/api/employees/:id", async ({ params, request }) => {
+    const body = (await request.json()) as { app_role?: string; role?: string | null };
+    const existing = mockEmployees.find((e) => e.id === params.id) ?? mockEmployees[0];
+    return HttpResponse.json({
+      ...existing,
+      app_role: body.app_role ?? existing.app_role,
+      role: body.role !== undefined ? body.role : existing.role,
+    });
+  }),
 ];
 
 export const docPackHandlers = [

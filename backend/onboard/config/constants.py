@@ -23,3 +23,10 @@ MAX_DOC_PACK_FILES_PER_UPLOAD = 10
 
 APP_TITLE = "Onboard API"
 APP_DESCRIPTION = "Backend for Onboard - onboarding quizzes, repo readiness gating, skill-graph bus-factor detection"
+
+# OwnBoard org RBAC — Clerk membership is auth/tenancy only; access lives on employee.app_role.
+APP_ROLE_ADMIN = "admin"
+APP_ROLE_MEMBER = "member"
+APP_ROLES = frozenset({APP_ROLE_ADMIN, APP_ROLE_MEMBER})
+# Clerk role strings that may appear on legacy employee.role rows or bootstrap memberships.
+CLERK_ORG_ADMIN_ROLES = frozenset({"org:admin", "admin"})

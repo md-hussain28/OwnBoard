@@ -1,9 +1,10 @@
 "use client";
 
-import { useAuth, UserButton } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 import { dark, shadcn } from "@clerk/ui/themes";
 import { ThemeSettings } from "@/components/layout/theme-settings";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
+import { useAppRole } from "@/hooks/queries/me/me.queries";
 import {
   SidebarFooter,
   SidebarSeparator,
@@ -22,10 +23,10 @@ const sidebarTabTrigger = cn(
 );
 
 export function SidebarAccountFooter() {
-  const { has, isLoaded: authLoaded } = useAuth();
+  const { isAdmin, isLoading: roleLoading } = useAppRole();
   const { state, isMobile } = useSidebar();
   const collapsed = !isMobile && state === "collapsed";
-  const showManageTeam = authLoaded && !!has?.({ role: "org:admin" });
+  const showTeam = !roleLoading && isAdmin;
 
   const appearance = {
     theme: [shadcn, dark],
@@ -61,7 +62,7 @@ export function SidebarAccountFooter() {
         collapsed && "items-center",
       )}
     >
-      {showManageTeam && (
+      {showTeam && (
         <>
           <div
             className={cn(

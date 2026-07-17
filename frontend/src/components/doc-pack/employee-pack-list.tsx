@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useEmployees } from "@/hooks/queries/employee/employee.queries";
+import { useMe } from "@/hooks/queries/me/me.queries";
 import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import {
@@ -15,19 +16,28 @@ import { Button } from "@/ui/button";
 import { Skeleton } from "@/ui/skeleton";
 
 /**
- * Employee "tests left" list (Doc Pack PRD §7). There is no Clerk-user → employee link in the
- * data model yet, so V1 shows a "viewing as" employee picker — same information, demo-friendly.
+ * Employee "tests left" list (Doc Pack PRD §7). Defaults to the signed-in member's
+ * employee row; admins can still switch "viewing as" for demos.
  */
 export function EmployeePackList() {
+  const meQuery = useMe();
   const employeesQuery = useEmployees();
   const [employeeId, setEmployeeId] = useState("");
   const assignmentsQuery = useEmployeeAssignments(employeeId);
   const packsQuery = useDocPacks();
 
+  useEffect(() => {
+    if (employeeId) return;
+    if (meQuery.data?.employeeId) {
+      setEmployeeId(meQuery.data.employeeId);
+    }
+  }, [employeeId, meQuery.data?.employeeId]);
+
   const employees = employeesQuery.data ?? [];
   const assignments = assignmentsQuery.data ?? [];
   const packById = new Map((packsQuery.data ?? []).map((p) => [p.id, p]));
   const testsLeft = assignments.filter((a) => a.status !== "passed").length;
+  const isAdmin = meQuery.data?.appRole === "admin";
 
   return (
     <Card>
@@ -49,7 +59,7 @@ export function EmployeePackList() {
           </p>
         )}
 
-        {!employeesQuery.isLoading && !employeesQuery.isError && (
+        {isAdmin && !employeesQuery.isLoading && !employeesQuery.isError && (
           <div className="space-y-2">
             <p className="text-sm font-medium">Viewing as</p>
             <div className="flex flex-wrap gap-2">

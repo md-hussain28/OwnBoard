@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     CLERK_JWT_KEY: str = ""
     CLERK_AUTHORIZED_PARTIES: str = "http://localhost:3000"
 
+    # Used for Clerk invitation redirect_url (sign-in after accept).
+    FRONTEND_BASE_URL: str = "http://localhost:3000"
+
     # Supabase Storage (doc pack file uploads). Service role key is server-only —
     # never expose it to the browser; it bypasses Row Level Security entirely.
     SUPABASE_URL: str = ""

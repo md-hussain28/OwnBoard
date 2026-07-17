@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   repo: (id: string) => `/repos/${id}`,
   employees: "/employees",
   employee: (id: string) => `/employees/${id}`,
+  employeeInvitations: "/employees/invitations",
   employeeAssignments: (employeeId: string) => `/employees/${employeeId}/assignments`,
 
   // Doc Packs (Doc Pack PRD §6)

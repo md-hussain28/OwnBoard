@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQueries } from "@tanstack/react-query";
 import { PencilIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
 import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { packAssignmentKeys } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { packAssignmentService } from "@/services/pack-assignment.service";
 import { Button } from "@/ui/button";
@@ -125,6 +126,7 @@ export function QuizPackList({
 }: {
   onAssignPack: (packId: string) => void;
 }) {
+  const { isAdmin } = useAppRole();
   const { data: packs, isLoading, isError, error } = useDocPacks();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -136,7 +138,7 @@ export function QuizPackList({
     queries: packIds.map((packId) => ({
       queryKey: packAssignmentKeys.forPack(packId),
       queryFn: () => packAssignmentService.listForPack(packId),
-      enabled: packIds.length > 0,
+      enabled: isAdmin && packIds.length > 0,
       staleTime: 30_000,
     })),
   });
@@ -202,15 +204,19 @@ export function QuizPackList({
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight text-balance">Quizzes</h1>
           <p className="text-sm text-muted-foreground text-pretty">
-            Every pack you can assign. Open Assign to pick people and see who has passed.
+            {isAdmin
+              ? "Every pack you can assign. Open Assign to pick people and see who has passed."
+              : "Published quizzes in your organization. Your assigned reading is under Readiness."}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/doc-packs/new">
-            <PlusIcon className="size-4" />
-            Create quiz
-          </Link>
-        </Button>
+        {isAdmin && (
+          <Button asChild>
+            <Link href="/doc-packs/new">
+              <PlusIcon className="size-4" />
+              Create quiz
+            </Link>
+          </Button>
+        )}
       </div>
 
       {!isLoading && !isError && (packs?.length ?? 0) > 0 && (
@@ -236,12 +242,14 @@ export function QuizPackList({
             options={STATUS_FILTERS}
             aria-label="Filter by status"
           />
-          <FilterSelect
-            value={assignmentFilter}
-            onChange={setAssignmentFilter}
-            options={ASSIGNMENT_FILTERS}
-            aria-label="Filter by assignment"
-          />
+          {isAdmin && (
+            <FilterSelect
+              value={assignmentFilter}
+              onChange={setAssignmentFilter}
+              options={ASSIGNMENT_FILTERS}
+              aria-label="Filter by assignment"
+            />
+          )}
 
           {hasActiveFilters && (
             <button
@@ -274,12 +282,15 @@ export function QuizPackList({
       {!isLoading && !isError && packs?.length === 0 && (
         <div className="space-y-3 rounded-2xl border border-dashed border-border px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground text-pretty">
-            No quizzes yet. Create one to upload documents and generate a cited quiz, then assign
-            it to hires from this list.
+            {isAdmin
+              ? "No quizzes yet. Create one to upload documents and generate a cited quiz, then assign it to hires from this list."
+              : "No quizzes yet. An admin will create and assign them."}
           </p>
-          <Button asChild>
-            <Link href="/doc-packs/new">Create your first quiz</Link>
-          </Button>
+          {isAdmin && (
+            <Button asChild>
+              <Link href="/doc-packs/new">Create your first quiz</Link>
+            </Button>
+          )}
         </div>
       )}
 
@@ -319,34 +330,37 @@ export function QuizPackList({
                   {pack.description && (
                     <p className="truncate text-sm text-muted-foreground">{pack.description}</p>
                   )}
-                  {progress?.loading ? (
-                    <Skeleton className="h-3 w-36" />
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      {progress?.text ?? "Not assigned yet"}
-                      {progress && progress.count > 0
-                        ? ` · ${progress.count} ${progress.count === 1 ? "person" : "people"}`
-                        : ""}
-                    </p>
-                  )}
+                  {isAdmin &&
+                    (progress?.loading ? (
+                      <Skeleton className="h-3 w-36" />
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        {progress?.text ?? "Not assigned yet"}
+                        {progress && progress.count > 0
+                          ? ` · ${progress.count} ${progress.count === 1 ? "person" : "people"}`
+                          : ""}
+                      </p>
+                    ))}
                 </div>
 
-                <div className="flex shrink-0 items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => onAssignPack(pack.id)}
-                  >
-                    <UserPlusIcon className="size-3.5" />
-                    Assign
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/doc-packs/${pack.id}`}>
-                      <PencilIcon className="size-3.5" />
-                      Edit
-                    </Link>
-                  </Button>
-                </div>
+                {isAdmin && (
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => onAssignPack(pack.id)}
+                    >
+                      <UserPlusIcon className="size-3.5" />
+                      Assign
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/doc-packs/${pack.id}`}>
+                        <PencilIcon className="size-3.5" />
+                        Edit
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </li>
             );
           })}

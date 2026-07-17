@@ -1,5 +1,6 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 
+from onboard.config.constants import APP_ROLE_ADMIN
 from onboard.dao.base_dao import BaseDAO
 from onboard.dao.models.employee import Employee
 
@@ -30,3 +31,11 @@ class EmployeeDAO(BaseDAO[Employee]):
             select(Employee).where(Employee.org_id == org_id, Employee.clerk_user_id == clerk_user_id)
         )
         return result.scalar_one_or_none()
+
+    async def count_admins(self, org_id: str) -> int:
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(Employee)
+            .where(Employee.org_id == org_id, Employee.app_role == APP_ROLE_ADMIN)
+        )
+        return int(result.scalar_one())

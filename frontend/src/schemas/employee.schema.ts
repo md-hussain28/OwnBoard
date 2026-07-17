@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-/** Mirrors the backend's EmployeeResponse (id/org_id/name/role/github_handle). */
+export const appRoleSchema = z.enum(["admin", "member"]);
+export type AppRole = z.infer<typeof appRoleSchema>;
+
+/** Mirrors the backend's EmployeeResponse. */
 export const employeeSchema = z
   .object({
     id: z.string(),
@@ -8,6 +11,7 @@ export const employeeSchema = z
     clerk_user_id: z.string().nullable().optional(),
     name: z.string(),
     role: z.string().nullable(),
+    app_role: appRoleSchema,
     github_handle: z.string().nullable(),
   })
   .transform((e) => ({
@@ -16,9 +20,36 @@ export const employeeSchema = z
     clerkUserId: e.clerk_user_id ?? null,
     name: e.name,
     role: e.role,
+    appRole: e.app_role,
     githubHandle: e.github_handle,
   }));
 
 export const employeeListSchema = z.array(employeeSchema);
 
 export type Employee = z.infer<typeof employeeSchema>;
+
+export const employeeInviteSchema = z.object({
+  id: z.string(),
+  email_address: z.string(),
+  app_role: appRoleSchema,
+  status: z.string(),
+}).transform((i) => ({
+  id: i.id,
+  emailAddress: i.email_address,
+  appRole: i.app_role,
+  status: i.status,
+}));
+
+export type EmployeeInvitation = z.infer<typeof employeeInviteSchema>;
+
+export type InviteEmployeeInput = {
+  email: string;
+  appRole?: AppRole;
+};
+
+export type UpdateEmployeeInput = {
+  name?: string;
+  role?: string | null;
+  githubHandle?: string | null;
+  appRole?: AppRole;
+};

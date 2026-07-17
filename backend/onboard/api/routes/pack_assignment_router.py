@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from onboard.api.dependency.auth import ClerkUserId
+from onboard.api.dependency.rbac import RequireAdmin
 from onboard.api.dependency.service_container import ServiceContainer, get_service_container
 from onboard.api.dependency.tenancy import CurrentOrgId
 from onboard.api.schema.pack_assignment.request import CreateAssignmentsRequest
@@ -22,6 +23,7 @@ async def create_assignments(
     payload: CreateAssignmentsRequest,
     org_id: CurrentOrgId,
     assigned_by: ClerkUserId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     """Doc Pack PRD §6/§10.10 — manual multi-select assign only."""
@@ -30,14 +32,20 @@ async def create_assignments(
 
 @router.get("/doc-packs/{pack_id}/assignments", response_model=list[PackAssignmentResponse])
 async def list_pack_assignments(
-    pack_id: str, org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)
+    pack_id: str,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
 ):
     return await services.pack_assignment.list_for_pack(org_id, pack_id)
 
 
 @router.delete("/assignments/{assignment_id}", status_code=204)
 async def revoke_assignment(
-    assignment_id: str, org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)
+    assignment_id: str,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
 ):
     """Doc Pack PRD §10.15 — allowed unless the assignment has already passed."""
     await services.pack_assignment.revoke_assignment(org_id, assignment_id)

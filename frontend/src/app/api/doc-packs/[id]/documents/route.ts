@@ -1,4 +1,4 @@
-import { type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { proxyRequest } from "@/lib/api/proxy";
 
 /** Multipart upload — forward the browser's FormData; axios sets the multipart boundary itself. */

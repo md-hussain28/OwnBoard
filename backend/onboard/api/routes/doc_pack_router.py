@@ -1,13 +1,17 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
 
+from onboard.api.dependency.auth import ClerkOrgId, ClerkUserId
+from onboard.api.dependency.rbac import RequireAdmin
 from onboard.api.dependency.service_container import ServiceContainer, get_service_container
 from onboard.api.dependency.tenancy import CurrentOrgId
 from onboard.api.schema.doc_pack.request import DocPackCreateRequest, DocPackRetrieveRequest, DocPackUpdateRequest
 from onboard.api.schema.doc_pack.response import (
     DocPackDocumentResponse,
+    DocPackIngestStatusResponse,
     DocPackListItemResponse,
     DocPackResponse,
     DocPackRetrieveResponse,
+    DocumentIngestStatusItem,
     RetrievedDocChunkResponse,
 )
 from onboard.api.schema.quiz.request import (
@@ -20,29 +24,80 @@ from onboard.api.schema.quiz.response import (
     GeneratedSlotIssueResponse,
     QuizTemplateAdminResponse,
 )
+from onboard.dao.models.doc_pack import DocPack, DocumentStatus
 from onboard.services.doc_pack.doc_pack_service import ingest_document_background
 
 router = APIRouter(prefix="/doc-packs", tags=["doc-packs"])
+
+
+def _pack_list_item(pack: DocPack) -> DocPackListItemResponse:
+    return DocPackListItemResponse(
+        id=pack.id,
+        org_id=pack.org_id,
+        name=pack.name,
+        description=pack.description,
+        status=pack.status,
+        created_by=pack.created_by,
+        created_at=pack.created_at,
+        updated_at=pack.updated_at,
+        domain_id=pack.domain_id,
+        domain_name=pack.domain.name if pack.domain else None,
+    )
+
+
+def _pack_response(pack: DocPack) -> DocPackResponse:
+    return DocPackResponse(
+        id=pack.id,
+        org_id=pack.org_id,
+        name=pack.name,
+        description=pack.description,
+        status=pack.status,
+        created_by=pack.created_by,
+        created_at=pack.created_at,
+        updated_at=pack.updated_at,
+        domain_id=pack.domain_id,
+        domain_name=pack.domain.name if pack.domain else None,
+        documents=pack.documents or [],
+    )
 
 
 @router.post("", response_model=DocPackResponse, status_code=201)
 async def create_doc_pack(
     payload: DocPackCreateRequest,
     org_id: CurrentOrgId,
+    user_id: ClerkUserId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
-    pack = await services.doc_pack.create_pack(org_id=org_id, name=payload.name, description=payload.description)
-    return await services.doc_pack.get_pack(org_id, pack.id)
+    pack = await services.doc_pack.create_pack(
+        org_id=org_id,
+        name=payload.name,
+        description=payload.description,
+        created_by=user_id,
+        domain_id=payload.domain_id,
+    )
+    return _pack_response(pack)
 
 
 @router.get("", response_model=list[DocPackListItemResponse])
-async def list_doc_packs(org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)):
-    return await services.doc_pack.list_packs(org_id)
+async def list_doc_packs(
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Admin quiz desk — members see assigned packs via /employees/{id}/assignments instead."""
+    packs = await services.doc_pack.list_packs(org_id)
+    return [_pack_list_item(p) for p in packs]
 
 
 @router.get("/{pack_id}", response_model=DocPackResponse)
-async def get_doc_pack(pack_id: str, org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)):
-    return await services.doc_pack.get_pack(org_id, pack_id)
+async def get_doc_pack(
+    pack_id: str,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    return _pack_response(await services.doc_pack.get_pack(org_id, pack_id))
 
 
 @router.patch("/{pack_id}", response_model=DocPackResponse)
@@ -50,15 +105,29 @@ async def update_doc_pack(
     pack_id: str,
     payload: DocPackUpdateRequest,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
-    return await services.doc_pack.update_pack(org_id, pack_id, name=payload.name, description=payload.description)
+    fields = payload.model_dump(exclude_unset=True)
+    clear_domain = "domain_id" in fields and fields.get("domain_id") is None
+    domain_id = fields.get("domain_id") if not clear_domain else None
+    pack = await services.doc_pack.update_pack(
+        org_id,
+        pack_id,
+        name=fields.get("name"),
+        description=fields.get("description"),
+        domain_id=domain_id,
+        clear_domain=clear_domain,
+    )
+    return _pack_response(pack)
 
 
 @router.post("/{pack_id}/documents", response_model=list[DocPackDocumentResponse], status_code=201)
 async def upload_documents(
     pack_id: str,
     org_id: CurrentOrgId,
+    user_id: ClerkUserId,
+    _admin: RequireAdmin,
     background_tasks: BackgroundTasks,
     files: list[UploadFile] = File(...),
     services: ServiceContainer = Depends(get_service_container),
@@ -68,10 +137,46 @@ async def upload_documents(
         content = await upload.read()
         payloads.append((upload.filename or "untitled.txt", content, upload.content_type))
 
-    documents = await services.doc_pack.upload_documents(org_id, pack_id, payloads)
+    documents = await services.doc_pack.upload_documents(org_id, pack_id, payloads, created_by=user_id)
     for document in documents:
         background_tasks.add_task(ingest_document_background, org_id, document.id)
     return documents
+
+
+@router.get("/{pack_id}/documents/status", response_model=DocPackIngestStatusResponse)
+async def get_documents_status(
+    pack_id: str,
+    org_id: ClerkOrgId,  # not CurrentOrgId: this is polled — skip the org get-or-create round trip
+    _admin: RequireAdmin,
+    background_tasks: BackgroundTasks,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Cheap ingestion-progress poll: column-only query, no document/chunk hydration.
+
+    Also the recovery path for ingests killed by a host restart — stale documents come back
+    as `requeue_ids` and get their ingestion rescheduled here (see `get_ingest_status`).
+    """
+    rows, requeue_ids = await services.doc_pack.get_ingest_status(org_id, pack_id)
+    for document_id in requeue_ids:
+        background_tasks.add_task(ingest_document_background, org_id, document_id)
+    documents = [
+        DocumentIngestStatusItem(
+            id=row.id, title=row.title, status=row.status, page_count=row.page_count, error_message=row.error_message
+        )
+        for row in rows
+    ]
+    processed = sum(1 for d in documents if d.status == DocumentStatus.processed)
+    failed = sum(1 for d in documents if d.status == DocumentStatus.failed)
+    pending = len(documents) - processed - failed
+    return DocPackIngestStatusResponse(
+        pack_id=pack_id,
+        total=len(documents),
+        processed=processed,
+        failed=failed,
+        pending=pending,
+        is_complete=pending == 0,
+        documents=documents,
+    )
 
 
 @router.delete("/{pack_id}/documents/{document_id}", status_code=204)
@@ -79,6 +184,7 @@ async def delete_document(
     pack_id: str,
     document_id: str,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     await services.doc_pack.delete_document(org_id, pack_id, document_id)
@@ -89,6 +195,7 @@ async def retrieve_doc_pack(
     pack_id: str,
     payload: DocPackRetrieveRequest,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     hits = await services.rag.retrieve_doc_pack(
@@ -120,6 +227,7 @@ async def generate_doc_pack_quiz(
     pack_id: str,
     payload: GenerateDocPackQuizRequest,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     """Doc Pack PRD §5 — coverage_plan → draft → verify pipeline; returns a curation-ready draft."""
@@ -141,6 +249,7 @@ async def regenerate_quiz_questions(
     pack_id: str,
     payload: RegenerateQuestionsRequest,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     """Doc Pack PRD §2.1/§6 — regenerate specific dropped question slots within the current draft."""
@@ -149,7 +258,10 @@ async def regenerate_quiz_questions(
 
 @router.get("/{pack_id}/quiz", response_model=QuizTemplateAdminResponse)
 async def get_doc_pack_quiz(
-    pack_id: str, org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)
+    pack_id: str,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
 ):
     """Admin view of the latest generated/saved questions, including correct answers (Doc Pack PRD §6)."""
     return await services.quiz.get_admin_quiz(org_id, pack_id)
@@ -160,6 +272,7 @@ async def save_doc_pack_quiz(
     pack_id: str,
     payload: SaveDocPackQuizRequest,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     """Doc Pack PRD §5.5/§5.6 — publish the admin's curated set; pack becomes assignable."""

@@ -8,10 +8,16 @@ from onboard.dao.models.doc_pack import DocPack, DocPackDocument
 class DocPackDAO(BaseDAO[DocPack]):
     model = DocPack
 
+    async def exists_for_org(self, org_id: str, pack_id: str) -> bool:
+        """Primary-key existence probe — no row hydration, used by the hot status-polling path."""
+        result = await self.session.execute(select(DocPack.id).where(DocPack.id == pack_id, DocPack.org_id == org_id))
+        return result.scalar_one_or_none() is not None
+
     async def list_for_org(self, org_id: str, limit: int = 100, offset: int = 0) -> list[DocPack]:
         result = await self.session.execute(
             select(DocPack)
             .where(DocPack.org_id == org_id)
+            .options(selectinload(DocPack.domain))
             .order_by(DocPack.created_at.desc())
             .limit(limit)
             .offset(offset)
@@ -22,7 +28,7 @@ class DocPackDAO(BaseDAO[DocPack]):
         result = await self.session.execute(
             select(DocPack)
             .where(DocPack.id == pack_id, DocPack.org_id == org_id)
-            .options(selectinload(DocPack.documents))
+            .options(selectinload(DocPack.documents), selectinload(DocPack.domain))
         )
         return result.scalar_one_or_none()
 
@@ -43,6 +49,24 @@ class DocPackDocumentDAO(BaseDAO[DocPackDocument]):
             select(DocPackDocument).where(DocPackDocument.id == document_id, DocPackDocument.doc_pack_id == doc_pack_id)
         )
         return result.scalar_one_or_none()
+
+    async def list_status_for_pack(self, org_id: str, pack_id: str):
+        """Column-only status projection for polling — avoids hydrating ORM rows or loading document blobs."""
+        result = await self.session.execute(
+            select(
+                DocPackDocument.id,
+                DocPackDocument.title,
+                DocPackDocument.status,
+                DocPackDocument.page_count,
+                DocPackDocument.error_message,
+                DocPackDocument.ingest_attempts,
+                DocPackDocument.updated_at,
+            )
+            .join(DocPack, DocPack.id == DocPackDocument.doc_pack_id)
+            .where(DocPackDocument.doc_pack_id == pack_id, DocPack.org_id == org_id)
+            .order_by(DocPackDocument.created_at.asc())
+        )
+        return result.all()
 
     async def get_by_id_for_org(self, org_id: str, document_id: str) -> DocPackDocument | None:
         result = await self.session.execute(

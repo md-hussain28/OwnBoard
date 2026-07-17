@@ -6,6 +6,7 @@ import {
   NetworkIcon,
   SearchCodeIcon,
 } from "lucide-react";
+import type { AppRole } from "@/schemas/employee.schema";
 
 export type NavItem = {
   href: string;
@@ -17,6 +18,11 @@ export type NavItem = {
   incoming?: boolean;
   /** Match nested routes (e.g. /onboarding/policy-quiz). */
   matchPrefix?: boolean;
+  /**
+   * OwnBoard app_role gate. Omit = visible to every org member.
+   * When set, only those roles see the item.
+   */
+  roles?: AppRole[];
 };
 
 export type NavGroup = {
@@ -24,7 +30,7 @@ export type NavGroup = {
   items: NavItem[];
 };
 
-/** Workspace nav — shown to every signed-in org member. */
+/** Workspace nav — filtered by OwnBoard `app_role` in the sidebar. */
 export const WORKSPACE_NAV: NavGroup = {
   label: "Evidence desk",
   items: [
@@ -33,6 +39,7 @@ export const WORKSPACE_NAV: NavGroup = {
       label: "Codebases",
       description: "Connected repos",
       icon: FolderGit2Icon,
+      roles: ["admin"],
     },
     {
       href: "/doc-packs",
@@ -40,6 +47,15 @@ export const WORKSPACE_NAV: NavGroup = {
       description: "Assign & track",
       icon: BookOpenCheckIcon,
       matchPrefix: true,
+      roles: ["admin"],
+    },
+    {
+      href: "/onboarding/packs",
+      label: "My quizzes",
+      description: "Assigned reading",
+      icon: ClipboardCheckIcon,
+      matchPrefix: true,
+      roles: ["member"],
     },
     {
       href: "/onboarding",
@@ -48,6 +64,7 @@ export const WORKSPACE_NAV: NavGroup = {
       icon: ClipboardCheckIcon,
       incoming: true,
       matchPrefix: true,
+      roles: ["admin"],
     },
     {
       href: "/chat",
@@ -55,6 +72,7 @@ export const WORKSPACE_NAV: NavGroup = {
       description: "Ask why the code is",
       icon: SearchCodeIcon,
       incoming: true,
+      roles: ["admin"],
     },
     {
       href: "/dashboard",
@@ -62,6 +80,7 @@ export const WORKSPACE_NAV: NavGroup = {
       description: "Who knows what",
       icon: NetworkIcon,
       incoming: true,
+      roles: ["admin"],
     },
   ],
 };
@@ -71,6 +90,14 @@ export const WORKSPACE_NAV: NavGroup = {
  * Reached by URL (not org settings); create-org is hidden in the switcher.
  */
 export const PLATFORM_ADMIN_HREF = "/admin";
+
+export function navItemsForRole(role: AppRole | null | undefined): NavItem[] {
+  return WORKSPACE_NAV.items.filter((item) => {
+    if (!item.roles || item.roles.length === 0) return true;
+    if (!role) return false;
+    return item.roles.includes(role);
+  });
+}
 
 export function isNavItemActive(pathname: string, item: NavItem): boolean {
   if (item.href === "/") {

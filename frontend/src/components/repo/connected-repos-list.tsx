@@ -1,15 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
+import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { useCreateRepo } from "@/hooks/queries/repo/repo.mutations";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
+import { useRepos } from "@/hooks/queries/repo/repo.queries";
+import { getApiErrorMessage } from "@/lib/api/errors";
 import { Badge } from "@/ui/badge";
+import { Button } from "@/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { Input } from "@/ui/input";
+import { Skeleton } from "@/ui/skeleton";
 
 export function ConnectedReposList() {
+  const { isAdmin } = useAppRole();
   const { data: repos, isLoading, isError, error } = useRepos();
   const createRepo = useCreateRepo();
   const [url, setUrl] = useState("");
@@ -35,21 +38,15 @@ export function ConnectedReposList() {
         <CardTitle>Connected repos</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            placeholder="Repo name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Input
-            placeholder="Repo URL"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
-          <Button type="submit" disabled={createRepo.isPending}>
-            {createRepo.isPending ? "Adding..." : "Add repo"}
-          </Button>
-        </form>
+        {isAdmin && (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
+            <Input placeholder="Repo name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input placeholder="Repo URL" value={url} onChange={(e) => setUrl(e.target.value)} />
+            <Button type="submit" disabled={createRepo.isPending}>
+              {createRepo.isPending ? "Adding..." : "Add repo"}
+            </Button>
+          </form>
+        )}
 
         {isLoading && (
           <div className="space-y-2">
@@ -60,13 +57,17 @@ export function ConnectedReposList() {
 
         {isError && (
           <p className="text-sm text-muted-foreground">
-            Could not reach the backend ({error instanceof Error ? error.message : "unknown error"}).
-            Start the FastAPI service and refresh.
+            Could not reach the backend ({getApiErrorMessage(error)}). Start the FastAPI service and
+            refresh.
           </p>
         )}
 
         {!isLoading && !isError && repos?.length === 0 && (
-          <p className="text-sm text-muted-foreground">No repos connected yet.</p>
+          <p className="text-sm text-muted-foreground">
+            {isAdmin
+              ? "No repos connected yet."
+              : "No repos connected yet. Ask an admin to add one."}
+          </p>
         )}
 
         {!isLoading && !isError && repos && repos.length > 0 && (

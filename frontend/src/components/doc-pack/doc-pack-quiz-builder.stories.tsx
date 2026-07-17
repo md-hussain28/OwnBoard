@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { http, HttpResponse } from "msw";
-import { mockAdminQuizTemplate } from "../../../.storybook/mocks/data";
+import { HttpResponse, http } from "msw";
 import { DocPackQuizBuilder } from "@/components/doc-pack/doc-pack-quiz-builder";
+import { mockAdminQuizTemplate } from "../../../.storybook/mocks/data";
 
 const meta = {
   title: "Components/DocPack/DocPackQuizBuilder",

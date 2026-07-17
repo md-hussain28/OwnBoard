@@ -23,13 +23,13 @@ install: ## Install backend (uv) + frontend (npm) deps
 	$(MAKE) -C $(BACKEND_DIR) install
 	$(MAKE) -C $(FRONTEND_DIR) install
 
-db-up: ## Start Postgres
+db-up: ## Verify local Homebrew Postgres is ready
 	$(MAKE) -C $(BACKEND_DIR) db-up
 
-db-down: ## Stop Postgres (keeps data)
+db-down: ## Hint for stopping local Brew Postgres
 	$(MAKE) -C $(BACKEND_DIR) db-down
 
-db-reset: ## Stop Postgres and delete data
+db-reset: ## Drop/recreate local onboard DB (destructive)
 	$(MAKE) -C $(BACKEND_DIR) db-reset
 
 migrate: ## Run Alembic migrations

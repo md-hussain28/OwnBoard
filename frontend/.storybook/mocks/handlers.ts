@@ -1,4 +1,4 @@
-import { delay, http, HttpResponse } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import {
   mockAdminQuizTemplate,
   mockAssignmentDetail,
@@ -7,11 +7,15 @@ import {
   mockBusFactor,
   mockChatResponse,
   mockDocPackDetail,
+  mockDocPackIngestStatus,
   mockDocPacks,
   mockEmployees,
   mockExperts,
+  mockMe,
+  mockOrgDomains,
   mockQuizAnalytics,
   mockQuizAttempt,
+  mockQuizDomains,
   mockQuizTemplate,
   mockRepos,
   mockTenants,
@@ -32,7 +36,10 @@ export const repoHandlers = [
   http.get("/api/repos", () => HttpResponse.json(mockRepos)),
   http.post("/api/repos", async ({ request }) => {
     const body = (await request.json()) as { url: string; name: string };
-    return HttpResponse.json({ id: "repo_new1234567890abcd", ...body, ingested_at: null }, { status: 201 });
+    return HttpResponse.json(
+      { id: "repo_new1234567890abcd", ...body, ingested_at: null },
+      { status: 201 },
+    );
   }),
 ];
 
@@ -41,25 +48,130 @@ export const dashboardHandlers = [
   http.get("/api/dashboard/quiz-analytics", () => HttpResponse.json(mockQuizAnalytics)),
 ];
 
+/** Mirrors the backend: an absent or null `domain_id` clears the domain; otherwise look it up. */
+function findMockDomain(domainId: string | null | undefined) {
+  if (domainId === undefined || domainId === null) return null;
+  return mockOrgDomains.find((d) => d.id === domainId) ?? null;
+}
+
 export const employeeHandlers = [
+  http.get("/api/me", () => HttpResponse.json(mockMe)),
   http.get("/api/employees", () => HttpResponse.json(mockEmployees)),
   http.get("/api/employees/:employeeId/assignments", () => HttpResponse.json(mockAssignments)),
+  http.post("/api/employees/invitations", async ({ request }) => {
+    const body = (await request.json()) as { email: string; app_role?: string };
+    return HttpResponse.json(
+      {
+        id: "inv_storybook",
+        email_address: body.email,
+        app_role: body.app_role ?? "member",
+        status: "pending",
+      },
+      { status: 201 },
+    );
+  }),
+  http.patch("/api/employees/:id", async ({ params, request }) => {
+    const body = (await request.json()) as {
+      app_role?: string;
+      role?: string | null;
+      domain_id?: string | null;
+    };
+    const existing = mockEmployees.find((e) => e.id === params.id) ?? mockEmployees[0];
+    const domain = findMockDomain(body.domain_id);
+    return HttpResponse.json({
+      ...existing,
+      app_role: body.app_role ?? existing.app_role,
+      role: body.role !== undefined ? body.role : existing.role,
+      domain_id: body.domain_id !== undefined ? body.domain_id : existing.domain_id,
+      domain_name: body.domain_id !== undefined ? (domain?.name ?? null) : existing.domain_name,
+    });
+  }),
+];
+
+export const domainHandlers = [
+  http.get("/api/domains", () => HttpResponse.json(mockOrgDomains)),
+  http.post("/api/domains", async ({ request }) => {
+    const body = (await request.json()) as { name: string };
+    return HttpResponse.json(
+      {
+        id: `dom_${body.name.toLowerCase().replace(/\s+/g, "_")}`,
+        org_id: "org_demo",
+        name: body.name,
+        is_default: false,
+      },
+      { status: 201 },
+    );
+  }),
+  http.delete("/api/domains/:id", () => new HttpResponse(null, { status: 204 })),
+];
+
+export const quizDomainHandlers = [
+  http.get("/api/quiz-domains", () => HttpResponse.json(mockQuizDomains)),
+  http.post("/api/quiz-domains", async ({ request }) => {
+    const body = (await request.json()) as { name: string };
+    return HttpResponse.json(
+      {
+        id: `qdom_${body.name.toLowerCase().replace(/\s+/g, "_")}`,
+        org_id: "org_demo",
+        name: body.name,
+        is_default: false,
+      },
+      { status: 201 },
+    );
+  }),
+  http.delete("/api/quiz-domains/:id", () => new HttpResponse(null, { status: 204 })),
 ];
 
 export const docPackHandlers = [
   http.get("/api/doc-packs", () => HttpResponse.json(mockDocPacks)),
   http.get("/api/doc-packs/:id", () => HttpResponse.json(mockDocPackDetail)),
+  http.get("/api/doc-packs/:id/documents/status", () => HttpResponse.json(mockDocPackIngestStatus)),
   http.post("/api/doc-packs", async ({ request }) => {
-    const body = (await request.json()) as { name: string; description?: string };
+    const body = (await request.json()) as {
+      name: string;
+      description?: string;
+      domain_id?: string | null;
+    };
+    const domain = mockQuizDomains.find((d) => d.id === body.domain_id);
     return HttpResponse.json(
-      { id: "pack_new1234567890abcd", name: body.name, description: body.description ?? null, status: "draft", created_by: null, created_at: "2026-07-16T12:00:00Z", documents: [] },
+      {
+        id: "pack_new1234567890abcd",
+        name: body.name,
+        description: body.description ?? null,
+        status: "draft",
+        created_by: null,
+        created_at: "2026-07-16T12:00:00Z",
+        domain_id: domain?.id ?? null,
+        domain_name: domain?.name ?? null,
+        documents: [],
+      },
       { status: 201 },
     );
+  }),
+  http.patch("/api/doc-packs/:id", async ({ request }) => {
+    const body = (await request.json()) as {
+      name?: string;
+      description?: string;
+      domain_id?: string | null;
+    };
+    const domain =
+      body.domain_id === undefined
+        ? mockQuizDomains.find((d) => d.id === mockDocPackDetail.domain_id)
+        : mockQuizDomains.find((d) => d.id === body.domain_id);
+    return HttpResponse.json({
+      ...mockDocPackDetail,
+      ...body,
+      domain_id: body.domain_id === undefined ? mockDocPackDetail.domain_id : (domain?.id ?? null),
+      domain_name:
+        body.domain_id === undefined ? mockDocPackDetail.domain_name : (domain?.name ?? null),
+    });
   }),
   http.get("/api/doc-packs/:id/quiz", () => HttpResponse.json(mockAdminQuizTemplate)),
   http.put("/api/doc-packs/:id/quiz", () => HttpResponse.json(mockAdminQuizTemplate)),
   http.get("/api/doc-packs/:id/assignments", () => HttpResponse.json(mockAssignments)),
-  http.post("/api/doc-packs/:id/assignments", () => HttpResponse.json(mockAssignments, { status: 201 })),
+  http.post("/api/doc-packs/:id/assignments", () =>
+    HttpResponse.json(mockAssignments, { status: 201 }),
+  ),
 ];
 
 export const assignmentHandlers = [
@@ -79,7 +191,12 @@ export const quizHandlers = [
   // Grading is pass/fail on 100% — the mock passes when every answer matches.
   http.post("/api/quizzes/attempts/:attemptId/grade", async () => {
     await delay(400);
-    return HttpResponse.json({ ...mockQuizAttempt, score: 1, passed: true, completed_at: "2026-07-16T12:05:00Z" });
+    return HttpResponse.json({
+      ...mockQuizAttempt,
+      score: 1,
+      passed: true,
+      completed_at: "2026-07-16T12:05:00Z",
+    });
   }),
 ];
 
@@ -92,7 +209,9 @@ export const chatHandlers = [
 ];
 
 export const adminHandlers = [
-  http.get("/api/admin/me", () => HttpResponse.json({ isPlatformAdmin: true, email: "admin@ownboard.dev" })),
+  http.get("/api/admin/me", () =>
+    HttpResponse.json({ isPlatformAdmin: true, email: "admin@ownboard.dev" }),
+  ),
   http.get("/api/admin/tenants", () => HttpResponse.json(mockTenants)),
 ];
 
@@ -101,6 +220,8 @@ export const handlers = [
   ...repoHandlers,
   ...dashboardHandlers,
   ...employeeHandlers,
+  ...domainHandlers,
+  ...quizDomainHandlers,
   ...docPackHandlers,
   ...assignmentHandlers,
   ...quizHandlers,

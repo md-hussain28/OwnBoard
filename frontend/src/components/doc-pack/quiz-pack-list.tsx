@@ -1,30 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useQueries } from "@tanstack/react-query";
 import { PencilIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { FilterSelect } from "@/components/shared/filter-select";
 import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { packAssignmentKeys } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { packAssignmentService } from "@/services/pack-assignment.service";
+import { useAppRole } from "@/hooks/queries/me/me.queries";
+import {
+  type PackAssignmentProgress,
+  usePackAssignmentProgress,
+} from "@/hooks/queries/pack-assignment/pack-assignment.queries";
+import { useQuizDomains } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import type { DocPackListItem } from "@/schemas/docPack.schema";
+import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Skeleton } from "@/ui/skeleton";
-import { Badge } from "@/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/ui/select";
-import { cn } from "@/lib/utils";
-import type { DocPackListItem } from "@/schemas/docPack.schema";
-import type { PackAssignment, PackAssignmentStatus } from "@/schemas/packAssignment.schema";
 
 type PackStatus = DocPackListItem["status"];
 type StatusFilter = "all" | PackStatus;
 type AssignmentFilter = "all" | "assigned" | "unassigned";
+type DomainFilter = "all" | "none" | string;
 
 const STATUS_LABEL: Record<PackStatus, string> = {
   draft: "Draft",
@@ -54,145 +51,253 @@ function packStatusVariant(status: PackStatus) {
   return "secondary" as const;
 }
 
-function FilterSelect<T extends string>({
-  value,
-  onChange,
-  options,
-  "aria-label": ariaLabel,
+function matchesDomain(pack: DocPackListItem, domainFilter: DomainFilter) {
+  if (domainFilter === "all") return true;
+  if (domainFilter === "none") return !pack.domainId;
+  return pack.domainId === domainFilter;
+}
+
+function matchesAssignment(
+  pack: DocPackListItem,
+  assignmentFilter: AssignmentFilter,
+  progressByPackId: Map<string, PackAssignmentProgress>,
+) {
+  if (assignmentFilter === "all") return true;
+  const progress = progressByPackId.get(pack.id);
+  const assigned = (progress?.count ?? 0) > 0;
+  return assignmentFilter === "assigned" ? assigned : !assigned;
+}
+
+function matchesQuery(pack: DocPackListItem, q: string) {
+  if (!q) return true;
+  const haystack = [
+    pack.name,
+    pack.description ?? "",
+    pack.domainName ?? "",
+    STATUS_LABEL[pack.status],
+    pack.status.replace("_", " "),
+  ]
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(q);
+}
+
+function PackFilterBar({
+  query,
+  onQueryChange,
+  domainFilter,
+  onDomainFilterChange,
+  domainFilters,
+  statusFilter,
+  onStatusFilterChange,
+  assignmentFilter,
+  onAssignmentFilterChange,
+  isAdmin,
+  hasActiveFilters,
+  onClear,
 }: {
-  value: T;
-  onChange: (value: T) => void;
-  options: { value: T; label: string }[];
-  "aria-label": string;
+  query: string;
+  onQueryChange: (value: string) => void;
+  domainFilter: DomainFilter;
+  onDomainFilterChange: (value: DomainFilter) => void;
+  domainFilters: { value: DomainFilter; label: string }[];
+  statusFilter: StatusFilter;
+  onStatusFilterChange: (value: StatusFilter) => void;
+  assignmentFilter: AssignmentFilter;
+  onAssignmentFilterChange: (value: AssignmentFilter) => void;
+  isAdmin: boolean;
+  hasActiveFilters: boolean;
+  onClear: () => void;
 }) {
-  const active = value !== "all";
   return (
-    <Select value={value} onValueChange={(next) => onChange(next as T)}>
-      <SelectTrigger
-        size="sm"
-        aria-label={ariaLabel}
-        className={cn(
-          "shrink-0",
-          active && "border-primary/40 text-foreground",
-          !active && "text-muted-foreground",
-        )}
-      >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent align="end">
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="relative min-w-[12rem] flex-1 basis-48">
+        <SearchIcon
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          placeholder="Search quizzes…"
+          aria-label="Search quizzes"
+          className="pl-9"
+        />
+      </div>
+
+      <FilterSelect
+        value={domainFilter}
+        onChange={onDomainFilterChange}
+        options={domainFilters}
+        aria-label="Filter by domain"
+      />
+      <FilterSelect
+        value={statusFilter}
+        onChange={onStatusFilterChange}
+        options={STATUS_FILTERS}
+        aria-label="Filter by status"
+      />
+      {isAdmin && (
+        <FilterSelect
+          value={assignmentFilter}
+          onChange={onAssignmentFilterChange}
+          options={ASSIGNMENT_FILTERS}
+          aria-label="Filter by assignment"
+        />
+      )}
+
+      {hasActiveFilters && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          Clear
+        </button>
+      )}
+    </div>
   );
 }
 
-const PROGRESS_ORDER: PackAssignmentStatus[] = [
-  "passed",
-  "failed",
-  "quiz_in_progress",
-  "ready_for_quiz",
-  "reading",
-  "assigned",
-];
-
-const PROGRESS_SHORT: Record<PackAssignmentStatus, string> = {
-  assigned: "assigned",
-  reading: "reading",
-  ready_for_quiz: "ready",
-  quiz_in_progress: "in quiz",
-  passed: "passed",
-  failed: "failed",
-};
-
-function summarizeProgress(assignments: PackAssignment[]): string {
-  if (assignments.length === 0) return "Not assigned yet";
-  const counts = new Map<PackAssignmentStatus, number>();
-  for (const a of assignments) {
-    counts.set(a.status, (counts.get(a.status) ?? 0) + 1);
-  }
-  return PROGRESS_ORDER.filter((s) => (counts.get(s) ?? 0) > 0)
-    .map((s) => `${counts.get(s)} ${PROGRESS_SHORT[s]}`)
-    .join(" · ");
+function EmptyPacksState({ isAdmin }: { isAdmin: boolean }) {
+  return (
+    <div className="space-y-3 rounded-2xl border border-dashed border-border px-6 py-10 text-center">
+      <p className="text-sm text-muted-foreground text-pretty">
+        {isAdmin
+          ? "No quizzes yet. Create one to upload documents and generate a cited quiz, then assign it to hires from this list."
+          : "No quizzes yet. An admin will create and assign them."}
+      </p>
+      {isAdmin && (
+        <Button asChild>
+          <Link href="/doc-packs/new">Create your first quiz</Link>
+        </Button>
+      )}
+    </div>
+  );
 }
 
-export function QuizPackList({
+function NoMatchesState({ query, onClear }: { query: string; onClear: () => void }) {
+  return (
+    <div className="space-y-3 rounded-2xl border border-dashed border-border px-6 py-8 text-center">
+      <p className="text-sm text-muted-foreground">
+        {query.trim()
+          ? `No quizzes match “${query.trim()}” with the current filters.`
+          : "No quizzes match the current filters."}
+      </p>
+      <button
+        type="button"
+        onClick={onClear}
+        className="text-sm font-medium text-foreground underline-offset-2 hover:underline"
+      >
+        Clear filters
+      </button>
+    </div>
+  );
+}
+
+function PackProgressLine({ progress }: { progress: PackAssignmentProgress | undefined }) {
+  if (progress?.loading) {
+    return <Skeleton className="h-3 w-36" />;
+  }
+  return (
+    <p className="text-xs text-muted-foreground">
+      {progress?.text ?? "Not assigned yet"}
+      {progress && progress.count > 0
+        ? ` · ${progress.count} ${progress.count === 1 ? "person" : "people"}`
+        : ""}
+    </p>
+  );
+}
+
+function PackRow({
+  pack,
+  isAdmin,
+  progress,
   onAssignPack,
 }: {
+  pack: DocPackListItem;
+  isAdmin: boolean;
+  progress: PackAssignmentProgress | undefined;
   onAssignPack: (packId: string) => void;
 }) {
+  return (
+    <li className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5">
+      <div className="min-w-0 space-y-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="truncate font-medium">{pack.name}</p>
+          {pack.domainName && <Badge variant="outline">{pack.domainName}</Badge>}
+          <Badge variant={packStatusVariant(pack.status)}>{STATUS_LABEL[pack.status]}</Badge>
+        </div>
+        {pack.description && (
+          <p className="truncate text-sm text-muted-foreground">{pack.description}</p>
+        )}
+        {isAdmin && <PackProgressLine progress={progress} />}
+      </div>
+
+      {isAdmin && (
+        <div className="flex shrink-0 items-center gap-2">
+          <Button type="button" size="sm" onClick={() => onAssignPack(pack.id)}>
+            <UserPlusIcon className="size-3.5" />
+            Assign
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/doc-packs/${pack.id}`}>
+              <PencilIcon className="size-3.5" />
+              Edit
+            </Link>
+          </Button>
+        </div>
+      )}
+    </li>
+  );
+}
+
+export function QuizPackList({ onAssignPack }: { onAssignPack: (packId: string) => void }) {
+  const { isAdmin } = useAppRole();
   const { data: packs, isLoading, isError, error } = useDocPacks();
+  const domainsQuery = useQuizDomains({ enabled: isAdmin });
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilter>("all");
+  const [domainFilter, setDomainFilter] = useState<DomainFilter>("all");
 
   const packIds = useMemo(() => (packs ?? []).map((p) => p.id), [packs]);
+  const domains = domainsQuery.data ?? [];
+  const progressByPackId = usePackAssignmentProgress(packIds, isAdmin);
 
-  const assignmentQueries = useQueries({
-    queries: packIds.map((packId) => ({
-      queryKey: packAssignmentKeys.forPack(packId),
-      queryFn: () => packAssignmentService.listForPack(packId),
-      enabled: packIds.length > 0,
-      staleTime: 30_000,
-    })),
-  });
-
-  const progressByPackId = useMemo(() => {
-    const map = new Map<string, { text: string; loading: boolean; count: number }>();
-    packIds.forEach((packId, index) => {
-      const q = assignmentQueries[index];
-      if (!q || q.isLoading) {
-        map.set(packId, { text: "", loading: true, count: 0 });
-      } else if (q.isError) {
-        map.set(packId, { text: "Progress unavailable", loading: false, count: 0 });
-      } else {
-        const data = q.data ?? [];
-        map.set(packId, {
-          text: summarizeProgress(data),
-          loading: false,
-          count: data.length,
-        });
-      }
-    });
-    return map;
-  }, [packIds, assignmentQueries]);
+  const domainFilters: { value: DomainFilter; label: string }[] = useMemo(
+    () => [
+      { value: "all", label: "All domains" },
+      { value: "none", label: "No domain" },
+      ...domains.map((d) => ({ value: d.id, label: d.name })),
+    ],
+    [domains],
+  );
 
   const filteredPacks = useMemo(() => {
     const list = packs ?? [];
     const q = query.trim().toLowerCase();
-    return list.filter((pack) => {
-      if (statusFilter !== "all" && pack.status !== statusFilter) return false;
-
-      if (assignmentFilter !== "all") {
-        const progress = progressByPackId.get(pack.id);
-        const assigned = (progress?.count ?? 0) > 0;
-        if (assignmentFilter === "assigned" && !assigned) return false;
-        if (assignmentFilter === "unassigned" && assigned) return false;
-      }
-
-      if (!q) return true;
-      const haystack = [
-        pack.name,
-        pack.description ?? "",
-        STATUS_LABEL[pack.status],
-        pack.status.replace("_", " "),
-      ]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [packs, query, statusFilter, assignmentFilter, progressByPackId]);
+    return list.filter(
+      (pack) =>
+        (statusFilter === "all" || pack.status === statusFilter) &&
+        matchesDomain(pack, domainFilter) &&
+        matchesAssignment(pack, assignmentFilter, progressByPackId) &&
+        matchesQuery(pack, q),
+    );
+  }, [packs, query, statusFilter, assignmentFilter, domainFilter, progressByPackId]);
 
   const hasActiveFilters =
-    query.trim().length > 0 || statusFilter !== "all" || assignmentFilter !== "all";
+    query.trim().length > 0 ||
+    statusFilter !== "all" ||
+    assignmentFilter !== "all" ||
+    domainFilter !== "all";
 
   function clearFilters() {
     setQuery("");
     setStatusFilter("all");
     setAssignmentFilter("all");
+    setDomainFilter("all");
   }
 
   return (
@@ -201,57 +306,36 @@ export function QuizPackList({
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight text-balance">Quizzes</h1>
           <p className="text-sm text-muted-foreground text-pretty">
-            Every pack you can assign. Open Assign to pick people and see who has passed.
+            {isAdmin
+              ? "Every pack you can assign. Open Assign to pick people and see who has passed."
+              : "Published quizzes in your organization. Your assigned reading is under Readiness."}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/doc-packs/new">
-            <PlusIcon className="size-4" />
-            Create quiz
-          </Link>
-        </Button>
+        {isAdmin && (
+          <Button asChild>
+            <Link href="/doc-packs/new">
+              <PlusIcon className="size-4" />
+              Create quiz
+            </Link>
+          </Button>
+        )}
       </div>
 
       {!isLoading && !isError && (packs?.length ?? 0) > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-[12rem] flex-1 basis-48">
-            <SearchIcon
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden
-            />
-            <Input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search quizzes…"
-              aria-label="Search quizzes"
-              className="pl-9"
-            />
-          </div>
-
-          <FilterSelect
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={STATUS_FILTERS}
-            aria-label="Filter by status"
-          />
-          <FilterSelect
-            value={assignmentFilter}
-            onChange={setAssignmentFilter}
-            options={ASSIGNMENT_FILTERS}
-            aria-label="Filter by assignment"
-          />
-
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-            >
-              Clear
-            </button>
-          )}
-        </div>
+        <PackFilterBar
+          query={query}
+          onQueryChange={setQuery}
+          domainFilter={domainFilter}
+          onDomainFilterChange={setDomainFilter}
+          domainFilters={domainFilters}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          assignmentFilter={assignmentFilter}
+          onAssignmentFilterChange={setAssignmentFilter}
+          isAdmin={isAdmin}
+          hasActiveFilters={hasActiveFilters}
+          onClear={clearFilters}
+        />
       )}
 
       {isLoading && (
@@ -264,91 +348,28 @@ export function QuizPackList({
 
       {isError && (
         <p className="text-sm text-muted-foreground">
-          Could not reach the backend (
-          {error instanceof Error ? error.message : "unknown error"}). Start the FastAPI service
-          and refresh.
+          Could not reach the backend ({getApiErrorMessage(error)}). Start the FastAPI service and
+          refresh.
         </p>
       )}
 
-      {!isLoading && !isError && packs?.length === 0 && (
-        <div className="space-y-3 rounded-2xl border border-dashed border-border px-6 py-10 text-center">
-          <p className="text-sm text-muted-foreground text-pretty">
-            No quizzes yet. Create one to upload documents and generate a cited quiz, then assign
-            it to hires from this list.
-          </p>
-          <Button asChild>
-            <Link href="/doc-packs/new">Create your first quiz</Link>
-          </Button>
-        </div>
-      )}
+      {!isLoading && !isError && packs?.length === 0 && <EmptyPacksState isAdmin={isAdmin} />}
 
       {!isLoading && !isError && packs && packs.length > 0 && filteredPacks.length === 0 && (
-        <div className="space-y-3 rounded-2xl border border-dashed border-border px-6 py-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            {query.trim()
-              ? `No quizzes match “${query.trim()}” with the current filters.`
-              : "No quizzes match the current filters."}
-          </p>
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="text-sm font-medium text-foreground underline-offset-2 hover:underline"
-          >
-            Clear filters
-          </button>
-        </div>
+        <NoMatchesState query={query} onClear={clearFilters} />
       )}
 
       {!isLoading && !isError && filteredPacks.length > 0 && (
         <ul className="divide-y divide-border rounded-2xl border border-border bg-background shadow-soft">
-          {filteredPacks.map((pack) => {
-            const progress = progressByPackId.get(pack.id);
-            return (
-              <li
-                key={pack.id}
-                className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5"
-              >
-                <div className="min-w-0 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate font-medium">{pack.name}</p>
-                    <Badge variant={packStatusVariant(pack.status)}>
-                      {STATUS_LABEL[pack.status]}
-                    </Badge>
-                  </div>
-                  {pack.description && (
-                    <p className="truncate text-sm text-muted-foreground">{pack.description}</p>
-                  )}
-                  {progress?.loading ? (
-                    <Skeleton className="h-3 w-36" />
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      {progress?.text ?? "Not assigned yet"}
-                      {progress && progress.count > 0
-                        ? ` · ${progress.count} ${progress.count === 1 ? "person" : "people"}`
-                        : ""}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => onAssignPack(pack.id)}
-                  >
-                    <UserPlusIcon className="size-3.5" />
-                    Assign
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/doc-packs/${pack.id}`}>
-                      <PencilIcon className="size-3.5" />
-                      Edit
-                    </Link>
-                  </Button>
-                </div>
-              </li>
-            );
-          })}
+          {filteredPacks.map((pack) => (
+            <PackRow
+              key={pack.id}
+              pack={pack}
+              isAdmin={isAdmin}
+              progress={progressByPackId.get(pack.id)}
+              onAssignPack={onAssignPack}
+            />
+          ))}
         </ul>
       )}
     </div>

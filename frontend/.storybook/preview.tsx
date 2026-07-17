@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
 import type { Decorator, Preview } from "@storybook/nextjs-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { initialize, mswLoader } from "msw-storybook-addon";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { handlers } from "./mocks/handlers";
 import "../src/app/globals.css";
 
@@ -15,7 +16,13 @@ function StoryQueryProvider({ children }: { children: React.ReactNode }) {
     () =>
       new QueryClient({
         defaultOptions: {
-          queries: { retry: false, refetchOnWindowFocus: false, staleTime: 30_000 },
+          queries: {
+            retry: false,
+            refetchOnWindowFocus: false,
+            staleTime: 30_000,
+            gcTime: 5 * 60_000,
+          },
+          mutations: { retry: 0 },
         },
       }),
   );

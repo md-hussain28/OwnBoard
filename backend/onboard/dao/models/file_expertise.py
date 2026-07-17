@@ -8,6 +8,7 @@ from onboard.dao.models.base import AuditBase
 
 class FileExpertise(AuditBase):
     __tablename__ = "file_expertise"
+    __id_prefix__ = "fexp"
 
     repo_id: Mapped[str] = mapped_column(ForeignKey("repo.id", ondelete="CASCADE"), nullable=False)
     file_path: Mapped[str] = mapped_column(String(1024), nullable=False)

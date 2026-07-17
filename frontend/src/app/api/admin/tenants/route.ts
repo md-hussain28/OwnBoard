@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resolvePlatformAdmin } from "@/lib/platform-admin";
 
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
   const slug = parsed.data.slug ?? slugify(name);
   const clerk = await clerkClient();
 
-  let organization;
+  let organization: Awaited<ReturnType<typeof clerk.organizations.createOrganization>>;
   try {
     organization = await clerk.organizations.createOrganization({
       name,
@@ -100,6 +100,7 @@ export async function POST(request: Request) {
       inviterUserId: admin.userId,
       emailAddress: adminEmail.toLowerCase(),
       role: "org:admin",
+      publicMetadata: { app_role: "admin" },
       redirectUrl: `${origin}/sign-in`,
     });
     invitationId = invitation.id;

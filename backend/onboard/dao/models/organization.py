@@ -10,9 +10,14 @@ class Organization(AuditBase):
 
     __tablename__ = "organization"
 
+    # Clerk supplies the id verbatim — no default generator, insertion without an explicit id must fail.
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     employees: Mapped[list["Employee"]] = relationship(back_populates="organization", cascade="all, delete-orphan")
+    domains: Mapped[list["OrgDomain"]] = relationship(back_populates="organization", cascade="all, delete-orphan")
+    quiz_domains: Mapped[list["QuizDomain"]] = relationship(back_populates="organization", cascade="all, delete-orphan")
     repos: Mapped[list["Repo"]] = relationship(back_populates="organization", cascade="all, delete-orphan")
     policy_docs: Mapped[list["PolicyDoc"]] = relationship(back_populates="organization", cascade="all, delete-orphan")
     doc_packs: Mapped[list["DocPack"]] = relationship(back_populates="organization", cascade="all, delete-orphan")

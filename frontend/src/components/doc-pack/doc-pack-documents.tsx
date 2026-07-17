@@ -1,12 +1,18 @@
 "use client";
 
-import { useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FileTextIcon, Loader2Icon, Trash2Icon, UploadIcon } from "lucide-react";
-import { useUploadDocuments, useDeleteDocument } from "@/hooks/queries/doc-pack/doc-pack.mutations";
+import { useEffect, useRef, useState } from "react";
+import {
+  useBackgroundUpload,
+  useDeleteDocument,
+} from "@/hooks/queries/doc-pack/doc-pack.mutations";
+import { docPackKeys, useDocPackIngestStatus } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import type { DocPackDocument } from "@/schemas/docPack.schema";
+import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Badge } from "@/ui/badge";
-import type { DocPackDocument } from "@/schemas/docPack.schema";
 
 const STATUS_LABEL: Record<DocPackDocument["status"], string> = {
   uploaded: "Queued",
@@ -29,18 +35,45 @@ function formatSize(bytes: number): string {
 
 export function DocPackDocuments({
   packId,
+  packName,
   documents,
 }: {
   packId: string;
+  packName: string;
   documents: DocPackDocument[];
 }) {
-  const upload = useUploadDocuments(packId);
+  const queryClient = useQueryClient();
+  const startBackgroundUpload = useBackgroundUpload(packId, packName);
   const deleteDocument = useDeleteDocument(packId);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const hasPendingDocuments = documents.some(
+    (d) => d.status === "uploaded" || d.status === "processing",
+  );
+  // Cheap column-only poll — the heavy pack query is only re-fetched on transitions.
+  const { data: ingestStatus } = useDocPackIngestStatus(packId, hasPendingDocuments);
+
+  // Overlay live statuses onto the (possibly stale) pack detail data.
+  const liveById = new Map(ingestStatus?.documents.map((d) => [d.id, d]) ?? []);
+  const rows = documents.map((doc) => {
+    const live = liveById.get(doc.id);
+    return live
+      ? { ...doc, status: live.status, pageCount: live.pageCount, errorMessage: live.errorMessage }
+      : doc;
+  });
+
+  // Once the poll reports everything terminal, refresh the pack so the rest of the
+  // builder (quiz step gating) sees the final statuses.
+  useEffect(() => {
+    if (hasPendingDocuments && ingestStatus?.isComplete) {
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
+    }
+  }, [hasPendingDocuments, ingestStatus?.isComplete, packId, queryClient]);
 
   function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
-    upload.mutate(Array.from(fileList));
+    setValidationError(startBackgroundUpload(Array.from(fileList)));
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -62,35 +95,25 @@ export function DocPackDocuments({
           type="button"
           variant="outline"
           className="w-full border-dashed py-8"
-          disabled={upload.isPending}
           onClick={() => fileInputRef.current?.click()}
         >
-          {upload.isPending ? (
-            <>
-              <Loader2Icon className="size-4 animate-spin" /> Uploading...
-            </>
-          ) : (
-            <>
-              <UploadIcon className="size-4" /> Upload PDF, DOCX, TXT or MD files
-            </>
-          )}
+          <UploadIcon className="size-4" /> Upload PDF, DOCX, TXT or MD files
         </Button>
+        <p className="text-xs text-muted-foreground">
+          Uploads run in the background — you can keep working while documents process.
+        </p>
 
-        {upload.isError && (
-          <p className="text-sm text-destructive">
-            Upload failed ({upload.error instanceof Error ? upload.error.message : "unknown error"}).
-          </p>
-        )}
+        {validationError && <p className="text-sm text-destructive">{validationError}</p>}
 
-        {documents.length === 0 && (
+        {rows.length === 0 && (
           <p className="text-sm text-muted-foreground">
             No documents yet. Upload at least one file to generate a quiz.
           </p>
         )}
 
-        {documents.length > 0 && (
+        {rows.length > 0 && (
           <ul className="space-y-2">
-            {documents.map((doc) => (
+            {rows.map((doc) => (
               <li
                 key={doc.id}
                 className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3"
@@ -129,6 +152,12 @@ export function DocPackDocuments({
               </li>
             ))}
           </ul>
+        )}
+
+        {deleteDocument.isError && (
+          <p className="text-sm text-destructive">
+            {getApiErrorMessage(deleteDocument.error, "Delete failed.")}
+          </p>
         )}
       </CardContent>
     </Card>

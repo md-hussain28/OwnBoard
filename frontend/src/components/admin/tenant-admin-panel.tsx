@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useTenants } from "@/hooks/queries/admin/admin.queries";
 import { useCreateTenant, useDeleteTenant } from "@/hooks/queries/admin/admin.mutations";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
+import { useTenants } from "@/hooks/queries/admin/admin.queries";
+import { getApiErrorMessage } from "@/lib/api/errors";
 import { Badge } from "@/ui/badge";
+import { Button } from "@/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
+import { Input } from "@/ui/input";
+import { Skeleton } from "@/ui/skeleton";
 
 export function TenantAdminPanel() {
   const { data: tenants, isLoading, isError, error } = useTenants();
@@ -40,13 +41,11 @@ export function TenantAdminPanel() {
               `Tenant "${result.name}" created, but invite failed: ${result.invitationError}`,
             );
           } else {
-            setFormMessage(
-              `Tenant "${result.name}" created. Invite sent to ${result.adminEmail}.`,
-            );
+            setFormMessage(`Tenant "${result.name}" created. Invite sent to ${result.adminEmail}.`);
           }
         },
         onError: (err) => {
-          setFormMessage(err instanceof Error ? err.message : "Failed to create tenant");
+          setFormMessage(getApiErrorMessage(err, "Failed to create tenant"));
         },
       },
     );
@@ -56,7 +55,7 @@ export function TenantAdminPanel() {
     if (!window.confirm(`Delete tenant "${tenantName}"? This cannot be undone.`)) return;
     deleteTenant.mutate(id, {
       onError: (err) => {
-        setFormMessage(err instanceof Error ? err.message : "Failed to delete tenant");
+        setFormMessage(getApiErrorMessage(err, "Failed to delete tenant"));
       },
     });
   }
@@ -67,8 +66,8 @@ export function TenantAdminPanel() {
         <CardHeader>
           <CardTitle>Create tenant</CardTitle>
           <CardDescription>
-            Provisions a Clerk organization and invites one email as org admin. That person
-            signs in with their own password and can invite teammates from there.
+            Provisions a Clerk organization and invites one email as org admin. That person signs in
+            with their own password and can invite teammates from there.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -115,9 +114,7 @@ export function TenantAdminPanel() {
               </Button>
             </div>
           </form>
-          {formMessage && (
-            <p className="mt-3 text-sm text-muted-foreground">{formMessage}</p>
-          )}
+          {formMessage && <p className="mt-3 text-sm text-muted-foreground">{formMessage}</p>}
         </CardContent>
       </Card>
 
@@ -136,8 +133,7 @@ export function TenantAdminPanel() {
 
           {isError && (
             <p className="text-sm text-muted-foreground">
-              Could not load tenants (
-              {error instanceof Error ? error.message : "unknown error"}).
+              Could not load tenants ({getApiErrorMessage(error)}).
             </p>
           )}
 

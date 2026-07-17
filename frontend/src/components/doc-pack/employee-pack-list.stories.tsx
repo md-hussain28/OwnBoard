@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { http, HttpResponse } from "msw";
-import { docPackHandlers, employeeHandlers } from "../../../.storybook/mocks/handlers";
+import { HttpResponse, http } from "msw";
 import { EmployeePackList } from "@/components/doc-pack/employee-pack-list";
+import { docPackHandlers, employeeHandlers } from "../../../.storybook/mocks/handlers";
 
 const meta = {
   title: "Components/DocPack/EmployeePackList",
@@ -43,10 +43,7 @@ export const AllPassed: Story = {
 export const NoEmployees: Story = {
   parameters: {
     msw: {
-      handlers: [
-        ...docPackHandlers,
-        http.get("/api/employees", () => HttpResponse.json([])),
-      ],
+      handlers: [...docPackHandlers, http.get("/api/employees", () => HttpResponse.json([]))],
     },
   },
 };

@@ -6,10 +6,11 @@ export const employeeKeys = {
   detail: (id: string) => ["employees", id] as const,
 };
 
-export function useEmployees() {
+export function useEmployees(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: employeeKeys.all,
     queryFn: employeeService.list,
+    enabled: options?.enabled ?? true,
   });
 }
 

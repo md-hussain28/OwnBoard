@@ -116,14 +116,25 @@ Soft companions (`*-soft`) exist for icon wells and pills: `bg-brand-honey-soft 
 - Cards: white + honey-tinted `shadow-soft`.
 - Sidebar: deep warm ink; honey for active.
 
+### Dark mode (`.dark` in `globals.css`)
+
+Not an inverted light theme. Comfort rules:
+
+1. **Charcoal base** — ~`#121212` / `oklch(0.18 …)`, never pure black.
+2. **Softened text** — primary ~87% white emphasis (`foreground` / `brand-ink`); secondary ~60% (`muted-foreground`); disabled/placeholders ~38% via opacity.
+3. **Desaturated accents** — same brand hues, higher lightness and ~15–20% less chroma so they don’t vibrate.
+4. **Luminance elevation** — lighter surfaces for higher layers (base → card → secondary → popover); shadows are hairline only.
+
 ## 5. Do's and Don'ts
 
 ### Do
 - Use named `brand-*` tokens for intentional color moments.
 - Keep one meaning per hue (coral = risk, moss = pass, teal = verified).
 - Prefer soft fills + saturated text for badges.
+- In dark mode, rely on surface lightness for depth — don’t pile on drop shadows.
 
 ### Don't
 - Don't use raw Tailwind indigo/violet/purple for brand.
 - Don't tint the whole page warm-cream — that fights the honey primary.
 - Don't reuse honey for both success and warning.
+- Don't use pure black backgrounds or pure white text in dark mode.

@@ -1,10 +1,7 @@
 /** Soft honey/teal blur orbs for marketing surfaces only. */
 export function AtmosphereBlobs() {
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-    >
+    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div
         className="atmosphere-blob -left-[10%] -top-[15%] h-[28rem] w-[28rem] bg-brand-honey/25"
         style={{ animationDelay: "0ms" }}

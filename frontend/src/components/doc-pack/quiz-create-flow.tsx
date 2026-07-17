@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeftIcon } from "lucide-react";
+import { useState } from "react";
+import { QuizDomainsField } from "@/components/doc-pack/quiz-domains-field";
 import { useCreateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Textarea } from "@/ui/textarea";
-import { cn } from "@/lib/utils";
 
 const STEPS = [
   { id: 1, label: "Details" },
@@ -21,12 +21,17 @@ export function QuizCreateFlow() {
   const createPack = useCreateDocPack();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [domainId, setDomainId] = useState<string | null>(null);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!name.trim()) return;
     createPack.mutate(
-      { name: name.trim(), description: description.trim() || undefined },
+      {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        domain_id: domainId,
+      },
       {
         onSuccess: (pack) => {
           router.push(`/doc-packs/${pack.id}`);
@@ -37,20 +42,12 @@ export function QuizCreateFlow() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8">
-      <div className="space-y-3">
-        <Link
-          href="/doc-packs"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3.5" /> Back to Quizzes
-        </Link>
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-balance">Create a quiz</h1>
-          <p className="text-sm text-muted-foreground text-pretty">
-            Name the pack, upload the reading, then generate and publish a cited quiz — all in one
-            flow.
-          </p>
-        </div>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">Create a quiz</h1>
+        <p className="text-sm text-muted-foreground text-pretty">
+          Name the pack, pick a domain, upload the reading, then generate and publish a cited quiz —
+          all in one flow.
+        </p>
       </div>
 
       <ol className="flex items-center gap-2" aria-label="Create progress">
@@ -61,9 +58,7 @@ export function QuizCreateFlow() {
               <div
                 className={cn(
                   "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums",
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground",
+                  active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
                 )}
               >
                 {step.id}
@@ -102,6 +97,8 @@ export function QuizCreateFlow() {
           />
         </div>
 
+        <QuizDomainsField value={domainId} onChange={setDomainId} />
+
         <div className="space-y-2">
           <label htmlFor="quiz-description" className="text-sm font-medium">
             Description <span className="font-normal text-muted-foreground">(optional)</span>
@@ -117,9 +114,7 @@ export function QuizCreateFlow() {
 
         {createPack.isError && (
           <p className="text-sm text-destructive">
-            {createPack.error instanceof Error
-              ? createPack.error.message
-              : "Could not create quiz."}
+            {getApiErrorMessage(createPack.error, "Could not create quiz.")}
           </p>
         )}
 

@@ -15,7 +15,9 @@ from onboard.api.routes import (
     employee_router,
     expert_router,
     health_router,
+    org_domain_router,
     pack_assignment_router,
+    quiz_domain_router,
     quiz_router,
     rag_router,
     repo_router,
@@ -33,7 +35,18 @@ logger = get_logger("onboard.main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await ensure_vector_extension()
+    logger.info(
+        "startup_begin",
+        extra={"environment": settings.ENVIRONMENT, "is_prod": settings.is_prod},
+    )
+    try:
+        await ensure_vector_extension()
+    except Exception:
+        logger.exception(
+            "startup_db_failed — check ENVIRONMENT=prod|production and DATABASE_URL_PROD "
+            "(use postgresql+asyncpg://…?ssl=require for Neon)"
+        )
+        raise
     logger.info("startup_complete")
     yield
     await dispose_engine()
@@ -65,6 +78,8 @@ def create_app() -> FastAPI:
     app.include_router(auth_router.router, prefix=prefix, dependencies=protected)
     app.include_router(repo_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(employee_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(org_domain_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(quiz_domain_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(doc_pack_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(pack_assignment_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(skill_graph_router.router, prefix=prefix, dependencies=tenant_scoped)
@@ -85,8 +100,21 @@ app = create_app()
 
 
 def dev() -> None:
-    uvicorn.run("onboard.main:app", host=settings.API_HOST, port=settings.API_PORT, reload=True)
+    uvicorn.run(
+        "onboard.main:app",
+        host=settings.API_HOST,
+        port=settings.API_PORT,
+        reload=True,
+    )
+
+
+def run() -> None:
+    """Production entrypoint (Render/etc). Honors $PORT when set."""
+    import os
+
+    port = int(os.environ.get("PORT", settings.API_PORT))
+    uvicorn.run("onboard.main:app", host=settings.API_HOST, port=port, reload=False)
 
 
 if __name__ == "__main__":
-    dev()
+    run() if settings.is_prod else dev()

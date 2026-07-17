@@ -8,6 +8,7 @@ from onboard.dao.models.base import AuditBase
 
 class CodeChunk(AuditBase):
     __tablename__ = "code_chunk"
+    __id_prefix__ = "cchk"
 
     repo_id: Mapped[str] = mapped_column(ForeignKey("repo.id", ondelete="CASCADE"), nullable=False)
     file_path: Mapped[str] = mapped_column(String(1024), nullable=False)

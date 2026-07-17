@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 
 /**
  * Storybook stand-in for `@clerk/nextjs`, aliased in `.storybook/main.ts`.
@@ -13,6 +13,18 @@ const MOCK_ORG = {
   id: "org_2abcDEFghiJKLmno",
   name: "Acme Robotics",
   imageUrl: null as string | null,
+  update: async (params: { name?: string }) => {
+    if (params.name) MOCK_ORG.name = params.name;
+    return MOCK_ORG;
+  },
+  setLogo: async (params: { file: Blob | File | string | null }) => {
+    if (params.file instanceof Blob) {
+      MOCK_ORG.imageUrl = URL.createObjectURL(params.file);
+    } else if (params.file === null) {
+      MOCK_ORG.imageUrl = null;
+    }
+    return MOCK_ORG;
+  },
 };
 
 export function useAuth() {
@@ -59,7 +71,7 @@ export function UserButton({ showName = true }: { showName?: boolean } & Record<
 
 /** The mock session is always signed in. */
 export function Show({ when, children }: { when: string; children: React.ReactNode }) {
-  return when === "signed-in" ? <>{children}</> : null;
+  return when === "signed-in" ? children : null;
 }
 
 export function SignInButton({ children }: { children?: React.ReactNode }) {

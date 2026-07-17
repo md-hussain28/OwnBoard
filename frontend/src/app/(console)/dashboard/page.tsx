@@ -1,10 +1,10 @@
 "use client";
 
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
 import { BusFactorHeatmap } from "@/components/dashboard/bus-factor-heatmap";
 import { QuizAnalyticsCard } from "@/components/dashboard/quiz-analytics-card";
 import { IncomingBadge } from "@/components/layout/incoming-feature";
 import { DEMO_REPO_ID } from "@/constants/app";
+import { useRepos } from "@/hooks/queries/repo/repo.queries";
 
 export default function DashboardPage() {
   const { data: repos } = useRepos();

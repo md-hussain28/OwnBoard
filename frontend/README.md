@@ -56,7 +56,8 @@ The browser never calls FastAPI directly.
 ## Other commands
 
 ```bash
-make lint
+make lint    # biome check .
+make format  # biome format --write .
 make build
 make start   # production server after build
 ```

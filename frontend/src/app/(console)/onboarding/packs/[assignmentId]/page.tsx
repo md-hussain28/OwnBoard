@@ -1,16 +1,12 @@
 "use client";
 
-import { use } from "react";
-import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
-import { useAssignmentDetail } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
+import Link from "next/link";
+import { use } from "react";
 import { AssignmentWorkspace } from "@/components/doc-pack/assignment-workspace";
+import { useAssignmentDetail } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 
-export default function AssignmentPage({
-  params,
-}: {
-  params: Promise<{ assignmentId: string }>;
-}) {
+export default function AssignmentPage({ params }: { params: Promise<{ assignmentId: string }> }) {
   const { assignmentId } = use(params);
   const { data: detail } = useAssignmentDetail(assignmentId);
 

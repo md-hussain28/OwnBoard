@@ -25,6 +25,8 @@ class PackAssignmentResponse(BaseModel):
     quiz_template_id: str | None
     completed_at: datetime | None
     acks: list[PackAssignmentAckResponse] = []
+    # Hydrated for employee dashboards (members cannot list all packs).
+    doc_pack_name: str | None = None
 
 
 class AssignmentDocumentStatusResponse(BaseModel):

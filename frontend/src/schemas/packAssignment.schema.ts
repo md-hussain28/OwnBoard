@@ -20,9 +20,8 @@ export const packAssignmentSchema = z
     status: packAssignmentStatusSchema,
     quiz_template_id: z.string().nullable(),
     completed_at: z.string().nullable(),
-    acks: z
-      .array(z.object({ document_id: z.string(), acknowledged_at: z.string() }))
-      .default([]),
+    doc_pack_name: z.string().nullable().optional(),
+    acks: z.array(z.object({ document_id: z.string(), acknowledged_at: z.string() })).default([]),
   })
   .transform((a) => ({
     id: a.id,
@@ -33,7 +32,11 @@ export const packAssignmentSchema = z
     status: a.status,
     quizTemplateId: a.quiz_template_id,
     completedAt: a.completed_at,
-    acks: a.acks.map((ack) => ({ documentId: ack.document_id, acknowledgedAt: ack.acknowledged_at })),
+    docPackName: a.doc_pack_name ?? null,
+    acks: a.acks.map((ack) => ({
+      documentId: ack.document_id,
+      acknowledgedAt: ack.acknowledged_at,
+    })),
   }));
 
 export const assignmentDetailSchema = z

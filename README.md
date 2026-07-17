@@ -9,7 +9,9 @@ Hackathon onboarding platform: FastAPI backend + Next.js frontend.
 
 ## Run everything locally
 
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/), [uv](https://docs.astral.sh/uv/) (Python 3.12+), Node.js + npm
+**Prerequisites:** Homebrew [PostgreSQL](https://formulae.brew.sh/formula/postgresql@18) + [pgvector](https://github.com/pgvector/pgvector#installation), [uv](https://docs.astral.sh/uv/) (Python 3.12+), Node.js + npm
+
+Local DB URL (matches `backend/.env`): `postgresql://onboard:onboard@localhost:5432/onboard`. Do not also run a Docker Postgres on port 5432.
 
 ```bash
 # 1. First-time setup (env files, deps, Postgres, migrations)
@@ -40,8 +42,10 @@ Stop with `Ctrl+C`.
 make help       # list all targets
 make backend    # API only (:8000)
 make frontend   # Next.js only (:3000)
-make db-up      # start Postgres
-make db-down    # stop Postgres (keeps data)
+make db-up      # verify local Homebrew Postgres is ready
+make migrate    # run Alembic migrations
 ```
+
+Optional Docker Postgres (only if you are not using Brew on :5432): `make -C backend db-docker-up` / `db-docker-down`.
 
 More detail: [backend/README.md](./backend/README.md) · [frontend/README.md](./frontend/README.md)

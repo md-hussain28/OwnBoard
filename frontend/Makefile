@@ -1,4 +1,4 @@
-.PHONY: help setup env install dev build start lint clean
+.PHONY: help setup env install dev build start lint format clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -20,8 +20,11 @@ build: ## Production build
 start: ## Start production server (after build)
 	npm run start
 
-lint: ## Run ESLint
+lint: ## Run Biome check
 	npm run lint
+
+format: ## Format with Biome
+	npm run format
 
 clean: ## Remove Next.js build/cache
 	rm -rf .next node_modules

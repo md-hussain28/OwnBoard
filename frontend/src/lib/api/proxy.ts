@@ -1,7 +1,7 @@
 import "server-only";
 import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 import { isAxiosError } from "axios";
+import { NextResponse } from "next/server";
 import { getBackendClient } from "@/lib/api/backend-client";
 
 export async function proxyRequest(

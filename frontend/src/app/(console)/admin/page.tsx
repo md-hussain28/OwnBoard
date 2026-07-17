@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { resolvePlatformAdmin } from "@/lib/platform-admin";
 import { TenantAdminPanel } from "@/components/admin/tenant-admin-panel";
+import { resolvePlatformAdmin } from "@/lib/platform-admin";
 
 export default async function AdminPage() {
   const admin = await resolvePlatformAdmin();

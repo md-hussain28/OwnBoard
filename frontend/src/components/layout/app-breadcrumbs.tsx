@@ -1,10 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useDocPack } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { Fragment, type ReactNode } from "react";
 import { WORKSPACE_NAV } from "@/components/layout/nav-config";
+import { useDocPack } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,7 +23,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   "doc-packs": "Quizzes",
   new: "Create",
   onboarding: "Readiness",
-  packs: "Assigned reading",
+  packs: "My quizzes",
   "policy-quiz": "Policy quiz",
   "codebase-quiz": "Codebase quiz",
   unlocked: "Unlocked",
@@ -32,6 +32,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   admin: "Admin",
   settings: "Settings",
   organization: "Organization",
+  team: "Team",
 };
 
 function navLabelForPath(pathname: string): string | null {
@@ -71,8 +72,7 @@ function buildCrumbs(pathname: string): Crumb[] {
 
   const parts = pathname.split("/").filter(Boolean);
   const rootHref = `/${parts[0]}`;
-  const rootLabel =
-    navLabelForPath(pathname) ?? SEGMENT_LABELS[parts[0]] ?? titleCase(parts[0]);
+  const rootLabel = navLabelForPath(pathname) ?? SEGMENT_LABELS[parts[0]] ?? titleCase(parts[0]);
 
   if (parts.length === 1) {
     return [{ label: rootLabel }];
@@ -89,12 +89,7 @@ function buildCrumbs(pathname: string): Crumb[] {
     let label: ReactNode =
       SEGMENT_LABELS[segment] ?? (looksLikeId(segment) ? "Details" : titleCase(segment));
 
-    if (
-      isLast &&
-      parts[0] === "doc-packs" &&
-      segment !== "new" &&
-      looksLikeId(segment)
-    ) {
+    if (isLast && parts[0] === "doc-packs" && segment !== "new" && looksLikeId(segment)) {
       label = <DocPackCrumbLabel packId={segment} />;
     }
 
@@ -114,16 +109,18 @@ export function AppBreadcrumbs() {
         {crumbs.map((crumb, index) => {
           const isLast = index === crumbs.length - 1;
           return (
-            <BreadcrumbItem key={`${String(crumb.href)}-${index}`} className="min-w-0">
+            <Fragment key={`${String(crumb.href)}-${index}`}>
               {index > 0 && <BreadcrumbSeparator />}
-              {isLast || !crumb.href ? (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink asChild>
-                  <Link href={crumb.href}>{crumb.label}</Link>
-                </BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
+              <BreadcrumbItem className="min-w-0">
+                {isLast || !crumb.href ? (
+                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link href={crumb.href}>{crumb.label}</Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            </Fragment>
           );
         })}
       </BreadcrumbList>

@@ -37,10 +37,64 @@ export const mockQuizAnalytics = {
 
 // --- Employees (employee.schema.ts — snake_case) ---
 export const mockEmployees = [
-  { id: "emp_a1b2c3d4e5f6g7h8i9", org_id: "org_demo", name: "Priya Sharma", role: "Backend Engineer", github_handle: "priyash" },
-  { id: "emp_b2c3d4e5f6g7h8i9j0", org_id: "org_demo", name: "Diego Alvarez", role: "Frontend Engineer", github_handle: "dalvarez" },
-  { id: "emp_c3d4e5f6g7h8i9j0k1", org_id: "org_demo", name: "Mei Lin", role: null, github_handle: null },
+  {
+    id: "emp_a1b2c3d4e5f6g7h8i9",
+    org_id: "org_demo",
+    name: "Priya Sharma",
+    role: "Backend Engineer",
+    app_role: "admin",
+    github_handle: "priyash",
+    domain_id: "dom_developer",
+    domain_name: "Developer",
+  },
+  {
+    id: "emp_b2c3d4e5f6g7h8i9j0",
+    org_id: "org_demo",
+    name: "Diego Alvarez",
+    role: "Frontend Engineer",
+    app_role: "member",
+    github_handle: "dalvarez",
+    domain_id: "dom_developer",
+    domain_name: "Developer",
+  },
+  {
+    id: "emp_c3d4e5f6g7h8i9j0k1",
+    org_id: "org_demo",
+    name: "Mei Lin",
+    role: null,
+    app_role: "member",
+    github_handle: null,
+    domain_id: "dom_marketing",
+    domain_name: "Marketing",
+  },
 ];
+
+export const mockOrgDomains = [
+  { id: "dom_developer", org_id: "org_demo", name: "Developer", is_default: true },
+  { id: "dom_marketing", org_id: "org_demo", name: "Marketing", is_default: true },
+  { id: "dom_design", org_id: "org_demo", name: "Design", is_default: true },
+  { id: "dom_product", org_id: "org_demo", name: "Product", is_default: true },
+  { id: "dom_sales", org_id: "org_demo", name: "Sales", is_default: true },
+  { id: "dom_operations", org_id: "org_demo", name: "Operations", is_default: true },
+  { id: "dom_people", org_id: "org_demo", name: "People", is_default: true },
+  { id: "dom_finance", org_id: "org_demo", name: "Finance", is_default: true },
+];
+
+export const mockQuizDomains = [
+  { id: "qdom_policy", org_id: "org_demo", name: "Policy", is_default: true },
+  { id: "qdom_security", org_id: "org_demo", name: "Security", is_default: true },
+  { id: "qdom_holiday", org_id: "org_demo", name: "Holiday", is_default: true },
+  { id: "qdom_onboarding", org_id: "org_demo", name: "Onboarding", is_default: true },
+  { id: "qdom_benefits", org_id: "org_demo", name: "Benefits", is_default: true },
+  { id: "qdom_codebase", org_id: "org_demo", name: "Codebase", is_default: true },
+];
+
+export const mockMe = {
+  user_id: "user_storybook",
+  org_id: "org_2abcDEFghiJKLmno",
+  employee_id: "emp_a1b2c3d4e5f6g7h8i9",
+  app_role: "admin",
+};
 
 // --- Doc packs (docPack.schema.ts — snake_case) ---
 export const mockDocPacks = [
@@ -51,6 +105,8 @@ export const mockDocPacks = [
     status: "active",
     created_by: "emp_a1b2c3d4e5f6g7h8i9",
     created_at: "2026-07-01T12:00:00Z",
+    domain_id: "qdom_security",
+    domain_name: "Security",
   },
   {
     id: "pack_b2c3d4e5f6g7h8i9j0",
@@ -59,6 +115,8 @@ export const mockDocPacks = [
     status: "draft",
     created_by: null,
     created_at: "2026-07-08T15:30:00Z",
+    domain_id: "qdom_onboarding",
+    domain_name: "Onboarding",
   },
 ];
 
@@ -103,11 +161,29 @@ export const mockDocPackDetail = {
   documents: mockDocuments,
 };
 
+// Lightweight ingest-status poll (docPackIngestStatusSchema — snake_case)
+export const mockDocPackIngestStatus = {
+  pack_id: "pack_a1b2c3d4e5f6g7h8i9",
+  total: mockDocuments.length,
+  processed: mockDocuments.filter((d) => d.status === "processed").length,
+  failed: mockDocuments.filter((d) => d.status === "failed").length,
+  pending: mockDocuments.filter((d) => d.status === "processing" || d.status === "uploaded").length,
+  is_complete: false,
+  documents: mockDocuments.map((d) => ({
+    id: d.id,
+    title: d.title,
+    status: d.status,
+    page_count: d.page_count,
+    error_message: d.error_message,
+  })),
+};
+
 // --- Pack assignments (packAssignment.schema.ts — snake_case) ---
 export const mockAssignments = [
   {
     id: "asg_a1b2c3d4e5f6g7h8i9",
     doc_pack_id: "pack_a1b2c3d4e5f6g7h8i9",
+    doc_pack_name: "Security & Compliance",
     employee_id: "emp_a1b2c3d4e5f6g7h8i9",
     assigned_by: "emp_b2c3d4e5f6g7h8i9j0",
     assigned_at: "2026-07-05T09:00:00Z",
@@ -119,6 +195,7 @@ export const mockAssignments = [
   {
     id: "asg_b2c3d4e5f6g7h8i9j0",
     doc_pack_id: "pack_a1b2c3d4e5f6g7h8i9",
+    doc_pack_name: "Security & Compliance",
     employee_id: "emp_b2c3d4e5f6g7h8i9j0",
     assigned_by: null,
     assigned_at: "2026-07-04T09:00:00Z",
@@ -243,6 +320,18 @@ export const mockExperts = [
 
 // --- Admin (admin.schema.ts — camelCase, no transform) ---
 export const mockTenants = [
-  { id: "org_2abcDEFghiJKLmno", name: "Acme Robotics", slug: "acme-robotics", membersCount: 24, createdAt: "2026-06-01T08:00:00Z" },
-  { id: "org_2pqrSTUvwxYZAbcd", name: "Nimbus Health", slug: null, membersCount: 7, createdAt: "2026-07-11T14:20:00Z" },
+  {
+    id: "org_2abcDEFghiJKLmno",
+    name: "Acme Robotics",
+    slug: "acme-robotics",
+    membersCount: 24,
+    createdAt: "2026-06-01T08:00:00Z",
+  },
+  {
+    id: "org_2pqrSTUvwxYZAbcd",
+    name: "Nimbus Health",
+    slug: null,
+    membersCount: 7,
+    createdAt: "2026-07-11T14:20:00Z",
+  },
 ];

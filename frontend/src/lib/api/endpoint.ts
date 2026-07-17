@@ -7,13 +7,21 @@ export const API_ENDPOINTS = {
   repo: (id: string) => `/repos/${id}`,
   employees: "/employees",
   employee: (id: string) => `/employees/${id}`,
+  employeeInvitations: "/employees/invitations",
   employeeAssignments: (employeeId: string) => `/employees/${employeeId}/assignments`,
+
+  domains: "/domains",
+  domain: (id: string) => `/domains/${id}`,
+
+  quizDomains: "/quiz-domains",
+  quizDomain: (id: string) => `/quiz-domains/${id}`,
 
   // Doc Packs (Doc Pack PRD §6)
   docPacks: "/doc-packs",
   docPack: (id: string) => `/doc-packs/${id}`,
   docPackDocuments: (id: string) => `/doc-packs/${id}/documents`,
   docPackDocument: (id: string, documentId: string) => `/doc-packs/${id}/documents/${documentId}`,
+  docPackDocumentsStatus: (id: string) => `/doc-packs/${id}/documents/status`,
   docPackGenerateQuiz: (id: string) => `/doc-packs/${id}/generate-quiz`,
   docPackQuiz: (id: string) => `/doc-packs/${id}/quiz`,
   docPackRegenerateQuestions: (id: string) => `/doc-packs/${id}/quiz/regenerate-questions`,
@@ -23,7 +31,8 @@ export const API_ENDPOINTS = {
   assignment: (id: string) => `/assignments/${id}`,
   assignmentDocumentContent: (id: string, documentId: string) =>
     `/assignments/${id}/documents/${documentId}/content`,
-  assignmentAck: (id: string, documentId: string) => `/assignments/${id}/documents/${documentId}/ack`,
+  assignmentAck: (id: string, documentId: string) =>
+    `/assignments/${id}/documents/${documentId}/ack`,
   assignmentStartQuiz: (id: string) => `/assignments/${id}/start-quiz`,
 
   // Quiz grading — reused across policy/codebase/doc_pack (fixes PRD §9 path mismatch)

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useTheme } from "next-themes";
-import Link from "next/link";
 import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { MoonIcon, SunIcon } from "lucide-react";
+import Link from "next/link";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import { Button } from "@/ui/button";
 
 export function MarketingHeader() {
@@ -37,11 +37,7 @@ export function MarketingHeader() {
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             onClick={() => setTheme(isDark ? "light" : "dark")}
           >
-            {isDark ? (
-              <MoonIcon className="size-4" />
-            ) : (
-              <SunIcon className="size-4" />
-            )}
+            {isDark ? <MoonIcon className="size-4" /> : <SunIcon className="size-4" />}
           </Button>
           <Show when="signed-out">
             <SignInButton mode="modal">

@@ -8,6 +8,7 @@ from onboard.dao.models.base import AuditBase
 
 class InstitutionalMemoryNote(AuditBase):
     __tablename__ = "institutional_memory_note"
+    __id_prefix__ = "note"
 
     contributor_id: Mapped[str] = mapped_column(ForeignKey("contributor.id", ondelete="CASCADE"), nullable=False)
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

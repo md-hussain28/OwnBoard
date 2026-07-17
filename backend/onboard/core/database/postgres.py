@@ -12,7 +12,13 @@ _session_factory: async_sessionmaker[AsyncSession] | None = None
 def get_engine() -> AsyncEngine:
     global _engine
     if _engine is None:
-        _engine = create_async_engine(get_settings().DATABASE_URL, pool_pre_ping=True)
+        settings = get_settings()
+        # Fail fast on unreachable hosts (default TCP wait can hang for minutes on Render).
+        _engine = create_async_engine(
+            settings.DATABASE_URL,
+            pool_pre_ping=True,
+            connect_args={"timeout": 15},
+        )
     return _engine
 
 

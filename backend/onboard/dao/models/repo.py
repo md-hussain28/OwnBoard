@@ -8,6 +8,7 @@ from onboard.dao.models.base import AuditBase
 
 class Repo(AuditBase):
     __tablename__ = "repo"
+    __id_prefix__ = "repo"
 
     org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
     url: Mapped[str] = mapped_column(String(512), nullable=False)

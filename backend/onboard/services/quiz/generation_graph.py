@@ -28,7 +28,7 @@ from langgraph.graph import END, StateGraph
 from pydantic import BaseModel
 
 from onboard.config.constants import QUIZ_LLM_CONCURRENCY
-from onboard.core.common.ids import generate_id
+from onboard.core.common.ids import typed_id
 from onboard.core.llm.llm_client import LLMClient
 from onboard.dao.models.quiz_question import QuestionFormat
 
@@ -163,7 +163,7 @@ def plan_coverage(documents: list[DocumentForPlanning], target_count: int, forma
             format_index += 1
             slots.append(
                 SlotPlan(
-                    slot_id=generate_id(),
+                    slot_id=typed_id("slot"),
                     document_id=doc.document_id,
                     document_title=doc.title,
                     format=fmt,

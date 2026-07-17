@@ -2,9 +2,13 @@
 
 import { Show, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { ArrowRight, BookCheck, GitBranch, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { ConnectedReposList } from "@/components/repo/connected-repos-list";
+import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { Button } from "@/ui/button";
 import { Card, CardContent } from "@/ui/card";
+import { Skeleton } from "@/ui/skeleton";
 
 const FEATURES = [
   {
@@ -27,6 +31,40 @@ const FEATURES = [
   },
 ] as const;
 
+function SignedInHome() {
+  const router = useRouter();
+  const { isAdmin, isLoading } = useAppRole();
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAdmin) {
+      router.replace("/onboarding/packs");
+    }
+  }, [isAdmin, isLoading, router]);
+
+  if (isLoading || !isAdmin) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-24 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      <section className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight">Overview</h1>
+        <p className="text-muted-foreground">
+          Connect repositories to ground quizzes, archaeology answers, and skill-graph risk in real
+          git history.
+        </p>
+      </section>
+      <ConnectedReposList />
+    </div>
+  );
+}
+
 export default function HomePage() {
   return (
     <>
@@ -39,8 +77,8 @@ export default function HomePage() {
                 Onboarding you can verify
               </h1>
               <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Cited quizzes, commit-grounded readiness checks, and archaeology Q&A
-                that escalate to a human when confidence is low.
+                Cited quizzes, commit-grounded readiness checks, and archaeology Q&A that escalate
+                to a human when confidence is low.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <SignUpButton mode="modal">
@@ -65,8 +103,8 @@ export default function HomePage() {
                   </div>
                   <h2 className="text-xl font-bold tracking-tight">Evidence first</h2>
                   <p className="leading-relaxed text-muted-foreground">
-                    Every claim links back to a citation, commit, or file — so new
-                    hires and mentors share the same ground truth.
+                    Every claim links back to a citation, commit, or file — so new hires and mentors
+                    share the same ground truth.
                   </p>
                   <div className="flex gap-2 pt-2">
                     <span className="rounded-full bg-brand-teal-soft px-3 py-1 text-xs font-semibold text-brand-teal">
@@ -83,22 +121,15 @@ export default function HomePage() {
 
           <section className="grid gap-4 sm:grid-cols-3">
             {FEATURES.map((feature) => (
-              <Card
-                key={feature.title}
-                className="hover:-translate-y-1 hover:shadow-card-hover"
-              >
+              <Card key={feature.title} className="hover:-translate-y-1 hover:shadow-card-hover">
                 <CardContent className="space-y-3 pt-1">
                   <div
                     className={`flex h-11 w-11 items-center justify-center rounded-xl ${feature.well}`}
                   >
                     <feature.icon className="size-5" strokeWidth={2} />
                   </div>
-                  <h2 className="text-base font-semibold tracking-tight">
-                    {feature.title}
-                  </h2>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {feature.body}
-                  </p>
+                  <h2 className="text-base font-semibold tracking-tight">{feature.title}</h2>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{feature.body}</p>
                 </CardContent>
               </Card>
             ))}
@@ -107,16 +138,7 @@ export default function HomePage() {
       </Show>
 
       <Show when="signed-in">
-        <div className="space-y-8">
-          <section className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">Overview</h1>
-            <p className="text-muted-foreground">
-              Connect repositories to ground quizzes, archaeology answers, and skill-graph
-              risk in real git history.
-            </p>
-          </section>
-          <ConnectedReposList />
-        </div>
+        <SignedInHome />
       </Show>
     </>
   );

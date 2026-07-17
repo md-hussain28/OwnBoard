@@ -22,7 +22,7 @@ export function WorkspaceSwitcher() {
 
   const trigger = (
     <Link
-      href="/team"
+      href="/app/team"
       aria-label="Manage Team"
       className={cn(
         "flex h-9 w-full min-w-0 items-center gap-2.5 overflow-hidden rounded-lg px-2.5 text-left",

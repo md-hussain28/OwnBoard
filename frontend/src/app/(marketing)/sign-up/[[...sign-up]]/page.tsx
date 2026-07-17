@@ -1,9 +1,10 @@
 import { SignUp } from "@clerk/nextjs";
+import { APP_HOME } from "@/lib/routes";
 
 export default function SignUpPage() {
   return (
-    <div className="flex justify-center py-8">
-      <SignUp />
+    <div className="mx-auto flex max-w-5xl justify-center px-6 py-10">
+      <SignUp forceRedirectUrl={APP_HOME} signInForceRedirectUrl={APP_HOME} />
     </div>
   );
 }

@@ -62,7 +62,7 @@ function AdminsOnlyNotice() {
         Ask an organization admin to manage team access.
       </p>
       <Button className="mt-5" variant="outline" asChild>
-        <Link href="/">Back to workspace</Link>
+        <Link href="/app">Back to workspace</Link>
       </Button>
     </div>
   );

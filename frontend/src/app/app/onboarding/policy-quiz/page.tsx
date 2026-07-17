@@ -25,7 +25,7 @@ export default function PolicyQuizPage() {
   function handleContinue() {
     setPolicyQuizResult("passed");
     setStep("codebase-quiz");
-    router.push("/onboarding/codebase-quiz");
+    router.push("/app/onboarding/codebase-quiz");
   }
 
   return (

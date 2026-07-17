@@ -47,7 +47,7 @@ function PackHeader({ pack, quizPublished }: { pack: DocPack; quizPublished: boo
       </div>
       {quizPublished && (
         <Button size="sm" asChild>
-          <Link href={`/doc-packs?assign=${pack.id}`}>
+          <Link href={`/app/doc-packs?assign=${pack.id}`}>
             Assign & track
             <ArrowRightIcon className="size-3.5" />
           </Link>
@@ -146,7 +146,7 @@ function PublishCta({ quizPublished, packId }: { quizPublished: boolean; packId:
         This pack is ready to assign. Track who has read and passed from the Quizzes desk.
       </p>
       <Button className="mt-3" size="sm" asChild>
-        <Link href={`/doc-packs?assign=${packId}`}>
+        <Link href={`/app/doc-packs?assign=${packId}`}>
           Go to assign & track
           <ArrowRightIcon className="size-3.5" />
         </Link>

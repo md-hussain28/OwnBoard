@@ -140,7 +140,7 @@ export function ViewPackDialog({
                 Assign
               </Button>
               <Button type="button" asChild>
-                <Link href={`/doc-packs/${pack.id}`} onClick={() => onOpenChange(false)}>
+                <Link href={`/app/doc-packs/${pack.id}`} onClick={() => onOpenChange(false)}>
                   <PencilIcon className="size-3.5" aria-hidden />
                   Edit
                 </Link>

@@ -14,7 +14,7 @@ export default function AssignmentPage({ params }: { params: Promise<{ assignmen
     <div className="max-w-5xl space-y-6">
       <div className="space-y-2">
         <Link
-          href="/onboarding/packs"
+          href="/app/onboarding/packs"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeftIcon className="size-3.5" /> Assigned reading

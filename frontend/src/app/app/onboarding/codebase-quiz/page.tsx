@@ -21,7 +21,7 @@ export default function CodebaseQuizPage() {
   function handleContinue() {
     setCodebaseQuizResult("passed");
     setStep("unlocked");
-    router.push("/onboarding/unlocked");
+    router.push("/app/onboarding/unlocked");
   }
 
   return (

@@ -259,7 +259,7 @@ function NameField({
 function ManageTeamLink({ onNavigate }: { onNavigate: () => void }) {
   return (
     <Link
-      href="/team"
+      href="/app/team"
       onClick={onNavigate}
       className={cn(
         "flex items-center gap-3 rounded-xl border border-border/80 bg-card px-3 py-2.5",
@@ -307,7 +307,7 @@ function SaveFooter({
   );
 }
 
-/** Rename + logo only — member management lives on /team. */
+/** Rename + logo only — member management lives on /app/team. */
 export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
   const { organization, isLoaded } = useOrganization();
   const [name, setName] = useState("");

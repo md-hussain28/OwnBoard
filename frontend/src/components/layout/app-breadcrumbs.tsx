@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Fragment, type ReactNode } from "react";
 import { WORKSPACE_NAV } from "@/components/layout/nav-config";
 import { useDocPack } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { APP_HOME } from "@/lib/routes";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -37,8 +38,8 @@ const SEGMENT_LABELS: Record<string, string> = {
 
 function navLabelForPath(pathname: string): string | null {
   for (const item of WORKSPACE_NAV.items) {
-    if (item.href === "/") {
-      if (pathname === "/") return item.label;
+    if (item.href === APP_HOME) {
+      if (pathname === APP_HOME || pathname === `${APP_HOME}/`) return item.label;
       continue;
     }
     if (pathname === item.href || pathname.startsWith(`${item.href}/`)) {
@@ -66,30 +67,37 @@ function DocPackCrumbLabel({ packId }: { packId: string }) {
 }
 
 function buildCrumbs(pathname: string): Crumb[] {
-  if (pathname === "/") {
+  if (pathname === APP_HOME || pathname === `${APP_HOME}/`) {
     return [{ label: "Codebases" }];
   }
 
   const parts = pathname.split("/").filter(Boolean);
-  const rootHref = `/${parts[0]}`;
-  const rootLabel = navLabelForPath(pathname) ?? SEGMENT_LABELS[parts[0]] ?? titleCase(parts[0]);
+  // Paths are `/app/...` — drop the `app` segment from crumbs.
+  const consoleParts = parts[0] === "app" ? parts.slice(1) : parts;
+  if (consoleParts.length === 0) {
+    return [{ label: "Codebases" }];
+  }
 
-  if (parts.length === 1) {
+  const rootHref = `${APP_HOME}/${consoleParts[0]}`;
+  const rootLabel =
+    navLabelForPath(pathname) ?? SEGMENT_LABELS[consoleParts[0]] ?? titleCase(consoleParts[0]);
+
+  if (consoleParts.length === 1) {
     return [{ label: rootLabel }];
   }
 
   const crumbs: Crumb[] = [{ label: rootLabel, href: rootHref }];
 
   let path = rootHref;
-  for (let i = 1; i < parts.length; i++) {
-    const segment = parts[i];
+  for (let i = 1; i < consoleParts.length; i++) {
+    const segment = consoleParts[i];
     path = `${path}/${segment}`;
-    const isLast = i === parts.length - 1;
+    const isLast = i === consoleParts.length - 1;
 
     let label: ReactNode =
       SEGMENT_LABELS[segment] ?? (looksLikeId(segment) ? "Details" : titleCase(segment));
 
-    if (isLast && parts[0] === "doc-packs" && segment !== "new" && looksLikeId(segment)) {
+    if (isLast && consoleParts[0] === "doc-packs" && segment !== "new" && looksLikeId(segment)) {
       label = <DocPackCrumbLabel packId={segment} />;
     }
 

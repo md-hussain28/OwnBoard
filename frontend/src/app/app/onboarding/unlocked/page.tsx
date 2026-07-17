@@ -24,7 +24,7 @@ export default function UnlockedPage() {
             Policy and codebase quizzes are complete. Repo access has been granted.
           </p>
           <Button asChild>
-            <Link href="/chat">Try the archaeology Q&A</Link>
+            <Link href="/app/chat">Try the archaeology Q&A</Link>
           </Button>
         </CardContent>
       </Card>

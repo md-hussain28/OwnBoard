@@ -5,7 +5,7 @@ import { resolvePlatformAdmin } from "@/lib/platform-admin";
 export default async function AdminPage() {
   const admin = await resolvePlatformAdmin();
   if (!admin) {
-    redirect("/");
+    redirect("/app");
   }
 
   return (

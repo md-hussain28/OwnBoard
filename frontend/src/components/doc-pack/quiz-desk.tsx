@@ -72,7 +72,7 @@ export function QuizDesk() {
           Quiz creation and assignment live here. Your assigned reading is under My quizzes.
         </p>
         <Button asChild>
-          <Link href="/onboarding/packs">Go to My quizzes</Link>
+          <Link href="/app/onboarding/packs">Go to My quizzes</Link>
         </Button>
       </div>
     );

@@ -134,7 +134,7 @@ export function AppSidebar() {
               tooltip={orgName}
               className="h-8 gap-2.5 px-1 hover:bg-sidebar-accent group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
             >
-              <Link href={appRole === "member" ? "/onboarding/packs" : "/"}>
+              <Link href={appRole === "member" ? "/app/onboarding/packs" : "/app"}>
                 <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient text-[0.6875rem] font-bold leading-none tracking-tight text-white shadow-button">
                   {logoUrl ? (
                     // Custom org logos from Clerk

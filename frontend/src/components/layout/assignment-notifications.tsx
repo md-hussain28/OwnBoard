@@ -76,7 +76,7 @@ function AssignmentRow({
   return (
     <li>
       <Link
-        href={`/onboarding/packs/${assignment.id}`}
+        href={`/app/onboarding/packs/${assignment.id}`}
         onClick={onNavigate}
         className={cn(
           "flex gap-3 rounded-lg px-3 py-2.5 transition-[background-color,transform] duration-200",
@@ -147,7 +147,7 @@ function NotificationsBody({
           </p>
         </div>
         <Link
-          href="/onboarding/packs"
+          href="/app/onboarding/packs"
           onClick={onClose}
           className="text-xs font-medium text-brand-teal transition-colors hover:text-brand-teal/80"
         >

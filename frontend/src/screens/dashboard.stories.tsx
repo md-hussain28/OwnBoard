@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import DashboardPage from "@/app/(console)/dashboard/page";
+import DashboardPage from "@/app/app/dashboard/page";
 import { handlers, loadingForever, notImplemented } from "../../.storybook/mocks/handlers";
 import { withAppShell } from "./story-shell";
 
 /**
- * Skill-graph dashboard screen (`/dashboard`): bus-factor heatmap and quiz
+ * Skill-graph dashboard screen (`/app/dashboard`): bus-factor heatmap and quiz
  * analytics side by side, fed by the global MSW handlers. Rendered inside the
  * real console shell (sidebar + topbar).
  */
@@ -14,7 +14,7 @@ const meta = {
   decorators: [withAppShell],
   parameters: {
     layout: "fullscreen",
-    nextjs: { navigation: { pathname: "/dashboard" } },
+    nextjs: { navigation: { pathname: "/app/dashboard" } },
   },
 } satisfies Meta<typeof DashboardPage>;
 

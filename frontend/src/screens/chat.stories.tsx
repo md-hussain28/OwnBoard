@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { delay, HttpResponse, http } from "msw";
 import { userEvent, within } from "storybook/test";
-import ChatPage from "@/app/(console)/chat/page";
+import ChatPage from "@/app/app/chat/page";
 import { mockChatResponse, mockExpertRouting } from "../../.storybook/mocks/data";
 import { handlers, notImplemented } from "../../.storybook/mocks/handlers";
 import { withAppShell } from "./story-shell";
 
 /**
- * Archaeology Q&A screen (`/chat`), inside the real console shell. The flow
+ * Archaeology Q&A screen (`/app/chat`), inside the real console shell. The flow
  * stories use a play function to type a question and submit it, so the full
  * ask → cited answer (or expert escalation) exchange is visible without
  * clicking around.
@@ -18,7 +18,7 @@ const meta = {
   decorators: [withAppShell],
   parameters: {
     layout: "fullscreen",
-    nextjs: { navigation: { pathname: "/chat" } },
+    nextjs: { navigation: { pathname: "/app/chat" } },
   },
 } satisfies Meta<typeof ChatPage>;
 

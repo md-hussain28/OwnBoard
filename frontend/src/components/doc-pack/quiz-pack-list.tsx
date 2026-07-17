@@ -172,7 +172,7 @@ function EmptyPacksState({ isAdmin }: { isAdmin: boolean }) {
       </p>
       {isAdmin && (
         <Button asChild>
-          <Link href="/doc-packs/new">Create your first quiz</Link>
+          <Link href="/app/doc-packs/new">Create your first quiz</Link>
         </Button>
       )}
     </div>
@@ -256,7 +256,7 @@ function PackRow({
             Assign
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/doc-packs/${pack.id}`}>
+            <Link href={`/app/doc-packs/${pack.id}`}>
               <PencilIcon className="size-3.5" />
               Edit
             </Link>
@@ -336,7 +336,7 @@ export function QuizPackList({ onAssignPack }: { onAssignPack: (packId: string) 
         </div>
         {isAdmin && (
           <Button asChild>
-            <Link href="/doc-packs/new">
+            <Link href="/app/doc-packs/new">
               <PlusIcon className="size-4" />
               Create quiz
             </Link>

@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { QuizCreateFlow } from "@/components/doc-pack/quiz-create-flow";
+import { use } from "react";
+import { QuizBuilderFlow } from "@/components/doc-pack/quiz-builder-flow";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { Button } from "@/ui/button";
 import { Skeleton } from "@/ui/skeleton";
 
-export default function NewQuizPage() {
+export default function DocPackDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { isAdmin, isLoading } = useAppRole();
 
   if (isLoading) {
@@ -23,14 +25,14 @@ export default function NewQuizPage() {
       <div className="rounded-xl border border-border px-5 py-8 text-center">
         <p className="font-medium">Admins only</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Only organization admins can create quizzes.
+          Only organization admins can edit quiz packs.
         </p>
         <Button className="mt-4" variant="outline" asChild>
-          <Link href="/doc-packs">Back to quizzes</Link>
+          <Link href="/app/onboarding/packs">Go to assigned reading</Link>
         </Button>
       </div>
     );
   }
 
-  return <QuizCreateFlow />;
+  return <QuizBuilderFlow packId={id} />;
 }

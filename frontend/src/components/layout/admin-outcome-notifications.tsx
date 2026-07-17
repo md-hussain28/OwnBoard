@@ -52,7 +52,7 @@ function OutcomeRow({
   return (
     <li>
       <Link
-        href={`/doc-packs/${outcome.docPackId}`}
+        href={`/app/doc-packs/${outcome.docPackId}`}
         onClick={onNavigate}
         className={cn(
           "flex gap-3 rounded-lg px-3 py-2.5 transition-[background-color,transform] duration-200",
@@ -123,7 +123,7 @@ function OutcomesBody({
           </p>
         </div>
         <Link
-          href="/doc-packs"
+          href="/app/doc-packs"
           onClick={onClose}
           className="text-xs font-medium text-brand-teal transition-colors hover:text-brand-teal/80"
         >

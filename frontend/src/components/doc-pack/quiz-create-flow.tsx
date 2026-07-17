@@ -38,7 +38,7 @@ export function QuizCreateFlow() {
             description: pack.name,
             id: `pack:${pack.id}`,
           });
-          router.push(`/doc-packs/${pack.id}`);
+          router.push(`/app/doc-packs/${pack.id}`);
         },
         onError: (err) => {
           notify.apiError(err, "Could not create quiz", { id: "pack-create-error" });

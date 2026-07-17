@@ -13,9 +13,9 @@ import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 
 const STEPS: { key: OnboardingStep; label: string; href: string }[] = [
-  { key: "policy-quiz", label: "Policy quiz", href: "/onboarding/policy-quiz" },
-  { key: "codebase-quiz", label: "Codebase quiz", href: "/onboarding/codebase-quiz" },
-  { key: "unlocked", label: "Repo access unlocked", href: "/onboarding/unlocked" },
+  { key: "policy-quiz", label: "Policy quiz", href: "/app/onboarding/policy-quiz" },
+  { key: "codebase-quiz", label: "Codebase quiz", href: "/app/onboarding/codebase-quiz" },
+  { key: "unlocked", label: "Repo access unlocked", href: "/app/onboarding/unlocked" },
 ];
 
 function stepResult(
@@ -54,7 +54,7 @@ export default function OnboardingPage() {
             100%.
           </p>
           <Button asChild size="sm" variant="outline">
-            <Link href="/onboarding/packs">Open</Link>
+            <Link href="/app/onboarding/packs">Open</Link>
           </Button>
         </CardContent>
       </Card>

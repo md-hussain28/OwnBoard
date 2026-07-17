@@ -3,7 +3,6 @@
 import { PencilIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ViewPackDialog } from "@/components/doc-pack/view-pack-dialog";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
@@ -122,8 +121,8 @@ function PackFilterBar({
           type="search"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Search quizzes…"
-          aria-label="Search quizzes"
+          placeholder="Search tracks…"
+          aria-label="Search tracks"
           className="pl-9"
         />
       </div>
@@ -167,12 +166,12 @@ function EmptyPacksState({ isAdmin }: { isAdmin: boolean }) {
     <div className="space-y-3 rounded-2xl border border-dashed border-border px-6 py-10 text-center">
       <p className="text-sm text-muted-foreground text-pretty">
         {isAdmin
-          ? "No quizzes yet. Create one to upload documents and generate a cited quiz, then assign it to hires from this list."
-          : "No quizzes yet. An admin will create and assign them."}
+          ? "No tracks yet. Create one to upload documents and generate a cited quiz, then assign it to hires from this list."
+          : "No tracks yet. An admin will create and assign them."}
       </p>
       {isAdmin && (
         <Button asChild>
-          <Link href="/app/doc-packs/new">Create your first quiz</Link>
+          <Link href="/app/tracks/new">Create your first track</Link>
         </Button>
       )}
     </div>
@@ -184,8 +183,8 @@ function NoMatchesState({ query, onClear }: { query: string; onClear: () => void
     <div className="space-y-3 rounded-2xl border border-dashed border-border px-6 py-8 text-center">
       <p className="text-sm text-muted-foreground">
         {query.trim()
-          ? `No quizzes match “${query.trim()}” with the current filters.`
-          : "No quizzes match the current filters."}
+          ? `No tracks match “${query.trim()}” with the current filters.`
+          : "No tracks match the current filters."}
       </p>
       <button
         type="button"
@@ -217,66 +216,91 @@ function PackRow({
   isAdmin,
   progress,
   onAssignPack,
+  onViewPack,
 }: {
   pack: DocPackListItem;
   isAdmin: boolean;
   progress: PackAssignmentProgress | undefined;
   onAssignPack: (packId: string) => void;
+  onViewPack: (packId: string) => void;
 }) {
-  const [viewOpen, setViewOpen] = useState(false);
-
   return (
     <li
       className={cn(
         "flex flex-col gap-3 px-4 py-4 transition-colors duration-150 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5",
-        "hover:bg-muted/40",
+        "cursor-pointer hover:bg-muted/40",
       )}
+      onClick={() => onViewPack(pack.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onViewPack(pack.id);
+        }
+      }}
+      // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: row opens the view sheet
+      role="button"
+      tabIndex={0}
+      aria-label={`View details for ${pack.name}`}
     >
-      <button
-        type="button"
-        onClick={() => setViewOpen(true)}
-        className="min-w-0 flex-1 space-y-1.5 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-        aria-label={`View details for ${pack.name}`}
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="truncate font-medium">{pack.name}</p>
-          {pack.domainName && <Badge variant="outline">{pack.domainName}</Badge>}
-          <Badge variant={packStatusVariant(pack.status)}>{STATUS_LABEL[pack.status]}</Badge>
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="flex items-start justify-between gap-3">
+          <p className="min-w-0 flex-1 font-medium leading-snug text-balance">{pack.name}</p>
+          <Badge variant={packStatusVariant(pack.status)} className="shrink-0">
+            {STATUS_LABEL[pack.status]}
+          </Badge>
         </div>
-        {pack.description && (
-          <p className="truncate text-sm text-muted-foreground">{pack.description}</p>
+
+        {(pack.domainName || pack.description) && (
+          <div className="space-y-1">
+            {pack.domainName && (
+              <Badge variant="outline" className="max-w-full truncate">
+                {pack.domainName}
+              </Badge>
+            )}
+            {pack.description && (
+              <p className="line-clamp-2 text-sm text-muted-foreground text-pretty sm:line-clamp-1">
+                {pack.description}
+              </p>
+            )}
+          </div>
         )}
+
         {isAdmin && <PackProgressLine progress={progress} />}
-      </button>
+      </div>
 
       {isAdmin && (
-        <div className="flex shrink-0 items-center gap-2">
-          <Button type="button" size="sm" onClick={() => onAssignPack(pack.id)}>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:items-center">
+          <Button
+            type="button"
+            size="sm"
+            className="w-full sm:w-auto"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAssignPack(pack.id);
+            }}
+          >
             <UserPlusIcon className="size-3.5" />
             Assign
           </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/app/doc-packs/${pack.id}`}>
+          <Button variant="outline" size="sm" className="w-full sm:w-auto" asChild>
+            <Link href={`/app/tracks/${pack.id}`} onClick={(e) => e.stopPropagation()}>
               <PencilIcon className="size-3.5" />
               Edit
             </Link>
           </Button>
         </div>
       )}
-
-      <ViewPackDialog
-        pack={pack}
-        open={viewOpen}
-        onOpenChange={setViewOpen}
-        progress={progress}
-        onAssign={() => onAssignPack(pack.id)}
-        isAdmin={isAdmin}
-      />
     </li>
   );
 }
 
-export function QuizPackList({ onAssignPack }: { onAssignPack: (packId: string) => void }) {
+export function QuizPackList({
+  onAssignPack,
+  onViewPack,
+}: {
+  onAssignPack: (packId: string) => void;
+  onViewPack: (packId: string) => void;
+}) {
   const { isAdmin } = useAppRole();
   const { data: packs, isLoading, isError, error } = useDocPacks();
   const domainsQuery = useQuizDomains({ enabled: isAdmin });
@@ -325,20 +349,20 @@ export function QuizPackList({ onAssignPack }: { onAssignPack: (packId: string) 
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-balance">Quizzes</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-balance">Tracks</h1>
           <p className="text-sm text-muted-foreground text-pretty">
             {isAdmin
-              ? "Every pack you can assign. Open Assign to pick people and see who has passed."
-              : "Published quizzes in your organization. Your assigned reading is under Readiness."}
+              ? "Every track you can assign. Open Assign to pick people and see who has passed."
+              : "Published tracks in your organization. Your assigned reading is under Readiness."}
           </p>
         </div>
         {isAdmin && (
-          <Button asChild>
-            <Link href="/app/doc-packs/new">
+          <Button asChild className="w-full sm:w-auto">
+            <Link href="/app/tracks/new">
               <PlusIcon className="size-4" />
-              Create quiz
+              Create track
             </Link>
           </Button>
         )}
@@ -391,6 +415,7 @@ export function QuizPackList({ onAssignPack }: { onAssignPack: (packId: string) 
               isAdmin={isAdmin}
               progress={progressByPackId.get(pack.id)}
               onAssignPack={onAssignPack}
+              onViewPack={onViewPack}
             />
           ))}
         </ul>

@@ -21,7 +21,7 @@ const PROGRESS_STRIP: { status: PackAssignmentStatus; tone: string }[] = [
   { status: "failed", tone: "bg-brand-coral-soft text-brand-coral" },
 ];
 
-/** Assign + roster for one quiz — used inside the Assign sheet on the Quizzes desk. */
+/** Assign + roster for one quiz — used inside the Assign modal on the Tracks desk. */
 export function QuizAssignmentPanel({ pack }: { pack: DocPackListItem }) {
   return <QuizAssignmentPanelLoaded key={pack.id} pack={pack} />;
 }
@@ -90,7 +90,7 @@ function QuizAssignmentPanelLoaded({ pack }: { pack: DocPackListItem }) {
             Finish and publish the quiz before assigning it to hires.
           </p>
           <Button className="mt-3" size="sm" asChild>
-            <Link href={`/app/doc-packs/${pack.id}`}>Open quiz builder</Link>
+            <Link href={`/app/tracks/${pack.id}`}>Open quiz builder</Link>
           </Button>
         </div>
       )}
@@ -100,7 +100,7 @@ function QuizAssignmentPanelLoaded({ pack }: { pack: DocPackListItem }) {
           packId={pack.id}
           quizPublished={quizPublished}
           chooseHeading="Choose people"
-          rosterHeading="Who has this quiz"
+          rosterHeading="Who has this track"
           emptyRosterHint="No one is assigned yet. Select people above."
           emptyOrgHint={
             <>

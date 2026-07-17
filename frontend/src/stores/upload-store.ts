@@ -5,8 +5,9 @@ import { docPackService } from "@/services/doc-pack.service";
 // Mirror the backend limits (backend/onboard/config/constants.py) so bad batches fail
 // instantly in the browser instead of tying up the 512MB API instance.
 export const MAX_UPLOAD_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+export const MAX_UPLOAD_FILE_SIZE_MB = MAX_UPLOAD_FILE_SIZE_BYTES / (1024 * 1024);
 export const MAX_UPLOAD_FILES_PER_BATCH = 10;
-const ALLOWED_EXTENSIONS = new Set(["pdf", "docx", "txt", "md", "markdown"]);
+const ALLOWED_EXTENSIONS = new Set(["pdf"]);
 
 export type UploadPhase = "uploading" | "processing" | "complete" | "failed";
 
@@ -46,10 +47,13 @@ type UploadStore = {
 /** First problem with a single file (type, emptiness, size), or null when it is acceptable. */
 function fileError(file: File): string | null {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-  if (!ALLOWED_EXTENSIONS.has(extension)) return `${file.name} is not a supported file type.`;
+  if (!ALLOWED_EXTENSIONS.has(extension)) {
+    return `${file.name} is not supported — only PDF files up to ${MAX_UPLOAD_FILE_SIZE_MB} MB.`;
+  }
   if (file.size === 0) return `${file.name} is empty.`;
-  if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES)
-    return `${file.name} is larger than ${MAX_UPLOAD_FILE_SIZE_BYTES / (1024 * 1024)} MB.`;
+  if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
+    return `${file.name} is larger than ${MAX_UPLOAD_FILE_SIZE_MB} MB.`;
+  }
   return null;
 }
 

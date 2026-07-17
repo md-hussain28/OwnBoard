@@ -2,6 +2,8 @@ import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
 import { isNotFoundError } from "@/lib/api/errors";
 import {
+  type AudiencePreview,
+  audiencePreviewSchema,
   type DocPack,
   type DocPackDocument,
   type DocPackIngestStatus,
@@ -34,6 +36,11 @@ export const docPackService = {
     name: string;
     description?: string;
     domain_id?: string | null;
+    assign_to_all?: boolean;
+    audience_domain_ids?: string[];
+    sequence_order?: number;
+    estimated_minutes?: number | null;
+    due_offset_days?: number | null;
   }): Promise<DocPack> {
     const { data } = await getApiClient().post(API_ENDPOINTS.docPacks, input);
     return docPackSchema.parse(data);
@@ -41,10 +48,28 @@ export const docPackService = {
 
   async update(
     id: string,
-    input: { name?: string; description?: string; domain_id?: string | null },
+    input: {
+      name?: string;
+      description?: string;
+      domain_id?: string | null;
+      assign_to_all?: boolean;
+      audience_domain_ids?: string[];
+      sequence_order?: number;
+      estimated_minutes?: number | null;
+      due_offset_days?: number | null;
+    },
   ): Promise<DocPack> {
     const { data } = await getApiClient().patch(API_ENDPOINTS.docPack(id), input);
     return docPackSchema.parse(data);
+  },
+
+  /** Dry-run: how many employees a given audience selection would resolve to. */
+  async audiencePreview(input: {
+    assign_to_all: boolean;
+    audience_domain_ids: string[];
+  }): Promise<AudiencePreview> {
+    const { data } = await getApiClient().post(API_ENDPOINTS.docPackAudiencePreview, input);
+    return audiencePreviewSchema.parse(data);
   },
 
   async uploadDocuments(
@@ -104,10 +129,12 @@ export const docPackService = {
     id: string,
     questions: QuizQuestionCurationItem[],
     openBook = false,
+    passPct = 100,
   ): Promise<AdminQuizTemplate> {
     const { data } = await getApiClient().put(API_ENDPOINTS.docPackQuiz(id), {
       questions,
       open_book: openBook,
+      pass_pct: passPct,
     });
     return adminQuizTemplateSchema.parse(data);
   },

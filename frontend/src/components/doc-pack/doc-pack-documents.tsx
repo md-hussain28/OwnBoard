@@ -108,7 +108,7 @@ export function DocPackDocuments({
           ref={fileInputRef}
           type="file"
           multiple
-          accept=".pdf,.docx,.txt,.md,.markdown"
+          accept=".pdf,application/pdf"
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
@@ -118,10 +118,11 @@ export function DocPackDocuments({
           className="w-full border-dashed py-8"
           onClick={() => fileInputRef.current?.click()}
         >
-          <UploadIcon className="size-4" /> Upload PDF, DOCX, TXT or MD files
+          <UploadIcon className="size-4" /> Upload PDF files (up to 20 MB each)
         </Button>
         <p className="text-xs text-muted-foreground">
-          Uploads run in the background — you can keep working while documents process.
+          PDF only, max 20 MB per file. Uploads run in the background — you can keep working while
+          documents process.
         </p>
 
         {rows.length === 0 && (

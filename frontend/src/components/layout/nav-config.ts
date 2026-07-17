@@ -43,8 +43,8 @@ export const WORKSPACE_NAV: NavGroup = {
       roles: ["admin"],
     },
     {
-      href: appPath("doc-packs"),
-      label: "Quizzes",
+      href: appPath("tracks"),
+      label: "Tracks",
       description: "Assign & track",
       icon: BookOpenCheckIcon,
       matchPrefix: true,
@@ -52,8 +52,8 @@ export const WORKSPACE_NAV: NavGroup = {
     },
     {
       href: appPath("onboarding", "packs"),
-      label: "My quizzes",
-      description: "Assigned reading",
+      label: "My tracks",
+      description: "Assigned onboarding",
       icon: ClipboardCheckIcon,
       matchPrefix: true,
       roles: ["member"],

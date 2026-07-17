@@ -2,10 +2,12 @@
 
 import { CheckIcon, Loader2Icon, SparklesIcon } from "lucide-react";
 import type { FormEvent } from "react";
-import type { QuestionFormat } from "@/components/doc-pack/quiz-builder-types";
+import { FORMAT_LABEL, type GenerateFormat } from "@/components/doc-pack/quiz-builder-types";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Textarea } from "@/ui/textarea";
+
+const GENERATE_FORMATS: GenerateFormat[] = ["mcq_4", "true_false"];
 
 type QuizGenerateFormProps = {
   hasTemplate: boolean;
@@ -13,10 +15,10 @@ type QuizGenerateFormProps = {
   busy: boolean;
   isPending: boolean;
   targetCount: number;
-  formats: QuestionFormat[];
+  formats: GenerateFormat[];
   customInstructions: string;
   onTargetCountChange: (value: number) => void;
-  onToggleFormat: (format: QuestionFormat) => void;
+  onToggleFormat: (format: GenerateFormat) => void;
   onCustomInstructionsChange: (value: string) => void;
   onSubmit: (event: FormEvent) => void;
 };
@@ -39,9 +41,10 @@ export function QuizGenerateForm({
       <p className="text-sm font-medium">
         {hasTemplate ? "Regenerate the quiz" : "Generate a quiz from this pack"}
       </p>
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm">
-          Questions
+
+      <div className="flex flex-wrap items-end gap-4">
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-medium">Questions</span>
           <Input
             type="number"
             min={5}
@@ -51,19 +54,34 @@ export function QuizGenerateForm({
             className="w-20"
           />
         </label>
-        {(["mcq_4", "true_false"] as const).map((format) => (
-          <Button
-            key={format}
-            type="button"
-            size="sm"
-            variant={formats.includes(format) ? "default" : "outline"}
-            onClick={() => onToggleFormat(format)}
+
+        <div className="space-y-1.5">
+          <p className="text-sm font-medium">Formats</p>
+          <div
+            className="flex flex-wrap items-center gap-2"
+            role="group"
+            aria-label="Question formats"
           >
-            {formats.includes(format) && <CheckIcon className="size-3.5" />}
-            {format === "mcq_4" ? "4-option MCQ" : "True / False"}
-          </Button>
-        ))}
+            {GENERATE_FORMATS.map((format) => {
+              const selected = formats.includes(format);
+              return (
+                <Button
+                  key={format}
+                  type="button"
+                  size="sm"
+                  variant={selected ? "default" : "outline"}
+                  aria-pressed={selected}
+                  onClick={() => onToggleFormat(format)}
+                >
+                  {selected && <CheckIcon className="size-3.5" />}
+                  {FORMAT_LABEL[format]}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
       </div>
+
       <Textarea
         placeholder="Optional instructions for the generator (tone, focus areas, ...)"
         value={customInstructions}
@@ -84,6 +102,9 @@ export function QuizGenerateForm({
         <p className="text-xs text-muted-foreground">
           Upload at least one document and wait for processing to finish first.
         </p>
+      )}
+      {formats.length === 0 && (
+        <p className="text-xs text-warning">Pick at least one format to generate.</p>
       )}
     </form>
   );

@@ -1,7 +1,7 @@
 "use client";
 
-import { CheckIcon, Loader2Icon, UserPlusIcon } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { CheckIcon, Loader2Icon, SearchIcon, SparklesIcon, UserPlusIcon } from "lucide-react";
+import { type ReactNode, useMemo, useState } from "react";
 import {
   ASSIGNMENT_STATUS_LABEL,
   assignmentStatusVariant,
@@ -18,6 +18,7 @@ import type { Employee } from "@/schemas/employee.schema";
 import type { PackAssignment } from "@/schemas/packAssignment.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
 import { Skeleton } from "@/ui/skeleton";
 
 type AssignmentRosterProps = {
@@ -29,6 +30,25 @@ type AssignmentRosterProps = {
   rosterHeading?: string;
   className?: string;
 };
+
+function matchesEmployeeQuery(employee: Employee, q: string) {
+  if (!q) return true;
+  const haystack = [
+    employee.name,
+    employee.role ?? "",
+    employee.githubHandle ?? "",
+    employee.domainName ?? "",
+    employee.appRole,
+  ]
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(q);
+}
+
+function employeeSubtitle(employee: Employee) {
+  const parts = [employee.role, employee.domainName, employee.githubHandle].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : "No title set";
+}
 
 function AssignEmployeePicker({
   employees,
@@ -43,40 +63,98 @@ function AssignEmployeePicker({
   onToggle: (id: string) => void;
   onAssign: () => void;
 }) {
+  const [query, setQuery] = useState("");
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return employees.filter((employee) => matchesEmployeeQuery(employee, q));
+  }, [employees, query]);
+
   return (
     <div className="space-y-3">
-      <ul className="flex flex-wrap gap-2">
-        {employees.map((employee) => {
+      <div className="relative">
+        <SearchIcon
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search members by name, title, or domain…"
+          aria-label="Search members"
+          className="pl-9"
+          autoFocus
+        />
+      </div>
+
+      <ul
+        className="max-h-64 divide-y divide-border overflow-y-auto rounded-xl border border-border"
+        aria-label="Organization members"
+      >
+        {filtered.length === 0 && (
+          <li className="px-4 py-6 text-center text-sm text-muted-foreground">
+            {query.trim()
+              ? `No members match “${query.trim()}”.`
+              : "No members available to assign."}
+          </li>
+        )}
+        {filtered.map((employee) => {
           const selected = selectedIds.includes(employee.id);
           return (
             <li key={employee.id}>
-              <Button
+              <button
                 type="button"
-                size="sm"
-                variant={selected ? "default" : "outline"}
                 onClick={() => onToggle(employee.id)}
                 aria-pressed={selected}
+                className={cn(
+                  "flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors",
+                  "hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
+                  selected && "bg-brand-honey-soft/50",
+                )}
               >
-                {selected && <CheckIcon className="size-3.5" />}
-                {employee.name}
-              </Button>
+                <span
+                  className={cn(
+                    "flex size-5 shrink-0 items-center justify-center rounded-md border",
+                    selected
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background text-transparent",
+                  )}
+                  aria-hidden
+                >
+                  <CheckIcon className="size-3" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{employee.name}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {employeeSubtitle(employee)}
+                  </span>
+                </span>
+              </button>
             </li>
           );
         })}
       </ul>
-      <Button
-        type="button"
-        size="sm"
-        disabled={selectedIds.length === 0 || assignPending}
-        onClick={onAssign}
-      >
-        {assignPending ? (
-          <Loader2Icon className="size-4 animate-spin" />
-        ) : (
-          <UserPlusIcon className="size-4" />
-        )}
-        Assign{selectedIds.length > 0 ? ` ${selectedIds.length}` : ""} selected
-      </Button>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">
+          {selectedIds.length > 0
+            ? `${selectedIds.length} selected`
+            : `${employees.length} available`}
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          disabled={selectedIds.length === 0 || assignPending}
+          onClick={onAssign}
+        >
+          {assignPending ? (
+            <Loader2Icon className="size-4 animate-spin" />
+          ) : (
+            <UserPlusIcon className="size-4" />
+          )}
+          Assign{selectedIds.length > 0 ? ` ${selectedIds.length}` : ""} selected
+        </Button>
+      </div>
     </div>
   );
 }
@@ -97,11 +175,20 @@ function RosterList({
       {assignments.map((assignment) => (
         <li key={assignment.id} className="flex items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
-            <p className="truncate font-medium">
-              {employeeById.get(assignment.employeeId)?.name ?? assignment.employeeId}
+            <p className="flex items-center gap-2 truncate font-medium">
+              <span className="truncate">
+                {employeeById.get(assignment.employeeId)?.name ?? assignment.employeeId}
+              </span>
+              {assignment.autoAssigned && (
+                <Badge variant="outline" className="h-5 shrink-0 gap-1 px-1.5">
+                  <SparklesIcon className="size-3" />
+                  Auto
+                </Badge>
+              )}
             </p>
             <p className="text-xs text-muted-foreground">
-              Assigned {new Date(assignment.assignedAt).toLocaleDateString()}
+              {assignment.autoAssigned ? "Auto-assigned by audience · " : ""}
+              {new Date(assignment.assignedAt).toLocaleDateString()}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -152,7 +239,7 @@ function AssignHint({
   );
 }
 
-/** Shared assign/revoke roster used by pack detail Card and Quizzes Assign sheet. */
+/** Shared assign/revoke roster used by pack detail Card and Quizzes Assign modal. */
 export function AssignmentRoster({
   packId,
   quizPublished,

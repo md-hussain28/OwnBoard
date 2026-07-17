@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AudienceField } from "@/components/doc-pack/audience-field";
 import { QuizDomainsField } from "@/components/doc-pack/quiz-domains-field";
 import { useCreateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
 import { notify } from "@/lib/toast";
@@ -22,6 +23,8 @@ export function QuizCreateFlow() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [domainId, setDomainId] = useState<string | null>(null);
+  const [assignToAll, setAssignToAll] = useState(false);
+  const [audienceDomainIds, setAudienceDomainIds] = useState<string[]>([]);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -31,17 +34,19 @@ export function QuizCreateFlow() {
         name: name.trim(),
         description: description.trim() || undefined,
         domain_id: domainId,
+        assign_to_all: assignToAll,
+        audience_domain_ids: assignToAll ? [] : audienceDomainIds,
       },
       {
         onSuccess: (pack) => {
-          notify.success("Quiz created", {
+          notify.success("Track created", {
             description: pack.name,
             id: `pack:${pack.id}`,
           });
-          router.push(`/app/doc-packs/${pack.id}`);
+          router.push(`/app/tracks/${pack.id}`);
         },
         onError: (err) => {
-          notify.apiError(err, "Could not create quiz", { id: "pack-create-error" });
+          notify.apiError(err, "Could not create track", { id: "pack-create-error" });
         },
       },
     );
@@ -50,10 +55,10 @@ export function QuizCreateFlow() {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance">Create a quiz</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">Create a track</h1>
         <p className="text-sm text-muted-foreground text-pretty">
-          Name the pack, pick a domain, upload the reading, then generate and publish a cited quiz —
-          all in one flow.
+          Name it, choose who it&apos;s for, upload the reading, then generate and publish a cited
+          quiz — all in one flow.
         </p>
       </div>
 
@@ -92,11 +97,11 @@ export function QuizCreateFlow() {
       >
         <div className="space-y-2">
           <label htmlFor="quiz-name" className="text-sm font-medium">
-            Quiz name
+            Track name
           </label>
           <Input
             id="quiz-name"
-            placeholder="e.g. Security Onboarding"
+            placeholder="e.g. Company Policy"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
@@ -106,13 +111,20 @@ export function QuizCreateFlow() {
 
         <QuizDomainsField value={domainId} onChange={setDomainId} />
 
+        <AudienceField
+          assignToAll={assignToAll}
+          domainIds={audienceDomainIds}
+          onAssignToAllChange={setAssignToAll}
+          onDomainIdsChange={setAudienceDomainIds}
+        />
+
         <div className="space-y-2">
           <label htmlFor="quiz-description" className="text-sm font-medium">
             Description <span className="font-normal text-muted-foreground">(optional)</span>
           </label>
           <Textarea
             id="quiz-description"
-            placeholder="What should hires learn from this pack?"
+            placeholder="What should hires learn from this track?"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}

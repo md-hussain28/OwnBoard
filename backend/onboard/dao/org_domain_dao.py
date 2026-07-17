@@ -20,7 +20,5 @@ class OrgDomainDAO(BaseDAO[OrgDomain]):
         return result.scalar_one_or_none()
 
     async def get_by_name_for_org(self, org_id: str, name: str) -> OrgDomain | None:
-        result = await self.session.execute(
-            select(OrgDomain).where(OrgDomain.org_id == org_id, OrgDomain.name == name)
-        )
+        result = await self.session.execute(select(OrgDomain).where(OrgDomain.org_id == org_id, OrgDomain.name == name))
         return result.scalar_one_or_none()

@@ -140,13 +140,10 @@ class PackAssignmentService:
             raise NotFoundError(f"Employee {employee_id} not found")
         assignments = await self.assignment_dao.list_for_employee(org_id, employee_id)
         return [
-            (assignment, assignment.doc_pack.name if assignment.doc_pack else "Doc pack")
-            for assignment in assignments
+            (assignment, assignment.doc_pack.name if assignment.doc_pack else "Doc pack") for assignment in assignments
         ]
 
-    async def get_assignment_detail(
-        self, org_id: str, assignment_id: str, *, actor: Employee
-    ) -> AssignmentDetail:
+    async def get_assignment_detail(self, org_id: str, assignment_id: str, *, actor: Employee) -> AssignmentDetail:
         assignment = await self.assignment_dao.get_by_id_for_org(org_id, assignment_id)
         if assignment is None:
             raise NotFoundError(f"Assignment {assignment_id} not found")
@@ -204,9 +201,7 @@ class PackAssignmentService:
         assert refreshed is not None
         return refreshed
 
-    async def start_quiz(
-        self, org_id: str, assignment_id: str, *, actor: Employee
-    ) -> tuple[QuizAttempt, QuizTemplate]:
+    async def start_quiz(self, org_id: str, assignment_id: str, *, actor: Employee) -> tuple[QuizAttempt, QuizTemplate]:
         assignment = await self.assignment_dao.get_by_id_for_org(org_id, assignment_id)
         if assignment is None:
             raise NotFoundError(f"Assignment {assignment_id} not found")

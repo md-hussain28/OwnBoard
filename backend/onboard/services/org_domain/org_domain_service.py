@@ -32,9 +32,7 @@ class OrgDomainService:
             raise ValidationError("Domain name is too long")
         return cleaned
 
-    async def _assert_name_available(
-        self, org_id: str, cleaned: str, *, exclude_id: str | None = None
-    ) -> None:
+    async def _assert_name_available(self, org_id: str, cleaned: str, *, exclude_id: str | None = None) -> None:
         for domain in await self.domain_dao.list_for_org(org_id):
             if exclude_id is not None and domain.id == exclude_id:
                 continue

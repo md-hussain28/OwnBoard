@@ -94,9 +94,7 @@ def _invite_profile_from_meta(public_metadata: Any) -> dict[str, Any]:
     job_title = _normalize_job_title(meta.get("job_title") if isinstance(meta.get("job_title"), str) else None)
     if job_title is not None:
         profile["role"] = job_title
-    github = _normalize_github_handle(
-        meta.get("github_handle") if isinstance(meta.get("github_handle"), str) else None
-    )
+    github = _normalize_github_handle(meta.get("github_handle") if isinstance(meta.get("github_handle"), str) else None)
     if github is not None:
         profile["github_handle"] = github
     domain_id = meta.get("domain_id")
@@ -417,9 +415,7 @@ class EmployeeService:
                         clerk_role=membership.role,
                     )
                     profile = _invite_profile_from_meta(membership.public_metadata)
-                    resolved_domain_id = await self._soft_resolve_domain_id(
-                        org_id, profile.get("domain_id")
-                    )
+                    resolved_domain_id = await self._soft_resolve_domain_id(org_id, profile.get("domain_id"))
 
                     existing = await self.employee_dao.get_by_clerk_user_id(org_id, clerk_user_id)
                     if existing is None:

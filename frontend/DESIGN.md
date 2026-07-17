@@ -110,6 +110,10 @@ Soft companions (`*-soft`) exist for icon wells and pills: `bg-brand-honey-soft 
 - `info` → info blue  
 - Charts: honey → teal → moss → coral → plum  
 
+### Notifications (Sonner)
+
+Transient mutation feedback uses Sonner toasts (`notify.*` in `src/lib/toast.ts`), top-right, soft icon wells in the semantic hues above. Success ≈ 4s, error ≈ 6s. Do not toast query load failures or chat-thread errors — those stay inline.
+
 ## 4. Surfaces & elevation
 
 - Canvas: pure white (`oklch(1 0 0)`). Warmth is in brand colors, not the page tint.

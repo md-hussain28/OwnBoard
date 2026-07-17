@@ -5,6 +5,7 @@ import { publicConfig } from "@/lib/api/config";
 import { AppClerkProvider } from "@/providers/app-clerk-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { Toaster } from "@/ui/sonner";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -34,6 +35,7 @@ export default function RootLayout({
           <AppClerkProvider>
             <QueryProvider>{children}</QueryProvider>
           </AppClerkProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

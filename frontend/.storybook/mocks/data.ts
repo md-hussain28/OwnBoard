@@ -193,6 +193,18 @@ export const mockAssignments = [
     acks: [{ document_id: "doc_a1b2c3d4e5f6g7h8i9", acknowledged_at: "2026-07-06T11:00:00Z" }],
   },
   {
+    id: "asg_c3d4e5f6g7h8i9j0k1",
+    doc_pack_id: "pack_b2c3d4e5f6g7h8i9j0",
+    doc_pack_name: "Engineering Handbook",
+    employee_id: "emp_a1b2c3d4e5f6g7h8i9",
+    assigned_by: "emp_b2c3d4e5f6g7h8i9j0",
+    assigned_at: "2026-07-16T14:00:00Z",
+    status: "assigned",
+    quiz_template_id: null,
+    completed_at: null,
+    acks: [],
+  },
+  {
     id: "asg_b2c3d4e5f6g7h8i9j0",
     doc_pack_id: "pack_a1b2c3d4e5f6g7h8i9",
     doc_pack_name: "Security & Compliance",

@@ -1,6 +1,7 @@
 "use client";
 
 import { AppBreadcrumbs } from "@/components/layout/app-breadcrumbs";
+import { AssignmentNotifications } from "@/components/layout/assignment-notifications";
 import { Separator } from "@/ui/separator";
 import { SidebarTrigger } from "@/ui/sidebar";
 
@@ -11,6 +12,9 @@ export function AppTopbar() {
       <Separator orientation="vertical" className="mr-1 h-4" />
       <div className="min-w-0 flex-1">
         <AppBreadcrumbs />
+      </div>
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        <AssignmentNotifications />
       </div>
     </header>
   );

@@ -20,11 +20,15 @@ export function usePackAssignments(packId: string) {
   });
 }
 
-export function useEmployeeAssignments(employeeId: string) {
+export function useEmployeeAssignments(
+  employeeId: string,
+  options?: { refetchInterval?: number | false },
+) {
   return useQuery({
     queryKey: packAssignmentKeys.forEmployee(employeeId),
     queryFn: () => packAssignmentService.listForEmployee(employeeId),
     enabled: Boolean(employeeId),
+    refetchInterval: options?.refetchInterval,
   });
 }
 

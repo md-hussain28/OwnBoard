@@ -10,6 +10,7 @@ import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { useEmployees } from "@/hooks/queries/employee/employee.queries";
 import { useAppRole, useMe } from "@/hooks/queries/me/me.queries";
 import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
+import { cn } from "@/lib/utils";
 import type { DocPackListItem } from "@/schemas/docPack.schema";
 import type { Employee } from "@/schemas/employee.schema";
 import type { PackAssignment } from "@/schemas/packAssignment.schema";
@@ -58,6 +59,25 @@ function ViewingAsPicker({
   );
 }
 
+function ctaLabel(status: PackAssignment["status"]): string {
+  switch (status) {
+    case "assigned":
+      return "Start";
+    case "reading":
+      return "Continue";
+    case "ready_for_quiz":
+      return "Take quiz";
+    case "quiz_in_progress":
+      return "Resume";
+    case "failed":
+      return "Retry";
+    case "passed":
+      return "Review";
+    default:
+      return "Open";
+  }
+}
+
 function AssignmentList({
   assignments,
   packById,
@@ -69,28 +89,59 @@ function AssignmentList({
     return <p className="text-sm text-muted-foreground">No packs assigned yet.</p>;
   }
 
+  const sorted = [...assignments].sort((a, b) => {
+    const aDone = a.status === "passed" ? 1 : 0;
+    const bDone = b.status === "passed" ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    if (a.status === "assigned" && b.status !== "assigned") return -1;
+    if (b.status === "assigned" && a.status !== "assigned") return 1;
+    return new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime();
+  });
+
   return (
     <ul className="space-y-2">
-      {assignments.map((assignment) => (
-        <li key={assignment.id}>
-          <Link
-            href={`/onboarding/packs/${assignment.id}`}
-            className="flex items-center justify-between rounded-xl border border-border px-4 py-3 transition-shadow duration-200 hover:shadow-soft"
-          >
-            <div>
-              <p className="font-medium">
-                {assignment.docPackName ?? packById.get(assignment.docPackId)?.name ?? "Doc pack"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Assigned {new Date(assignment.assignedAt).toLocaleDateString()}
-              </p>
-            </div>
-            <Badge variant={assignmentStatusVariant(assignment.status)}>
-              {ASSIGNMENT_STATUS_LABEL[assignment.status]}
-            </Badge>
-          </Link>
-        </li>
-      ))}
+      {sorted.map((assignment) => {
+        const isNew = assignment.status === "assigned";
+        return (
+          <li key={assignment.id}>
+            <Link
+              href={`/onboarding/packs/${assignment.id}`}
+              className={cn(
+                "flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-[box-shadow,border-color,background-color] duration-200 hover:shadow-soft",
+                isNew
+                  ? "border-brand-honey/40 bg-brand-honey-soft/40"
+                  : "border-border bg-background",
+              )}
+            >
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 font-medium">
+                  <span className="truncate">
+                    {assignment.docPackName ??
+                      packById.get(assignment.docPackId)?.name ??
+                      "Doc pack"}
+                  </span>
+                  {isNew && (
+                    <Badge variant="warning" className="h-5 shrink-0 px-1.5 text-[0.65rem]">
+                      New
+                    </Badge>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Assigned {new Date(assignment.assignedAt).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <Badge variant={assignmentStatusVariant(assignment.status)}>
+                  {ASSIGNMENT_STATUS_LABEL[assignment.status]}
+                </Badge>
+                <span className="hidden text-xs font-semibold text-brand-teal sm:inline">
+                  {ctaLabel(assignment.status)}
+                </span>
+              </div>
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }

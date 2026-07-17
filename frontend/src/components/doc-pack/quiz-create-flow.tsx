@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { QuizDomainsField } from "@/components/doc-pack/quiz-domains-field";
 import { useCreateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
-import { getApiErrorMessage } from "@/lib/api/errors";
+import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
@@ -34,7 +34,14 @@ export function QuizCreateFlow() {
       },
       {
         onSuccess: (pack) => {
+          notify.success("Quiz created", {
+            description: pack.name,
+            id: `pack:${pack.id}`,
+          });
           router.push(`/doc-packs/${pack.id}`);
+        },
+        onError: (err) => {
+          notify.apiError(err, "Could not create quiz", { id: "pack-create-error" });
         },
       },
     );
@@ -111,12 +118,6 @@ export function QuizCreateFlow() {
             rows={3}
           />
         </div>
-
-        {createPack.isError && (
-          <p className="text-sm text-destructive">
-            {getApiErrorMessage(createPack.error, "Could not create quiz.")}
-          </p>
-        )}
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
           <p className="text-sm text-muted-foreground">

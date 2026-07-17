@@ -12,7 +12,7 @@ import {
   useRevokeAssignment,
 } from "@/hooks/queries/pack-assignment/pack-assignment.mutations";
 import { usePackAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
+import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { Employee } from "@/schemas/employee.schema";
 import type { PackAssignment } from "@/schemas/packAssignment.schema";
@@ -34,16 +34,12 @@ function AssignEmployeePicker({
   employees,
   selectedIds,
   assignPending,
-  assignError,
-  assignIsError,
   onToggle,
   onAssign,
 }: {
   employees: Employee[];
   selectedIds: string[];
   assignPending: boolean;
-  assignError: unknown;
-  assignIsError: boolean;
   onToggle: (id: string) => void;
   onAssign: () => void;
 }) {
@@ -81,11 +77,6 @@ function AssignEmployeePicker({
         )}
         Assign{selectedIds.length > 0 ? ` ${selectedIds.length}` : ""} selected
       </Button>
-      {assignIsError && (
-        <p className="text-sm text-destructive">
-          {getApiErrorMessage(assignError, "Assigning failed.")}
-        </p>
-      )}
     </div>
   );
 }
@@ -190,7 +181,29 @@ export function AssignmentRoster({
 
   function handleAssign() {
     if (selectedIds.length === 0) return;
-    createAssignments.mutate(selectedIds, { onSuccess: () => setSelectedIds([]) });
+    const count = selectedIds.length;
+    createAssignments.mutate(selectedIds, {
+      onSuccess: () => {
+        setSelectedIds([]);
+        notify.success(count === 1 ? "1 person assigned" : `${count} people assigned`, {
+          id: `assign:${packId}`,
+        });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Assigning failed", { id: `assign-error:${packId}` });
+      },
+    });
+  }
+
+  function handleRevoke(assignmentId: string) {
+    revoke.mutate(assignmentId, {
+      onSuccess: () => {
+        notify.success("Assignment revoked", { id: `revoke:${assignmentId}` });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Revoke failed", { id: `revoke-error:${assignmentId}` });
+      },
+    });
   }
 
   const isLoading = employeesQuery.isLoading || assignmentsQuery.isLoading;
@@ -231,8 +244,6 @@ export function AssignmentRoster({
                 employees={assignableEmployees}
                 selectedIds={selectedIds}
                 assignPending={createAssignments.isPending}
-                assignError={createAssignments.error}
-                assignIsError={createAssignments.isError}
                 onToggle={toggleEmployee}
                 onAssign={handleAssign}
               />
@@ -253,13 +264,8 @@ export function AssignmentRoster({
                 assignments={assignments}
                 employeeById={employeeById}
                 revokePending={revoke.isPending}
-                onRevoke={(assignmentId) => revoke.mutate(assignmentId)}
+                onRevoke={handleRevoke}
               />
-            )}
-            {revoke.isError && (
-              <p className="text-sm text-destructive">
-                {getApiErrorMessage(revoke.error, "Revoke failed.")}
-              </p>
             )}
           </section>
         </>

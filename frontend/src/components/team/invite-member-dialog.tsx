@@ -6,7 +6,7 @@ import { Field } from "@/components/team/field";
 import { RoleSelect } from "@/components/team/role-select";
 import { NONE_DOMAIN } from "@/components/team/team-constants";
 import { useInviteEmployee } from "@/hooks/queries/employee/employee.mutations";
-import { getApiErrorMessage } from "@/lib/api/errors";
+import { notify } from "@/lib/toast";
 import type { AppRole } from "@/schemas/employee.schema";
 import type { OrgDomain } from "@/schemas/org-domain.schema";
 import { Button } from "@/ui/button";
@@ -30,7 +30,7 @@ export function InviteMemberDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   domains: OrgDomain[];
-  onSent: (email: string) => void;
+  onSent?: (email: string) => void;
 }) {
   const invite = useInviteEmployee();
   const formId = useId();
@@ -76,7 +76,14 @@ export function InviteMemberDialog({
       {
         onSuccess: (result) => {
           onOpenChange(false);
-          onSent(result.emailAddress);
+          notify.success("Invitation sent", {
+            description: result.emailAddress,
+            id: `invite:${result.emailAddress}`,
+          });
+          onSent?.(result.emailAddress);
+        },
+        onError: (err) => {
+          notify.apiError(err, "Could not send invitation", { id: `invite-error:${trimmed}` });
         },
       },
     );
@@ -163,10 +170,6 @@ export function InviteMemberDialog({
               />
             </div>
           </Field>
-
-          {invite.isError && (
-            <p className="text-sm text-destructive">{getApiErrorMessage(invite.error)}</p>
-          )}
         </form>
 
         <DialogFooter>

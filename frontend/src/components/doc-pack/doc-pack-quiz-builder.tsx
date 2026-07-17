@@ -10,6 +10,7 @@ import {
   useSaveQuiz,
 } from "@/hooks/queries/doc-pack/doc-pack.mutations";
 import { useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { notify } from "@/lib/toast";
 import type { AdminQuizTemplate } from "@/schemas/quiz.schema";
 import { Badge } from "@/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
@@ -107,11 +108,24 @@ export function DocPackQuizBuilder({
   function handleGenerate(event: FormEvent) {
     event.preventDefault();
     if (formats.length === 0) return;
-    generate.mutate({
-      target_count: targetCount,
-      formats,
-      custom_instructions: customInstructions.trim() || undefined,
-    });
+    generate.mutate(
+      {
+        target_count: targetCount,
+        formats,
+        custom_instructions: customInstructions.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          notify.success("Quiz generated", {
+            description: "Review the questions, then save to publish.",
+            id: `quiz-gen:${packId}`,
+          });
+        },
+        onError: (err) => {
+          notify.apiError(err, "Generation failed", { id: `quiz-gen-error:${packId}` });
+        },
+      },
+    );
   }
 
   function updateQuestion(id: string, patch: Partial<EditableQuestion>) {
@@ -124,7 +138,28 @@ export function DocPackQuizBuilder({
 
   function handleSave() {
     if (keptQuestions.length === 0) return;
-    save.mutate(toSavePayload(keptQuestions));
+    save.mutate(toSavePayload(keptQuestions), {
+      onSuccess: () => {
+        notify.success("Quiz saved", {
+          description: "The pack is ready to assign.",
+          id: `quiz-save:${packId}`,
+        });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Save failed", { id: `quiz-save-error:${packId}` });
+      },
+    });
+  }
+
+  function handleRegenerateDropped() {
+    regenerate.mutate(droppedIds, {
+      onSuccess: () => {
+        notify.success("Questions regenerated", { id: `quiz-regen:${packId}` });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Regeneration failed", { id: `quiz-regen-error:${packId}` });
+      },
+    });
   }
 
   const busy = generate.isPending || regenerate.isPending || save.isPending;
@@ -144,8 +179,6 @@ export function DocPackQuizBuilder({
           hasProcessedDocuments={hasProcessedDocuments}
           busy={busy}
           isPending={generate.isPending}
-          error={generate.error}
-          isError={generate.isError}
           targetCount={targetCount}
           formats={formats}
           customInstructions={customInstructions}
@@ -175,13 +208,9 @@ export function DocPackQuizBuilder({
             busy={busy}
             regeneratePending={regenerate.isPending}
             savePending={save.isPending}
-            regenerateError={regenerate.error}
-            regenerateIsError={regenerate.isError}
-            saveError={save.error}
-            saveIsError={save.isError}
             onUpdateQuestion={updateQuestion}
             onUpdateOption={updateOption}
-            onRegenerateDropped={() => regenerate.mutate(droppedIds)}
+            onRegenerateDropped={handleRegenerateDropped}
             onSave={handleSave}
           />
         )}

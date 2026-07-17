@@ -2,7 +2,6 @@
 
 import { Loader2Icon, LockIcon } from "lucide-react";
 import { QuizQuestionCard } from "@/components/onboarding/quiz-question-card";
-import { getApiErrorMessage } from "@/lib/api/errors";
 import type { QuizAttempt, QuizTemplate } from "@/schemas/quiz.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
@@ -14,11 +13,7 @@ type AssignmentQuizPaneProps = {
   activeQuiz: { attempt: QuizAttempt; template: QuizTemplate } | null;
   answers: Record<string, string>;
   startPending: boolean;
-  startError: unknown;
-  startIsError: boolean;
   gradePending: boolean;
-  gradeError: unknown;
-  gradeIsError: boolean;
   onStart: () => void;
   onAnswer: (questionId: string, option: string) => void;
   onSubmit: () => void;
@@ -27,13 +22,8 @@ type AssignmentQuizPaneProps = {
 function QuizStartPrompt({
   allAcked,
   startPending,
-  startError,
-  startIsError,
   onStart,
-}: Pick<
-  AssignmentQuizPaneProps,
-  "allAcked" | "startPending" | "startError" | "startIsError" | "onStart"
->) {
+}: Pick<AssignmentQuizPaneProps, "allAcked" | "startPending" | "onStart">) {
   return (
     <>
       <p className="text-sm text-muted-foreground">
@@ -50,11 +40,6 @@ function QuizStartPrompt({
           "Start quiz"
         )}
       </Button>
-      {startIsError && (
-        <p className="text-sm text-destructive">
-          {getApiErrorMessage(startError, "Could not start the quiz.")}
-        </p>
-      )}
     </>
   );
 }
@@ -63,14 +48,11 @@ function QuizQuestionsForm({
   questions,
   answers,
   gradePending,
-  gradeError,
-  gradeIsError,
   onAnswer,
   onSubmit,
-}: Pick<
-  AssignmentQuizPaneProps,
-  "answers" | "gradePending" | "gradeError" | "gradeIsError" | "onAnswer" | "onSubmit"
-> & { questions: QuizTemplate["questions"] }) {
+}: Pick<AssignmentQuizPaneProps, "answers" | "gradePending" | "onAnswer" | "onSubmit"> & {
+  questions: QuizTemplate["questions"];
+}) {
   const allAnswered = questions.length > 0 && questions.every((q) => answers[q.id]);
 
   return (
@@ -98,11 +80,6 @@ function QuizQuestionsForm({
           "Submit answers"
         )}
       </Button>
-      {gradeIsError && (
-        <p className="text-sm text-destructive">
-          {getApiErrorMessage(gradeError, "Grading failed.")}
-        </p>
-      )}
     </div>
   );
 }
@@ -123,8 +100,6 @@ function QuizPaneBody(props: AssignmentQuizPaneProps) {
       <QuizStartPrompt
         allAcked={props.allAcked}
         startPending={props.startPending}
-        startError={props.startError}
-        startIsError={props.startIsError}
         onStart={props.onStart}
       />
     );
@@ -135,8 +110,6 @@ function QuizPaneBody(props: AssignmentQuizPaneProps) {
       questions={activeQuiz.template.questions}
       answers={props.answers}
       gradePending={props.gradePending}
-      gradeError={props.gradeError}
-      gradeIsError={props.gradeIsError}
       onAnswer={props.onAnswer}
       onSubmit={props.onSubmit}
     />
@@ -144,15 +117,18 @@ function QuizPaneBody(props: AssignmentQuizPaneProps) {
 }
 
 export function AssignmentQuizPane(props: AssignmentQuizPaneProps) {
-  const { status, allAcked } = props;
+  const locked = !props.allAcked && !props.activeQuiz;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          {!allAcked && <LockIcon className="size-4 text-muted-foreground" />}
           Quiz
-          {status === "passed" && <Badge>Passed</Badge>}
+          {locked && (
+            <Badge variant="secondary">
+              <LockIcon className="size-3" /> Locked
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

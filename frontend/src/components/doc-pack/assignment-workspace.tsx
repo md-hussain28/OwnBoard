@@ -10,6 +10,7 @@ import {
 } from "@/hooks/queries/pack-assignment/pack-assignment.mutations";
 import { useAssignmentDetail } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { useGradeAttempt } from "@/hooks/queries/quiz/quiz.mutations";
+import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { AssignmentDetail } from "@/schemas/packAssignment.schema";
 import type { QuizAttempt, QuizTemplate } from "@/schemas/quiz.schema";
@@ -192,7 +193,18 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
     setResult(null);
     setAnswers({});
     startQuiz.mutate(undefined, {
-      onSuccess: (data) => setActiveQuiz(data),
+      onSuccess: (data) => {
+        setActiveQuiz(data);
+        notify.info("Quiz started", {
+          description: "Open-book — the reading pane stays available.",
+          id: `quiz-start:${assignmentId}`,
+        });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Could not start the quiz", {
+          id: `quiz-start-error:${assignmentId}`,
+        });
+      },
     });
   }
 
@@ -204,6 +216,20 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
         onSuccess: (graded) => {
           setResult(graded);
           setActiveQuiz(null);
+          if (graded.passed) {
+            notify.success("Quiz passed", {
+              description: "You are clear on this pack.",
+              id: `quiz-grade:${assignmentId}`,
+            });
+          } else {
+            notify.warning("Not quite — retake when ready", {
+              description: "You need 100% to pass. Unlimited retakes.",
+              id: `quiz-grade:${assignmentId}`,
+            });
+          }
+        },
+        onError: (err) => {
+          notify.apiError(err, "Grading failed", { id: `quiz-grade-error:${assignmentId}` });
         },
       },
     );
@@ -224,7 +250,16 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
           detail={detail}
           allAcked={allAcked}
           ackPending={ack.isPending}
-          onAck={(documentId) => ack.mutate(documentId)}
+          onAck={(documentId) =>
+            ack.mutate(documentId, {
+              onSuccess: () => {
+                notify.success("Marked as read", { id: `ack:${documentId}` });
+              },
+              onError: (err) => {
+                notify.apiError(err, "Could not mark as read", { id: `ack-error:${documentId}` });
+              },
+            })
+          }
         />
 
         <AssignmentQuizPane
@@ -233,11 +268,7 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
           activeQuiz={activeQuiz}
           answers={answers}
           startPending={startQuiz.isPending}
-          startError={startQuiz.error}
-          startIsError={startQuiz.isError}
           gradePending={grade.isPending}
-          gradeError={grade.error}
-          gradeIsError={grade.isError}
           onStart={handleStartQuiz}
           onAnswer={(questionId, option) =>
             setAnswers((prev) => ({ ...prev, [questionId]: option }))

@@ -8,6 +8,7 @@ import {
   useQuizDomains,
 } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
@@ -41,15 +42,26 @@ export function QuizDomainsField({ value, onChange }: QuizDomainsFieldProps) {
         onSuccess: (domain) => {
           setName("");
           onChange(domain.id);
+          notify.success("Domain added", { description: domain.name, id: `qdomain:${domain.id}` });
+        },
+        onError: (err) => {
+          notify.apiError(err, "Could not add domain", { id: `qdomain-add-error:${trimmed}` });
         },
       },
     );
   }
 
-  function handleDelete(domainId: string) {
+  function handleDelete(domainId: string, domainName: string) {
     deleteDomain.mutate(domainId, {
       onSuccess: () => {
         if (value === domainId) onChange(null);
+        notify.success("Domain removed", {
+          description: domainName,
+          id: `qdomain-del:${domainId}`,
+        });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Could not delete domain", { id: `qdomain-del-error:${domainId}` });
       },
     });
   }
@@ -115,7 +127,7 @@ export function QuizDomainsField({ value, onChange }: QuizDomainsFieldProps) {
                     aria-label={`Delete ${domain.name}`}
                     className="ml-0.5 rounded-md p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive disabled:opacity-50"
                     disabled={deleteDomain.isPending}
-                    onClick={() => handleDelete(domain.id)}
+                    onClick={() => handleDelete(domain.id, domain.name)}
                   >
                     <Trash2Icon className="size-3.5" />
                   </button>
@@ -154,12 +166,6 @@ export function QuizDomainsField({ value, onChange }: QuizDomainsFieldProps) {
 
       {domainsQuery.isError && (
         <p className="text-sm text-destructive">{getApiErrorMessage(domainsQuery.error)}</p>
-      )}
-      {createDomain.isError && (
-        <p className="text-sm text-destructive">{getApiErrorMessage(createDomain.error)}</p>
-      )}
-      {deleteDomain.isError && (
-        <p className="text-sm text-destructive">{getApiErrorMessage(deleteDomain.error)}</p>
       )}
     </div>
   );

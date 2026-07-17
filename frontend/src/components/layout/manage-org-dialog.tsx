@@ -11,6 +11,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
 import {
@@ -336,9 +337,12 @@ export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
     setError(null);
     try {
       await persistOrgChanges(organization, trimmed, logo.logoFile, logo.removeLogo);
+      notify.success("Workspace updated", { id: "org-save" });
       onOpenChange(false);
     } catch (err) {
-      setError(saveErrorMessage(err));
+      const message = saveErrorMessage(err);
+      setError(message);
+      notify.error(message, { id: "org-save-error" });
     } finally {
       setSaving(false);
     }

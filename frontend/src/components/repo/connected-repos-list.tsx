@@ -5,6 +5,7 @@ import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { useCreateRepo } from "@/hooks/queries/repo/repo.mutations";
 import { useRepos } from "@/hooks/queries/repo/repo.queries";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import { notify } from "@/lib/toast";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
@@ -24,9 +25,16 @@ export function ConnectedReposList() {
     createRepo.mutate(
       { url, name },
       {
-        onSuccess: () => {
+        onSuccess: (repo) => {
           setUrl("");
           setName("");
+          notify.success("Repo connected", {
+            description: repo.name,
+            id: `repo:${repo.id}`,
+          });
+        },
+        onError: (err) => {
+          notify.apiError(err, "Could not add repo", { id: "repo-create-error" });
         },
       },
     );

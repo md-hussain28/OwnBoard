@@ -2,11 +2,14 @@
 
 import { AtSignIcon, PencilIcon } from "lucide-react";
 import { useState } from "react";
-import { EditMemberDialog } from "@/components/team/edit-member-dialog";
+import {
+  EditMemberDialog,
+  type MemberDialogMode,
+} from "@/components/team/edit-member-dialog";
 import { RoleSelect } from "@/components/team/role-select";
 import { initials, memberSubtitle } from "@/components/team/team-constants";
 import { useUpdateEmployee } from "@/hooks/queries/employee/employee.mutations";
-import { getApiErrorMessage } from "@/lib/api/errors";
+import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { AppRole, Employee } from "@/schemas/employee.schema";
 import type { OrgDomain } from "@/schemas/org-domain.schema";
@@ -23,7 +26,13 @@ export function MemberRow({
 }) {
   const updateEmployee = useUpdateEmployee();
   const [pendingRole, setPendingRole] = useState<AppRole | null>(null);
-  const [editing, setEditing] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<MemberDialogMode>("view");
+
+  function openDialog(mode: MemberDialogMode) {
+    setDialogMode(mode);
+    setDialogOpen(true);
+  }
 
   function handleRoleChange(appRole: AppRole) {
     if (appRole === employee.appRole) return;
@@ -31,6 +40,15 @@ export function MemberRow({
     updateEmployee.mutate(
       { id: employee.id, input: { appRole } },
       {
+        onSuccess: () => {
+          notify.success("Access updated", {
+            description: `${employee.name} is now ${appRole === "admin" ? "an admin" : "a member"}.`,
+            id: `role:${employee.id}`,
+          });
+        },
+        onError: (err) => {
+          notify.apiError(err, "Could not update access", { id: `role-error:${employee.id}` });
+        },
         onSettled: () => setPendingRole(null),
       },
     );
@@ -50,7 +68,7 @@ export function MemberRow({
     >
       <button
         type="button"
-        onClick={() => setEditing(true)}
+        onClick={() => openDialog("view")}
         className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg text-left outline-none sm:gap-3 focus-visible:ring-2 focus-visible:ring-ring/50"
         aria-label={`View details for ${employee.name}`}
       >
@@ -88,7 +106,7 @@ export function MemberRow({
           variant="ghost"
           size="icon-sm"
           aria-label={`Edit ${employee.name}`}
-          onClick={() => setEditing(true)}
+          onClick={() => openDialog("edit")}
           className="text-muted-foreground hover:text-foreground"
         >
           <PencilIcon />
@@ -103,18 +121,13 @@ export function MemberRow({
         />
       </div>
 
-      {updateEmployee.isError && (
-        <p className="basis-full pl-10 text-sm text-destructive sm:pl-12">
-          {getApiErrorMessage(updateEmployee.error)}
-        </p>
-      )}
-
       <EditMemberDialog
         employee={employee}
-        open={editing}
-        onOpenChange={setEditing}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
         domains={domains}
         isSelf={isSelf}
+        initialMode={dialogMode}
       />
     </li>
   );

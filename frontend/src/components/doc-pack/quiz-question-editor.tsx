@@ -2,7 +2,6 @@
 
 import { CheckIcon, Loader2Icon, RotateCcwIcon, Undo2Icon, XIcon } from "lucide-react";
 import type { EditableQuestion } from "@/components/doc-pack/quiz-builder-types";
-import { getApiErrorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
@@ -17,10 +16,6 @@ type QuizQuestionEditorProps = {
   busy: boolean;
   regeneratePending: boolean;
   savePending: boolean;
-  regenerateError: unknown;
-  regenerateIsError: boolean;
-  saveError: unknown;
-  saveIsError: boolean;
   onUpdateQuestion: (id: string, patch: Partial<EditableQuestion>) => void;
   onUpdateOption: (id: string, index: number, value: string) => void;
   onRegenerateDropped: () => void;
@@ -35,10 +30,6 @@ export function QuizQuestionEditor({
   busy,
   regeneratePending,
   savePending,
-  regenerateError,
-  regenerateIsError,
-  saveError,
-  saveIsError,
   onUpdateQuestion,
   onUpdateOption,
   onRegenerateDropped,
@@ -82,15 +73,6 @@ export function QuizQuestionEditor({
           </Button>
         </div>
       </div>
-
-      {regenerateIsError && (
-        <p className="text-sm text-destructive">
-          {getApiErrorMessage(regenerateError, "Regeneration failed.")}
-        </p>
-      )}
-      {saveIsError && (
-        <p className="text-sm text-destructive">{getApiErrorMessage(saveError, "Save failed.")}</p>
-      )}
 
       <ul className="space-y-3">
         {questions.map((question, index) => (

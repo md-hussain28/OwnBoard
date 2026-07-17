@@ -7,7 +7,7 @@ import { DocPackQuizBuilder } from "@/components/doc-pack/doc-pack-quiz-builder"
 import { useUpdateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
 import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { useQuizDomains } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
+import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { DocPack } from "@/schemas/docPack.schema";
 import type { QuizDomain } from "@/schemas/quiz-domain.schema";
@@ -39,16 +39,12 @@ function PackHeader({
   domains,
   quizPublished,
   domainPending,
-  domainError,
-  domainIsError,
   onDomainChange,
 }: {
   pack: DocPack;
   domains: QuizDomain[];
   quizPublished: boolean;
   domainPending: boolean;
-  domainError: unknown;
-  domainIsError: boolean;
   onDomainChange: (value: string) => void;
 }) {
   const statusBadge = PACK_STATUS_BADGE[pack.status];
@@ -85,9 +81,6 @@ function PackHeader({
               ))}
             </SelectContent>
           </Select>
-          {domainIsError && (
-            <p className="text-sm text-destructive">{getApiErrorMessage(domainError)}</p>
-          )}
         </div>
         <p className="text-sm text-muted-foreground">
           Finish documents and quiz here, then assign from the Quizzes desk.
@@ -218,9 +211,19 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
   const domains = domainsQuery.data ?? [];
 
   function handleDomainChange(value: string) {
-    updatePack.mutate({
-      domain_id: value === NONE_DOMAIN ? null : value,
-    });
+    updatePack.mutate(
+      {
+        domain_id: value === NONE_DOMAIN ? null : value,
+      },
+      {
+        onSuccess: () => {
+          notify.success("Domain updated", { id: `pack-domain:${packId}` });
+        },
+        onError: (err) => {
+          notify.apiError(err, "Could not update domain", { id: `pack-domain-error:${packId}` });
+        },
+      },
+    );
   }
 
   return (
@@ -241,8 +244,6 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
             domains={domains}
             quizPublished={quizPublished}
             domainPending={updatePack.isPending}
-            domainError={updatePack.error}
-            domainIsError={updatePack.isError}
             onDomainChange={handleDomainChange}
           />
         )}

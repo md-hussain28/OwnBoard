@@ -3,7 +3,6 @@
 import { CheckIcon, Loader2Icon, SparklesIcon } from "lucide-react";
 import type { FormEvent } from "react";
 import type { QuestionFormat } from "@/components/doc-pack/quiz-builder-types";
-import { getApiErrorMessage } from "@/lib/api/errors";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Textarea } from "@/ui/textarea";
@@ -13,8 +12,6 @@ type QuizGenerateFormProps = {
   hasProcessedDocuments: boolean;
   busy: boolean;
   isPending: boolean;
-  error: unknown;
-  isError: boolean;
   targetCount: number;
   formats: QuestionFormat[];
   customInstructions: string;
@@ -29,8 +26,6 @@ export function QuizGenerateForm({
   hasProcessedDocuments,
   busy,
   isPending,
-  error,
-  isError,
   targetCount,
   formats,
   customInstructions,
@@ -88,11 +83,6 @@ export function QuizGenerateForm({
       {!hasProcessedDocuments && (
         <p className="text-xs text-muted-foreground">
           Upload at least one document and wait for processing to finish first.
-        </p>
-      )}
-      {isError && (
-        <p className="text-sm text-destructive">
-          {getApiErrorMessage(error, "Generation failed.")}
         </p>
       )}
     </form>

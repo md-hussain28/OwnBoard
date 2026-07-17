@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2Icon, PlusIcon, SearchIcon } from "lucide-react";
+import { PlusIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { FilterSelect } from "@/components/shared/filter-select";
@@ -174,18 +174,6 @@ function PeopleToolbar({
   );
 }
 
-function InviteSentNotice({ message }: { message: string }) {
-  return (
-    <p
-      role="status"
-      className="flex items-center gap-1.5 rounded-lg border border-success/25 bg-success/5 px-3 py-2 text-sm text-success"
-    >
-      <CheckCircle2Icon className="size-3.5 shrink-0" aria-hidden />
-      {message}
-    </p>
-  );
-}
-
 function PeopleCount({
   hasActiveFilters,
   filteredCount,
@@ -334,7 +322,6 @@ export function TeamPanel() {
   const domainsQuery = useOrgDomains();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [domainsOpen, setDomainsOpen] = useState(false);
-  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
 
   const employees = employeesQuery.data ?? [];
   const domains = domainsQuery.data ?? [];
@@ -357,22 +344,10 @@ export function TeamPanel() {
       <TeamHeader
         domainsDisabled={domainsQuery.isLoading || domainsQuery.isError}
         onManageDomains={() => setDomainsOpen(true)}
-        onInvite={() => {
-          setInviteMessage(null);
-          setInviteOpen(true);
-        }}
+        onInvite={() => setInviteOpen(true)}
       />
 
-      {inviteMessage && <InviteSentNotice message={inviteMessage} />}
-
-      <InviteMemberDialog
-        open={inviteOpen}
-        onOpenChange={setInviteOpen}
-        domains={domains}
-        onSent={(emailAddress) => {
-          setInviteMessage(`Invitation sent to ${emailAddress}`);
-        }}
-      />
+      <InviteMemberDialog open={inviteOpen} onOpenChange={setInviteOpen} domains={domains} />
 
       <ManageDomainsDialog open={domainsOpen} onOpenChange={setDomainsOpen} domains={domains} />
 

@@ -27,7 +27,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: publicConfig.NEXT_PUBLIC_APP_NAME,
-  description: "Onboard: cited, commit-grounded engineering onboarding.",
+  description: "OwnBoard: cited, commit-grounded engineering onboarding.",
   icons: {
     icon: [
       { url: "/brand/ownboard-mark.svg", type: "image/svg+xml" },

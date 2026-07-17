@@ -3,6 +3,8 @@ import { cn } from "@/lib/utils";
 
 type BrandMarkProps = {
   className?: string;
+  /** When true, mark is decorative (wordmark carries the name). */
+  decorative?: boolean;
   title?: string;
 };
 
@@ -10,7 +12,7 @@ type BrandMarkProps = {
  * OwnBoard product mark — honey board tile, white O + desk plank, teal verified seal.
  * Works from favicon size up to hero lockups.
  */
-export function BrandMark({ className, title = "OwnBoard" }: BrandMarkProps) {
+export function BrandMark({ className, decorative = false, title = "OwnBoard" }: BrandMarkProps) {
   const gradId = useId();
   return (
     <svg
@@ -18,10 +20,11 @@ export function BrandMark({ className, title = "OwnBoard" }: BrandMarkProps) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn("size-8 shrink-0", className)}
-      role="img"
-      aria-label={title}
+      role={decorative ? undefined : "img"}
+      aria-hidden={decorative || undefined}
+      aria-label={decorative ? undefined : title}
     >
-      <title>{title}</title>
+      {!decorative && <title>{title}</title>}
       <defs>
         <linearGradient id={gradId} x1="8" y1="4" x2="58" y2="60" gradientUnits="userSpaceOnUse">
           <stop stopColor="#E9A01C" />
@@ -43,6 +46,25 @@ export function BrandMark({ className, title = "OwnBoard" }: BrandMarkProps) {
   );
 }
 
+type BrandWordmarkProps = {
+  className?: string;
+};
+
+/** Custom OwnBoard logotype — Fraunces display face, not the UI sans. */
+export function BrandWordmark({ className }: BrandWordmarkProps) {
+  return (
+    <span
+      className={cn(
+        "font-brand text-[1.0625rem] font-semibold leading-none tracking-[-0.03em] text-foreground",
+        className,
+      )}
+    >
+      Own
+      <span className="text-brand-amber">Board</span>
+    </span>
+  );
+}
+
 type BrandLogoProps = {
   className?: string;
   markClassName?: string;
@@ -52,13 +74,9 @@ type BrandLogoProps = {
 /** Mark + wordmark lockup for marketing chrome and hero brand moments. */
 export function BrandLogo({ className, markClassName, wordmarkClassName }: BrandLogoProps) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <BrandMark className={cn("shadow-button", markClassName)} />
-      <span
-        className={cn("text-base font-extrabold tracking-tight text-foreground", wordmarkClassName)}
-      >
-        OwnBoard
-      </span>
+    <span className={cn("inline-flex items-center gap-2.5", className)} aria-label="OwnBoard">
+      <BrandMark decorative className={cn("shadow-button", markClassName)} />
+      <BrandWordmark className={wordmarkClassName} />
     </span>
   );
 }

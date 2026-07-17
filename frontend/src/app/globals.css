@@ -11,6 +11,7 @@
   --font-sans: var(--font-plus-jakarta);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-plus-jakarta);
+  --font-brand: var(--font-fraunces), "Fraunces", ui-serif, Georgia, serif;
 
   /* Named brand primitives — use these for intentional color moments */
   --color-brand-honey: var(--brand-honey);

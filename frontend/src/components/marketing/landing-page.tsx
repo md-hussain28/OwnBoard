@@ -85,7 +85,7 @@ export function LandingPage() {
             <div className="landing-rise" style={{ animationDelay: "0ms" }}>
               <BrandLogo
                 markClassName="size-11 rounded-[0.85rem] sm:size-12 sm:rounded-[0.95rem]"
-                wordmarkClassName="text-2xl sm:text-3xl"
+                wordmarkClassName="text-[1.65rem] font-semibold sm:text-[1.85rem]"
               />
             </div>
             <h1
@@ -363,7 +363,10 @@ export function LandingPage() {
       </section>
 
       <footer className="mx-auto mt-16 flex max-w-6xl flex-col items-center gap-3 px-6 text-center">
-        <BrandLogo markClassName="size-7 rounded-[0.5rem]" wordmarkClassName="text-sm font-bold" />
+        <BrandLogo
+          markClassName="size-7 rounded-[0.5rem]"
+          wordmarkClassName="text-[0.9375rem] font-semibold"
+        />
         <p className="font-mono text-[0.6875rem] text-muted-foreground">
           Verifiable engineering onboarding
         </p>

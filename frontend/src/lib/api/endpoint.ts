@@ -13,6 +13,9 @@ export const API_ENDPOINTS = {
   domains: "/domains",
   domain: (id: string) => `/domains/${id}`,
 
+  quizDomains: "/quiz-domains",
+  quizDomain: (id: string) => `/quiz-domains/${id}`,
+
   // Doc Packs (Doc Pack PRD §6)
   docPacks: "/doc-packs",
   docPack: (id: string) => `/doc-packs/${id}`,

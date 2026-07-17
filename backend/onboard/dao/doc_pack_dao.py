@@ -17,6 +17,7 @@ class DocPackDAO(BaseDAO[DocPack]):
         result = await self.session.execute(
             select(DocPack)
             .where(DocPack.org_id == org_id)
+            .options(selectinload(DocPack.domain))
             .order_by(DocPack.created_at.desc())
             .limit(limit)
             .offset(offset)
@@ -27,7 +28,7 @@ class DocPackDAO(BaseDAO[DocPack]):
         result = await self.session.execute(
             select(DocPack)
             .where(DocPack.id == pack_id, DocPack.org_id == org_id)
-            .options(selectinload(DocPack.documents))
+            .options(selectinload(DocPack.documents), selectinload(DocPack.domain))
         )
         return result.scalar_one_or_none()
 

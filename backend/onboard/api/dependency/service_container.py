@@ -10,6 +10,7 @@ from onboard.services.expert_routing.expert_routing_service import ExpertRouting
 from onboard.services.org_domain.org_domain_service import OrgDomainService
 from onboard.services.pack_assignment.pack_assignment_service import PackAssignmentService
 from onboard.services.quiz.quiz_service import QuizService
+from onboard.services.quiz_domain.quiz_domain_service import QuizDomainService
 from onboard.services.rag.rag_service import RAGService
 from onboard.services.repo_ingestion.repo_ingestion_service import RepoIngestionService
 from onboard.services.skill_graph.skill_graph_service import SkillGraphService
@@ -23,6 +24,7 @@ class ServiceContainer:
         self._repo_ingestion: RepoIngestionService | None = None
         self._employee: EmployeeService | None = None
         self._org_domain: OrgDomainService | None = None
+        self._quiz_domain: QuizDomainService | None = None
         self._skill_graph: SkillGraphService | None = None
         self._rag: RAGService | None = None
         self._quiz: QuizService | None = None
@@ -49,6 +51,12 @@ class ServiceContainer:
         if self._org_domain is None:
             self._org_domain = OrgDomainService(self.session)
         return self._org_domain
+
+    @property
+    def quiz_domain(self) -> QuizDomainService:
+        if self._quiz_domain is None:
+            self._quiz_domain = QuizDomainService(self.session)
+        return self._quiz_domain
 
     @property
     def skill_graph(self) -> SkillGraphService:

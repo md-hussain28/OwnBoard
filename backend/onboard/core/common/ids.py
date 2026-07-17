@@ -27,6 +27,7 @@ ID_PREFIXES = frozenset(
         "note",  # institutional_memory_note
         "pack",  # doc_pack
         "pol",  # policy_doc
+        "qdom",  # quiz_domain (Policy, Holiday, …)
         "ques",  # quiz_question
         "quiz",  # quiz_template
         "repo",  # repo

@@ -3,12 +3,22 @@
 import Link from "next/link";
 import { ArrowRightIcon, CheckIcon } from "lucide-react";
 import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { useUpdateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
+import { useQuizDomains } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
 import { DocPackDocuments } from "@/components/doc-pack/doc-pack-documents";
 import { DocPackQuizBuilder } from "@/components/doc-pack/doc-pack-quiz-builder";
 import { Skeleton } from "@/ui/skeleton";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/ui/select";
 import { cn } from "@/lib/utils";
+import { getApiErrorMessage } from "@/lib/api/errors";
 
 const STEPS = [
   { id: 1, label: "Details", key: "details" },
@@ -16,9 +26,13 @@ const STEPS = [
   { id: 3, label: "Quiz", key: "quiz" },
 ] as const;
 
+const NONE_DOMAIN = "__none__";
+
 export function QuizBuilderFlow({ packId }: { packId: string }) {
   const { data: pack, isLoading, isError } = useDocPack(packId);
   const quizQuery = useDocPackQuiz(packId);
+  const domainsQuery = useQuizDomains();
+  const updatePack = useUpdateDocPack(packId);
 
   const hasDocuments = (pack?.documents ?? []).length > 0;
   const hasProcessedDocuments = (pack?.documents ?? []).some((d) => d.status === "processed");
@@ -26,6 +40,13 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
   const hasQuizDraft = Boolean(quizQuery.data);
 
   const currentStep = quizPublished || hasQuizDraft ? 3 : hasDocuments ? 3 : 2;
+  const domains = domainsQuery.data ?? [];
+
+  function handleDomainChange(value: string) {
+    updatePack.mutate({
+      domain_id: value === NONE_DOMAIN ? null : value,
+    });
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -46,6 +67,7 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
                 <h1 className="text-2xl font-semibold tracking-tight text-balance">
                   {pack.name}
                 </h1>
+                {pack.domainName && <Badge variant="outline">{pack.domainName}</Badge>}
                 {pack.status === "needs_review" && (
                   <Badge variant="warning">Needs review</Badge>
                 )}
@@ -56,6 +78,33 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
               {pack.description && (
                 <p className="text-muted-foreground text-pretty">{pack.description}</p>
               )}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <label htmlFor="pack-domain" className="text-sm text-muted-foreground">
+                  Domain
+                </label>
+                <Select
+                  value={pack.domainId ?? NONE_DOMAIN}
+                  onValueChange={handleDomainChange}
+                  disabled={updatePack.isPending}
+                >
+                  <SelectTrigger id="pack-domain" size="sm" className="w-[11rem]">
+                    <SelectValue placeholder="No domain" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE_DOMAIN}>No domain</SelectItem>
+                    {domains.map((domain) => (
+                      <SelectItem key={domain.id} value={domain.id}>
+                        {domain.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {updatePack.isError && (
+                  <p className="text-sm text-destructive">
+                    {getApiErrorMessage(updatePack.error)}
+                  </p>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">
                 Finish documents and quiz here, then assign from the Quizzes desk.
               </p>

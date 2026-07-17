@@ -48,8 +48,13 @@ class DocPack(AuditBase):
     )
     review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Quiz topic domain (Policy, Holiday, …) — optional; separate from employee OrgDomain.
+    domain_id: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("quiz_domain.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     organization: Mapped["Organization"] = relationship(back_populates="doc_packs")
+    domain: Mapped["QuizDomain | None"] = relationship(back_populates="doc_packs")
     documents: Mapped[list["DocPackDocument"]] = relationship(back_populates="doc_pack", cascade="all, delete-orphan")
     chunks: Mapped[list["DocChunk"]] = relationship(back_populates="doc_pack", cascade="all, delete-orphan")
     assignments: Mapped[list["PackAssignment"]] = relationship(back_populates="doc_pack", cascade="all, delete-orphan")

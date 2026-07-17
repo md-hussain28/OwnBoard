@@ -20,6 +20,7 @@ from onboard.dao.models.org_domain import OrgDomain
 from onboard.dao.models.organization import Organization
 from onboard.dao.models.policy_doc import PolicyDoc
 from onboard.dao.models.quiz_attempt import QuizAttempt
+from onboard.dao.models.quiz_domain import QuizDomain
 from onboard.dao.models.quiz_question import QuestionFormat, QuizQuestion
 from onboard.dao.models.quiz_template import QuizTemplate, QuizType
 from onboard.dao.models.repo import Repo
@@ -46,6 +47,7 @@ __all__ = [
     "PolicyDoc",
     "QuestionFormat",
     "QuizAttempt",
+    "QuizDomain",
     "QuizQuestion",
     "QuizTemplate",
     "QuizType",

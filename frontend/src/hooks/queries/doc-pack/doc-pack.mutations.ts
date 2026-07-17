@@ -8,8 +8,21 @@ import { useUploadStore } from "@/stores/upload-store";
 export function useCreateDocPack() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; description?: string }) => docPackService.create(input),
+    mutationFn: (input: { name: string; description?: string; domain_id?: string | null }) =>
+      docPackService.create(input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: docPackKeys.all }),
+  });
+}
+
+export function useUpdateDocPack(packId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name?: string; description?: string; domain_id?: string | null }) =>
+      docPackService.update(packId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: docPackKeys.all });
+      queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
+    },
   });
 }
 

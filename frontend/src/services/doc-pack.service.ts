@@ -30,12 +30,19 @@ export const docPackService = {
     return docPackSchema.parse(data);
   },
 
-  async create(input: { name: string; description?: string }): Promise<DocPack> {
+  async create(input: {
+    name: string;
+    description?: string;
+    domain_id?: string | null;
+  }): Promise<DocPack> {
     const { data } = await getApiClient().post(API_ENDPOINTS.docPacks, input);
     return docPackSchema.parse(data);
   },
 
-  async update(id: string, input: { name?: string; description?: string }): Promise<DocPack> {
+  async update(
+    id: string,
+    input: { name?: string; description?: string; domain_id?: string | null },
+  ): Promise<DocPack> {
     const { data } = await getApiClient().patch(API_ENDPOINTS.docPack(id), input);
     return docPackSchema.parse(data);
   },

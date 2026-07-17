@@ -80,6 +80,14 @@ export const mockOrgDomains = [
   { id: "dom_finance", org_id: "org_demo", name: "Finance", is_default: true },
 ];
 
+export const mockQuizDomains = [
+  { id: "qdom_policy", org_id: "org_demo", name: "Policy", is_default: true },
+  { id: "qdom_security", org_id: "org_demo", name: "Security", is_default: true },
+  { id: "qdom_holiday", org_id: "org_demo", name: "Holiday", is_default: true },
+  { id: "qdom_onboarding", org_id: "org_demo", name: "Onboarding", is_default: true },
+  { id: "qdom_benefits", org_id: "org_demo", name: "Benefits", is_default: true },
+  { id: "qdom_codebase", org_id: "org_demo", name: "Codebase", is_default: true },
+];
 
 export const mockMe = {
   user_id: "user_storybook",
@@ -97,6 +105,8 @@ export const mockDocPacks = [
     status: "active",
     created_by: "emp_a1b2c3d4e5f6g7h8i9",
     created_at: "2026-07-01T12:00:00Z",
+    domain_id: "qdom_security",
+    domain_name: "Security",
   },
   {
     id: "pack_b2c3d4e5f6g7h8i9j0",
@@ -105,6 +115,8 @@ export const mockDocPacks = [
     status: "draft",
     created_by: null,
     created_at: "2026-07-08T15:30:00Z",
+    domain_id: "qdom_onboarding",
+    domain_name: "Onboarding",
   },
 ];
 

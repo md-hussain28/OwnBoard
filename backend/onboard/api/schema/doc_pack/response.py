@@ -55,6 +55,8 @@ class DocPackResponse(BaseModel):
     created_by: str | None
     created_at: datetime
     updated_at: datetime
+    domain_id: str | None = None
+    domain_name: str | None = None
     documents: list[DocPackDocumentResponse] = []
 
 
@@ -69,6 +71,8 @@ class DocPackListItemResponse(BaseModel):
     created_by: str | None
     created_at: datetime
     updated_at: datetime
+    domain_id: str | None = None
+    domain_name: str | None = None
 
 
 class RetrievedDocChunkResponse(BaseModel):

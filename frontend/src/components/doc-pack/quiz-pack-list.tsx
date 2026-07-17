@@ -3,10 +3,15 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQueries } from "@tanstack/react-query";
-import { PencilIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, SearchIcon, Trash2Icon, UserPlusIcon } from "lucide-react";
 import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { packAssignmentKeys } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
+import {
+  useCreateQuizDomain,
+  useDeleteQuizDomain,
+  useQuizDomains,
+} from "@/hooks/queries/quiz-domain/quiz-domain.queries";
 import { packAssignmentService } from "@/services/pack-assignment.service";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
@@ -22,11 +27,13 @@ import {
 import { cn } from "@/lib/utils";
 import type { DocPackListItem } from "@/schemas/docPack.schema";
 import type { PackAssignment, PackAssignmentStatus } from "@/schemas/packAssignment.schema";
+import type { QuizDomain } from "@/schemas/quiz-domain.schema";
 import { getApiErrorMessage } from "@/lib/api/errors";
 
 type PackStatus = DocPackListItem["status"];
 type StatusFilter = "all" | PackStatus;
 type AssignmentFilter = "all" | "assigned" | "unassigned";
+type DomainFilter = "all" | "none" | string;
 
 const STATUS_LABEL: Record<PackStatus, string> = {
   draft: "Draft",
@@ -121,6 +128,86 @@ function summarizeProgress(assignments: PackAssignment[]): string {
     .join(" · ");
 }
 
+function QuizDomainsManager({ domains }: { domains: QuizDomain[] }) {
+  const createDomain = useCreateQuizDomain();
+  const deleteDomain = useDeleteQuizDomain();
+  const [name, setName] = useState("");
+
+  function handleCreate(event: React.FormEvent) {
+    event.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    createDomain.mutate(
+      { name: trimmed },
+      {
+        onSuccess: () => setName(""),
+      },
+    );
+  }
+
+  return (
+    <section
+      className="space-y-3 rounded-xl border border-border bg-card/40 px-4 py-3.5"
+      aria-labelledby="quiz-domains-heading"
+    >
+      <div className="space-y-0.5">
+        <h2 id="quiz-domains-heading" className="text-sm font-semibold">
+          Domains
+        </h2>
+        <p className="text-xs text-muted-foreground text-pretty">
+          Label quizzes by topic (Policy, Holiday, …). Built-ins stay; add custom ones anytime.
+        </p>
+      </div>
+
+      <ul className="flex flex-wrap gap-2">
+        {domains.map((domain) => (
+          <li key={domain.id}>
+            <span className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1 text-sm">
+              {domain.name}
+              {domain.isDefault ? (
+                <Badge variant="secondary" className="ml-0.5 h-4 px-1.5 text-[0.625rem]">
+                  Default
+                </Badge>
+              ) : (
+                <button
+                  type="button"
+                  aria-label={`Delete ${domain.name}`}
+                  className="ml-0.5 rounded-md p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive disabled:opacity-50"
+                  disabled={deleteDomain.isPending}
+                  onClick={() => deleteDomain.mutate(domain.id)}
+                >
+                  <Trash2Icon className="size-3.5" />
+                </button>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <form onSubmit={handleCreate} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Add a domain…"
+          aria-label="New quiz domain name"
+          className="sm:flex-1"
+        />
+        <Button type="submit" variant="outline" size="sm" disabled={createDomain.isPending || !name.trim()}>
+          <PlusIcon className="size-4" />
+          {createDomain.isPending ? "Adding…" : "Add domain"}
+        </Button>
+      </form>
+
+      {createDomain.isError && (
+        <p className="text-sm text-destructive">{getApiErrorMessage(createDomain.error)}</p>
+      )}
+      {deleteDomain.isError && (
+        <p className="text-sm text-destructive">{getApiErrorMessage(deleteDomain.error)}</p>
+      )}
+    </section>
+  );
+}
+
 export function QuizPackList({
   onAssignPack,
 }: {
@@ -128,11 +215,23 @@ export function QuizPackList({
 }) {
   const { isAdmin } = useAppRole();
   const { data: packs, isLoading, isError, error } = useDocPacks();
+  const domainsQuery = useQuizDomains({ enabled: isAdmin });
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilter>("all");
+  const [domainFilter, setDomainFilter] = useState<DomainFilter>("all");
 
   const packIds = useMemo(() => (packs ?? []).map((p) => p.id), [packs]);
+  const domains = domainsQuery.data ?? [];
+
+  const domainFilters: { value: DomainFilter; label: string }[] = useMemo(
+    () => [
+      { value: "all", label: "All domains" },
+      { value: "none", label: "No domain" },
+      ...domains.map((d) => ({ value: d.id, label: d.name })),
+    ],
+    [domains],
+  );
 
   const assignmentQueries = useQueries({
     queries: packIds.map((packId) => ({
@@ -169,6 +268,12 @@ export function QuizPackList({
     return list.filter((pack) => {
       if (statusFilter !== "all" && pack.status !== statusFilter) return false;
 
+      if (domainFilter === "none") {
+        if (pack.domainId) return false;
+      } else if (domainFilter !== "all" && pack.domainId !== domainFilter) {
+        return false;
+      }
+
       if (assignmentFilter !== "all") {
         const progress = progressByPackId.get(pack.id);
         const assigned = (progress?.count ?? 0) > 0;
@@ -180,6 +285,7 @@ export function QuizPackList({
       const haystack = [
         pack.name,
         pack.description ?? "",
+        pack.domainName ?? "",
         STATUS_LABEL[pack.status],
         pack.status.replace("_", " "),
       ]
@@ -187,15 +293,19 @@ export function QuizPackList({
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [packs, query, statusFilter, assignmentFilter, progressByPackId]);
+  }, [packs, query, statusFilter, assignmentFilter, domainFilter, progressByPackId]);
 
   const hasActiveFilters =
-    query.trim().length > 0 || statusFilter !== "all" || assignmentFilter !== "all";
+    query.trim().length > 0 ||
+    statusFilter !== "all" ||
+    assignmentFilter !== "all" ||
+    domainFilter !== "all";
 
   function clearFilters() {
     setQuery("");
     setStatusFilter("all");
     setAssignmentFilter("all");
+    setDomainFilter("all");
   }
 
   return (
@@ -219,6 +329,9 @@ export function QuizPackList({
         )}
       </div>
 
+      {isAdmin && !domainsQuery.isLoading && <QuizDomainsManager domains={domains} />}
+      {isAdmin && domainsQuery.isLoading && <Skeleton className="h-24 w-full rounded-xl" />}
+
       {!isLoading && !isError && (packs?.length ?? 0) > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-[12rem] flex-1 basis-48">
@@ -236,6 +349,12 @@ export function QuizPackList({
             />
           </div>
 
+          <FilterSelect
+            value={domainFilter}
+            onChange={setDomainFilter}
+            options={domainFilters}
+            aria-label="Filter by domain"
+          />
           <FilterSelect
             value={statusFilter}
             onChange={setStatusFilter}
@@ -323,6 +442,7 @@ export function QuizPackList({
                 <div className="min-w-0 space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate font-medium">{pack.name}</p>
+                    {pack.domainName && <Badge variant="outline">{pack.domainName}</Badge>}
                     <Badge variant={packStatusVariant(pack.status)}>
                       {STATUS_LABEL[pack.status]}
                     </Badge>

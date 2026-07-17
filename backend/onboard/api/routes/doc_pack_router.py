@@ -24,10 +24,41 @@ from onboard.api.schema.quiz.response import (
     GeneratedSlotIssueResponse,
     QuizTemplateAdminResponse,
 )
-from onboard.dao.models.doc_pack import DocumentStatus
+from onboard.dao.models.doc_pack import DocPack, DocumentStatus
 from onboard.services.doc_pack.doc_pack_service import ingest_document_background
 
 router = APIRouter(prefix="/doc-packs", tags=["doc-packs"])
+
+
+def _pack_list_item(pack: DocPack) -> DocPackListItemResponse:
+    return DocPackListItemResponse(
+        id=pack.id,
+        org_id=pack.org_id,
+        name=pack.name,
+        description=pack.description,
+        status=pack.status,
+        created_by=pack.created_by,
+        created_at=pack.created_at,
+        updated_at=pack.updated_at,
+        domain_id=pack.domain_id,
+        domain_name=pack.domain.name if pack.domain else None,
+    )
+
+
+def _pack_response(pack: DocPack) -> DocPackResponse:
+    return DocPackResponse(
+        id=pack.id,
+        org_id=pack.org_id,
+        name=pack.name,
+        description=pack.description,
+        status=pack.status,
+        created_by=pack.created_by,
+        created_at=pack.created_at,
+        updated_at=pack.updated_at,
+        domain_id=pack.domain_id,
+        domain_name=pack.domain.name if pack.domain else None,
+        documents=pack.documents or [],
+    )
 
 
 @router.post("", response_model=DocPackResponse, status_code=201)
@@ -39,19 +70,34 @@ async def create_doc_pack(
     services: ServiceContainer = Depends(get_service_container),
 ):
     pack = await services.doc_pack.create_pack(
-        org_id=org_id, name=payload.name, description=payload.description, created_by=user_id
+        org_id=org_id,
+        name=payload.name,
+        description=payload.description,
+        created_by=user_id,
+        domain_id=payload.domain_id,
     )
-    return await services.doc_pack.get_pack(org_id, pack.id)
+    return _pack_response(pack)
 
 
 @router.get("", response_model=list[DocPackListItemResponse])
-async def list_doc_packs(org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)):
-    return await services.doc_pack.list_packs(org_id)
+async def list_doc_packs(
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Admin quiz desk — members see assigned packs via /employees/{id}/assignments instead."""
+    packs = await services.doc_pack.list_packs(org_id)
+    return [_pack_list_item(p) for p in packs]
 
 
 @router.get("/{pack_id}", response_model=DocPackResponse)
-async def get_doc_pack(pack_id: str, org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)):
-    return await services.doc_pack.get_pack(org_id, pack_id)
+async def get_doc_pack(
+    pack_id: str,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    return _pack_response(await services.doc_pack.get_pack(org_id, pack_id))
 
 
 @router.patch("/{pack_id}", response_model=DocPackResponse)
@@ -62,7 +108,18 @@ async def update_doc_pack(
     _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
-    return await services.doc_pack.update_pack(org_id, pack_id, name=payload.name, description=payload.description)
+    fields = payload.model_dump(exclude_unset=True)
+    clear_domain = "domain_id" in fields and fields.get("domain_id") is None
+    domain_id = fields.get("domain_id") if not clear_domain else None
+    pack = await services.doc_pack.update_pack(
+        org_id,
+        pack_id,
+        name=fields.get("name"),
+        description=fields.get("description"),
+        domain_id=domain_id,
+        clear_domain=clear_domain,
+    )
+    return _pack_response(pack)
 
 
 @router.post("/{pack_id}/documents", response_model=list[DocPackDocumentResponse], status_code=201)
@@ -90,6 +147,7 @@ async def upload_documents(
 async def get_documents_status(
     pack_id: str,
     org_id: ClerkOrgId,  # not CurrentOrgId: this is polled — skip the org get-or-create round trip
+    _admin: RequireAdmin,
     background_tasks: BackgroundTasks,
     services: ServiceContainer = Depends(get_service_container),
 ):
@@ -137,6 +195,7 @@ async def retrieve_doc_pack(
     pack_id: str,
     payload: DocPackRetrieveRequest,
     org_id: CurrentOrgId,
+    _admin: RequireAdmin,
     services: ServiceContainer = Depends(get_service_container),
 ):
     hits = await services.rag.retrieve_doc_pack(

@@ -42,3 +42,13 @@ DEFAULT_ORG_DOMAINS = (
     "People",
     "Finance",
 )
+
+# Seeded once per org on first quiz-domain list — admins can add more (Policy, Holiday, …).
+DEFAULT_QUIZ_DOMAINS = (
+    "Policy",
+    "Security",
+    "Holiday",
+    "Onboarding",
+    "Benefits",
+    "Codebase",
+)

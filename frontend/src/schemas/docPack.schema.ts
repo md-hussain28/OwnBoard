@@ -31,6 +31,8 @@ const docPackBase = {
   status: z.enum(["draft", "active", "archived", "needs_review"]),
   created_by: z.string().nullable(),
   created_at: z.string(),
+  domain_id: z.string().nullable().optional(),
+  domain_name: z.string().nullable().optional(),
 };
 
 export const docPackListItemSchema = z.object(docPackBase).transform((p) => ({
@@ -40,6 +42,8 @@ export const docPackListItemSchema = z.object(docPackBase).transform((p) => ({
   status: p.status,
   createdBy: p.created_by,
   createdAt: p.created_at,
+  domainId: p.domain_id ?? null,
+  domainName: p.domain_name ?? null,
 }));
 
 export const docPackSchema = z
@@ -51,6 +55,8 @@ export const docPackSchema = z
     status: p.status,
     createdBy: p.created_by,
     createdAt: p.created_at,
+    domainId: p.domain_id ?? null,
+    domainName: p.domain_name ?? null,
     documents: p.documents,
   }));
 

@@ -17,6 +17,7 @@ from onboard.api.routes import (
     health_router,
     org_domain_router,
     pack_assignment_router,
+    quiz_domain_router,
     quiz_router,
     rag_router,
     repo_router,
@@ -78,6 +79,7 @@ def create_app() -> FastAPI:
     app.include_router(repo_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(employee_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(org_domain_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(quiz_domain_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(doc_pack_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(pack_assignment_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(skill_graph_router.router, prefix=prefix, dependencies=tenant_scoped)

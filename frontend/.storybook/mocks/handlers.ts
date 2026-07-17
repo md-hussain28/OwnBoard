@@ -15,6 +15,7 @@ import {
   mockOrgDomains,
   mockQuizAnalytics,
   mockQuizAttempt,
+  mockQuizDomains,
   mockQuizTemplate,
   mockRepos,
   mockTenants,
@@ -101,17 +102,66 @@ export const domainHandlers = [
   http.delete("/api/domains/:id", () => new HttpResponse(null, { status: 204 })),
 ];
 
+export const quizDomainHandlers = [
+  http.get("/api/quiz-domains", () => HttpResponse.json(mockQuizDomains)),
+  http.post("/api/quiz-domains", async ({ request }) => {
+    const body = (await request.json()) as { name: string };
+    return HttpResponse.json(
+      {
+        id: `qdom_${body.name.toLowerCase().replace(/\s+/g, "_")}`,
+        org_id: "org_demo",
+        name: body.name,
+        is_default: false,
+      },
+      { status: 201 },
+    );
+  }),
+  http.delete("/api/quiz-domains/:id", () => new HttpResponse(null, { status: 204 })),
+];
 
 export const docPackHandlers = [
   http.get("/api/doc-packs", () => HttpResponse.json(mockDocPacks)),
   http.get("/api/doc-packs/:id", () => HttpResponse.json(mockDocPackDetail)),
   http.get("/api/doc-packs/:id/documents/status", () => HttpResponse.json(mockDocPackIngestStatus)),
   http.post("/api/doc-packs", async ({ request }) => {
-    const body = (await request.json()) as { name: string; description?: string };
+    const body = (await request.json()) as {
+      name: string;
+      description?: string;
+      domain_id?: string | null;
+    };
+    const domain = mockQuizDomains.find((d) => d.id === body.domain_id);
     return HttpResponse.json(
-      { id: "pack_new1234567890abcd", name: body.name, description: body.description ?? null, status: "draft", created_by: null, created_at: "2026-07-16T12:00:00Z", documents: [] },
+      {
+        id: "pack_new1234567890abcd",
+        name: body.name,
+        description: body.description ?? null,
+        status: "draft",
+        created_by: null,
+        created_at: "2026-07-16T12:00:00Z",
+        domain_id: domain?.id ?? null,
+        domain_name: domain?.name ?? null,
+        documents: [],
+      },
       { status: 201 },
     );
+  }),
+  http.patch("/api/doc-packs/:id", async ({ request }) => {
+    const body = (await request.json()) as {
+      name?: string;
+      description?: string;
+      domain_id?: string | null;
+    };
+    const domain =
+      body.domain_id === undefined
+        ? mockQuizDomains.find((d) => d.id === mockDocPackDetail.domain_id)
+        : mockQuizDomains.find((d) => d.id === body.domain_id);
+    return HttpResponse.json({
+      ...mockDocPackDetail,
+      ...body,
+      domain_id: body.domain_id === undefined ? mockDocPackDetail.domain_id : (domain?.id ?? null),
+      domain_name:
+        body.domain_id === undefined ? mockDocPackDetail.domain_name : (domain?.name ?? null),
+    });
   }),
   http.get("/api/doc-packs/:id/quiz", () => HttpResponse.json(mockAdminQuizTemplate)),
   http.put("/api/doc-packs/:id/quiz", () => HttpResponse.json(mockAdminQuizTemplate)),
@@ -159,6 +209,7 @@ export const handlers = [
   ...dashboardHandlers,
   ...employeeHandlers,
   ...domainHandlers,
+  ...quizDomainHandlers,
   ...docPackHandlers,
   ...assignmentHandlers,
   ...quizHandlers,

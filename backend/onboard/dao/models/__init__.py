@@ -21,6 +21,20 @@ from onboard.dao.models.notification import Notification, NotificationType
 from onboard.dao.models.org_domain import OrgDomain
 from onboard.dao.models.organization import Organization
 from onboard.dao.models.policy_doc import PolicyDoc
+from onboard.dao.models.project import (
+    Project,
+    ProjectFunctionType,
+    ProjectMember,
+    ProjectRepo,
+    ProjectStatus,
+)
+from onboard.dao.models.project_module import (
+    ProjectModule,
+    ProjectModuleAssignment,
+    ProjectModuleAssignmentStatus,
+    ProjectModuleStatus,
+    ProjectModuleType,
+)
 from onboard.dao.models.quiz_attempt import QuizAttempt
 from onboard.dao.models.quiz_domain import QuizDomain
 from onboard.dao.models.quiz_question import QuestionFormat, QuizQuestion
@@ -50,6 +64,16 @@ __all__ = [
     "PackAssignmentAck",
     "PackAssignmentStatus",
     "PolicyDoc",
+    "Project",
+    "ProjectFunctionType",
+    "ProjectMember",
+    "ProjectModule",
+    "ProjectModuleAssignment",
+    "ProjectModuleAssignmentStatus",
+    "ProjectModuleStatus",
+    "ProjectModuleType",
+    "ProjectRepo",
+    "ProjectStatus",
     "QuestionFormat",
     "QuizAttempt",
     "QuizDomain",

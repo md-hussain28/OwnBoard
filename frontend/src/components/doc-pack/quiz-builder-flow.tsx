@@ -175,7 +175,7 @@ function PublishCta({ quizPublished, packId }: { quizPublished: boolean; packId:
   if (!quizPublished) {
     return (
       <p className="text-sm text-muted-foreground text-pretty">
-        Publish the curated quiz above to unlock assigning hires on the Tracks desk.
+        Publish the curated quiz above to unlock assigning hires on the Modules desk.
       </p>
     );
   }
@@ -184,7 +184,7 @@ function PublishCta({ quizPublished, packId }: { quizPublished: boolean; packId:
     <div className="rounded-xl border border-border bg-brand-moss-soft/40 px-4 py-4">
       <p className="text-sm font-medium text-brand-moss">Quiz published</p>
       <p className="mt-1 text-sm text-muted-foreground text-pretty">
-        This track is ready to assign. Track who has read and passed from the Tracks desk.
+        This module is ready to assign. Track who has read and passed from the Modules desk.
       </p>
       <Button className="mt-3" size="sm" asChild>
         <Link href={`/app/tracks?assign=${packId}`}>
@@ -226,7 +226,7 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
         {isLoading && <Skeleton className="h-8 w-64" />}
         {isError && (
           <p className="text-sm text-muted-foreground">
-            Could not load this track. Check that you are signed in with an active organization,
+            Could not load this module. Check that you are signed in with an active organization,
             then refresh. If this persists on a deployed site, confirm BACKEND_API_BASE_URL points
             at the live API.
           </p>

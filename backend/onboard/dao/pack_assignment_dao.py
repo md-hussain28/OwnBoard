@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import selectinload
 
 from onboard.dao.base_dao import BaseDAO
@@ -39,6 +39,37 @@ class PackAssignmentDAO(BaseDAO[PackAssignment]):
             .order_by(PackAssignment.assigned_at.desc())
         )
         return list(result.scalars().all())
+
+    async def list_for_project(self, org_id: str, project_id: str) -> list[PackAssignment]:
+        """Every assignment whose track belongs to this project — drives project readiness/gating
+        for the whole member panel in a single query."""
+        from onboard.dao.models.doc_pack import DocPack
+
+        result = await self.session.execute(
+            select(PackAssignment)
+            .join(DocPack, DocPack.id == PackAssignment.doc_pack_id)
+            .where(PackAssignment.org_id == org_id, DocPack.project_id == project_id)
+            .options(selectinload(PackAssignment.doc_pack))
+        )
+        return list(result.scalars().all())
+
+    async def delete_for_project_and_employee(self, org_id: str, project_id: str, employee_id: str) -> int:
+        """Delete this employee's assignments for every track belonging to a project (org-scoped).
+
+        Used when a member is removed from a project so their project-track gate/readiness don't linger.
+        Assignment acks cascade on delete. Returns the number of assignments removed."""
+        from onboard.dao.models.doc_pack import DocPack
+
+        pack_ids = select(DocPack.id).where(DocPack.org_id == org_id, DocPack.project_id == project_id)
+        result = await self.session.execute(
+            delete(PackAssignment).where(
+                PackAssignment.org_id == org_id,
+                PackAssignment.employee_id == employee_id,
+                PackAssignment.doc_pack_id.in_(pack_ids),
+            )
+        )
+        await self.session.commit()
+        return result.rowcount or 0
 
     async def list_assigned_employee_ids(self, doc_pack_id: str) -> set[str]:
         """Employee ids that already have an assignment for this pack — used to dedupe auto-assign."""

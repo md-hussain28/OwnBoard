@@ -26,6 +26,19 @@ class DocPackDAO(BaseDAO[DocPack]):
         )
         return list(result.scalars().all())
 
+    async def list_general_for_org(self, org_id: str, limit: int = 100, offset: int = 0) -> list[DocPack]:
+        """General/company tracks only (project_id IS NULL) — the admin Tracks desk. Project-specific
+        tracks are surfaced inside their project, not here."""
+        result = await self.session.execute(
+            select(DocPack)
+            .where(DocPack.org_id == org_id, DocPack.project_id.is_(None))
+            .options(selectinload(DocPack.domain), _AUDIENCE_LOAD)
+            .order_by(DocPack.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return list(result.scalars().all())
+
     async def get_by_id_for_org(self, org_id: str, pack_id: str) -> DocPack | None:
         result = await self.session.execute(
             select(DocPack)
@@ -37,6 +50,16 @@ class DocPackDAO(BaseDAO[DocPack]):
             )
         )
         return result.scalar_one_or_none()
+
+    async def list_for_project(self, org_id: str, project_id: str) -> list[DocPack]:
+        """Project-specific tracks (the ones that gate entry to a project), newest first."""
+        result = await self.session.execute(
+            select(DocPack)
+            .where(DocPack.org_id == org_id, DocPack.project_id == project_id)
+            .options(selectinload(DocPack.domain), _AUDIENCE_LOAD)
+            .order_by(DocPack.sequence_order.asc(), DocPack.created_at.asc())
+        )
+        return list(result.scalars().all())
 
     async def list_auto_assign_targets_for_domain(self, org_id: str, domain_id: str | None) -> list[DocPack]:
         """Packs whose audience includes this employee — 'everyone' packs plus (if the employee has a

@@ -1,5 +1,6 @@
 import enum
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint, func
@@ -7,6 +8,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from onboard.config.constants import EMBEDDING_DIMENSION
 from onboard.dao.models.base import AuditBase
+
+if TYPE_CHECKING:
+    from onboard.dao.models.employee import Employee
+    from onboard.dao.models.org_domain import OrgDomain
+    from onboard.dao.models.organization import Organization
+    from onboard.dao.models.project import Project
+    from onboard.dao.models.quiz_domain import QuizDomain
 
 
 class DocPackStatus(str, enum.Enum):
@@ -39,6 +47,10 @@ class DocPack(AuditBase):
     __id_prefix__ = "pack"
 
     org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
+    # NULL = general/company onboarding track; set = project-specific track that gates entry to that project.
+    project_id: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("project.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[DocPackStatus] = mapped_column(
@@ -69,6 +81,7 @@ class DocPack(AuditBase):
     due_offset_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     organization: Mapped["Organization"] = relationship(back_populates="doc_packs")
+    project: Mapped["Project | None"] = relationship(back_populates="tracks")
     domain: Mapped["QuizDomain | None"] = relationship(back_populates="doc_packs")
     documents: Mapped[list["DocPackDocument"]] = relationship(back_populates="doc_pack", cascade="all, delete-orphan")
     chunks: Mapped[list["DocChunk"]] = relationship(back_populates="doc_pack", cascade="all, delete-orphan")

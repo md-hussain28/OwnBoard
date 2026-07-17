@@ -1,7 +1,13 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from onboard.dao.models.base import AuditBase
+
+if TYPE_CHECKING:
+    from onboard.dao.models.doc_pack import DocPack
+    from onboard.dao.models.organization import Organization
 
 
 class QuizDomain(AuditBase):

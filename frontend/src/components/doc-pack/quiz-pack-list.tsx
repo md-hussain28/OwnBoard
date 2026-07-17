@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  GaugeIcon,
-  PencilIcon,
-  PlusIcon,
-  SearchIcon,
-  UserPlusIcon,
-} from "lucide-react";
+import { GaugeIcon, PencilIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { FilterSelect } from "@/components/shared/filter-select";
@@ -127,8 +121,8 @@ function PackFilterBar({
           type="search"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Search tracks…"
-          aria-label="Search tracks"
+          placeholder="Search modules…"
+          aria-label="Search modules"
           className="pl-9"
         />
       </div>
@@ -172,12 +166,12 @@ function EmptyPacksState({ isAdmin }: { isAdmin: boolean }) {
     <div className="space-y-3 rounded-2xl border border-dashed border-border px-6 py-10 text-center">
       <p className="text-sm text-muted-foreground text-pretty">
         {isAdmin
-          ? "No tracks yet. Create one to upload documents and generate a cited quiz, then assign it to hires from this list."
-          : "No tracks yet. An admin will create and assign them."}
+          ? "No modules yet. Create one to upload documents and generate a cited quiz, then assign it to hires from this list."
+          : "No modules yet. An admin will create and assign them."}
       </p>
       {isAdmin && (
         <Button asChild>
-          <Link href="/app/tracks/new">Create your first track</Link>
+          <Link href="/app/tracks/new">Create your first module</Link>
         </Button>
       )}
     </div>
@@ -189,8 +183,8 @@ function NoMatchesState({ query, onClear }: { query: string; onClear: () => void
     <div className="space-y-3 rounded-2xl border border-dashed border-border px-6 py-8 text-center">
       <p className="text-sm text-muted-foreground">
         {query.trim()
-          ? `No tracks match “${query.trim()}” with the current filters.`
-          : "No tracks match the current filters."}
+          ? `No modules match “${query.trim()}” with the current filters.`
+          : "No modules match the current filters."}
       </p>
       <button
         type="button"
@@ -357,11 +351,11 @@ export function QuizPackList({
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0 flex-1 space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-balance">Tracks</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-balance">Onboarding Modules</h1>
           <p className="text-sm text-muted-foreground text-pretty">
             {isAdmin
-              ? "Every track you can assign. Open Assign to pick people and see who has passed."
-              : "Published tracks in your organization. Your assigned reading is under Readiness."}
+              ? "Every module you can assign. Open Assign to pick people and see who has passed."
+              : "Published modules in your organization. Your assigned reading is under Readiness."}
           </p>
         </div>
         {isAdmin && (
@@ -384,7 +378,7 @@ export function QuizPackList({
             <Button asChild>
               <Link href="/app/tracks/new">
                 <PlusIcon className="size-4" />
-                Create track
+                Create module
               </Link>
             </Button>
           </div>

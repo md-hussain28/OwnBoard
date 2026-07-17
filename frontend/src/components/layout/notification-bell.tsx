@@ -6,6 +6,7 @@ import {
   CheckCheck,
   CircleCheck,
   FileText,
+  Loader2Icon,
   type LucideIcon,
   Users,
 } from "lucide-react";
@@ -177,7 +178,11 @@ function NotificationsBody({
             onClick={onMarkAll}
             disabled={markAllPending}
           >
-            <CheckCheck className="size-3.5" />
+            {markAllPending ? (
+              <Loader2Icon className="size-3.5 animate-spin" />
+            ) : (
+              <CheckCheck className="size-3.5" />
+            )}
             Mark all read
           </Button>
         )}

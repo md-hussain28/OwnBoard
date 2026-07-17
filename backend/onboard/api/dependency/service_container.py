@@ -10,6 +10,7 @@ from onboard.services.expert_routing.expert_routing_service import ExpertRouting
 from onboard.services.notification.notification_service import NotificationService
 from onboard.services.org_domain.org_domain_service import OrgDomainService
 from onboard.services.pack_assignment.pack_assignment_service import PackAssignmentService
+from onboard.services.project.project_service import ProjectService
 from onboard.services.quiz.quiz_service import QuizService
 from onboard.services.quiz_domain.quiz_domain_service import QuizDomainService
 from onboard.services.rag.rag_service import RAGService
@@ -35,6 +36,7 @@ class ServiceContainer:
         self._doc_pack: DocPackService | None = None
         self._pack_assignment: PackAssignmentService | None = None
         self._notification: NotificationService | None = None
+        self._project: ProjectService | None = None
 
     @property
     def repo_ingestion(self) -> RepoIngestionService:
@@ -113,6 +115,12 @@ class ServiceContainer:
         if self._notification is None:
             self._notification = NotificationService(self.session)
         return self._notification
+
+    @property
+    def project(self) -> ProjectService:
+        if self._project is None:
+            self._project = ProjectService(self.session)
+        return self._project
 
 
 def get_service_container(session: AsyncSession = Depends(get_db)) -> ServiceContainer:

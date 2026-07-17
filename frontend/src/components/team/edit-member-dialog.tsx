@@ -27,6 +27,7 @@ import {
 } from "@/ui/dialog";
 import { Input } from "@/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
+import { Spinner } from "@/ui/spinner";
 
 export type MemberDialogMode = "view" | "edit";
 
@@ -375,6 +376,7 @@ export function EditMemberDialog({
                 form={formId}
                 disabled={updateEmployee.isPending || !name.trim()}
               >
+                {updateEmployee.isPending && <Spinner />}
                 {updateEmployee.isPending ? "Saving…" : "Save"}
               </Button>
             </>

@@ -1,11 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  BookOpenCheckIcon,
-  ClipboardCheckIcon,
-  FolderGit2Icon,
-  NetworkIcon,
-  SearchCodeIcon,
-} from "lucide-react";
+import { BookOpenCheckIcon, ClipboardCheckIcon, FolderKanbanIcon } from "lucide-react";
 import { APP_HOME, appPath } from "@/lib/routes";
 import type { AppRole } from "@/schemas/employee.schema";
 
@@ -36,23 +30,32 @@ export const WORKSPACE_NAV: NavGroup = {
   label: "Evidence desk",
   items: [
     {
-      href: APP_HOME,
-      label: "Codebases",
-      description: "Connected repos",
-      icon: FolderGit2Icon,
-      roles: ["admin"],
-    },
-    {
       href: appPath("tracks"),
-      label: "Tracks",
+      label: "Onboarding",
       description: "Assign & track",
       icon: BookOpenCheckIcon,
       matchPrefix: true,
       roles: ["admin"],
     },
     {
+      href: appPath("projects"),
+      label: "Projects",
+      description: "Teams & onboarding",
+      icon: FolderKanbanIcon,
+      matchPrefix: true,
+      roles: ["admin"],
+    },
+    {
+      href: appPath("projects"),
+      label: "My projects",
+      description: "Your teams & access",
+      icon: FolderKanbanIcon,
+      matchPrefix: true,
+      roles: ["member"],
+    },
+    {
       href: appPath("onboarding", "packs"),
-      label: "My tracks",
+      label: "My modules",
       description: "Assigned onboarding",
       icon: ClipboardCheckIcon,
       matchPrefix: true,
@@ -65,22 +68,6 @@ export const WORKSPACE_NAV: NavGroup = {
       icon: ClipboardCheckIcon,
       incoming: true,
       matchPrefix: true,
-      roles: ["admin"],
-    },
-    {
-      href: appPath("chat"),
-      label: "Archaeology",
-      description: "Ask why the code is",
-      icon: SearchCodeIcon,
-      incoming: true,
-      roles: ["admin"],
-    },
-    {
-      href: appPath("dashboard"),
-      label: "Skill map",
-      description: "Who knows what",
-      icon: NetworkIcon,
-      incoming: true,
       roles: ["admin"],
     },
   ],

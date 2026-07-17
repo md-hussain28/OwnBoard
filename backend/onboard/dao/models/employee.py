@@ -1,8 +1,16 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from onboard.config.constants import APP_ROLE_MEMBER
 from onboard.dao.models.base import AuditBase
+
+if TYPE_CHECKING:
+    from onboard.dao.models.doc_pack import PackAssignment
+    from onboard.dao.models.org_domain import OrgDomain
+    from onboard.dao.models.organization import Organization
+    from onboard.dao.models.quiz_attempt import QuizAttempt
 
 
 class Employee(AuditBase):

@@ -87,11 +87,13 @@ class DocPackService:
         sequence_order: int = 0,
         estimated_minutes: int | None = None,
         due_offset_days: int | None = None,
+        project_id: str | None = None,
     ) -> DocPack:
         resolved_domain_id = await self._resolve_domain_id(org_id, domain_id)
         resolved_audience = await self._resolve_audience_domain_ids(org_id, audience_domain_ids or [])
         pack = await self.pack_dao.create(
             org_id=org_id,
+            project_id=project_id,
             name=name.strip(),
             description=description,
             status=DocPackStatus.draft,
@@ -107,7 +109,9 @@ class DocPackService:
         return await self.get_pack(org_id, pack.id)
 
     async def list_packs(self, org_id: str, limit: int = 100, offset: int = 0) -> list[DocPack]:
-        return await self.pack_dao.list_for_org(org_id, limit=limit, offset=offset)
+        # Admin Tracks desk shows general/company tracks only; project-specific tracks live inside
+        # their project (see ProjectService.list_project_tracks).
+        return await self.pack_dao.list_general_for_org(org_id, limit=limit, offset=offset)
 
     async def preview_audience(
         self, org_id: str, assign_to_all: bool, audience_domain_ids: list[str]

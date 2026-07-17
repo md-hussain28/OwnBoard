@@ -1,7 +1,16 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from onboard.dao.models.base import AuditBase
+
+if TYPE_CHECKING:
+    from onboard.dao.models.commit_record import CommitRecord
+    from onboard.dao.models.expertise_availability import ExpertiseAvailability
+    from onboard.dao.models.file_expertise import FileExpertise
+    from onboard.dao.models.institutional_memory_note import InstitutionalMemoryNote
+    from onboard.dao.models.repo import Repo
 
 
 class Contributor(AuditBase):

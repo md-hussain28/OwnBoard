@@ -199,7 +199,7 @@ export function CohortDashboard() {
       <StatRow data={data} />
       {data.employees.length === 0 ? (
         <p className="rounded-xl border border-border px-5 py-8 text-center text-sm text-muted-foreground">
-          No employees have been assigned a track yet.
+          No employees have been assigned a module yet.
         </p>
       ) : (
         <CompletionMatrix data={data} />

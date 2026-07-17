@@ -20,6 +20,7 @@ import {
 } from "@/ui/dialog";
 import { Input } from "@/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
+import { Spinner } from "@/ui/spinner";
 
 export function InviteMemberDialog({
   open,
@@ -182,6 +183,7 @@ export function InviteMemberDialog({
             Cancel
           </Button>
           <Button type="submit" form={formId} disabled={invite.isPending || !email.trim()}>
+            {invite.isPending && <Spinner />}
             {invite.isPending ? "Sending…" : "Send invitation"}
           </Button>
         </DialogFooter>

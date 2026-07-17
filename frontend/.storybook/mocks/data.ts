@@ -384,6 +384,160 @@ export const mockExperts = [
   { id: "emp_b2c3d4e5f6g7h8i9j0", name: "Diego Alvarez", subsystems: ["web"] },
 ];
 
+// --- Projects (project.schema.ts — snake_case wire shape, schema .transform()s to camelCase) ---
+const lockedReadiness = {
+  locked: true,
+  total_tracks: 3,
+  passed_tracks: 1,
+  in_progress_tracks: 2,
+  progress_pct: 33,
+};
+const readyReadiness = {
+  locked: false,
+  total_tracks: 3,
+  passed_tracks: 3,
+  in_progress_tracks: 0,
+  progress_pct: 100,
+};
+
+const projectBase = {
+  org_id: "org_demo",
+  created_by: "emp_a1b2c3d4e5f6g7h8i9",
+  created_at: "2026-07-01T09:00:00Z",
+  updated_at: "2026-07-14T09:00:00Z",
+};
+
+export const mockProjects = [
+  {
+    ...projectBase,
+    id: "proj_a1b2c3d4e5f6g7h8i9",
+    name: "Payments Service",
+    description: "The core billing and payments platform.",
+    status: "active",
+    repo_id: "repo_a1b2c3d4e5f6g7h8i9",
+    repo_name: "payments-service",
+    member_count: 4,
+    track_count: 3,
+  },
+  {
+    ...projectBase,
+    id: "proj_b2c3d4e5f6g7h8i9j0",
+    name: "Growth Experiments",
+    description: "A/B testing and growth analytics.",
+    status: "active",
+    repo_id: null,
+    repo_name: null,
+    member_count: 2,
+    track_count: 1,
+  },
+  {
+    ...projectBase,
+    id: "proj_c3d4e5f6g7h8i9j0k1",
+    name: "Legacy Monolith",
+    description: "Deprecated — kept for reference only.",
+    status: "archived",
+    repo_id: null,
+    repo_name: null,
+    member_count: 0,
+    track_count: 0,
+  },
+];
+
+export const mockMyProjects = [
+  { ...mockProjects[0], readiness: lockedReadiness },
+  { ...mockProjects[1], readiness: readyReadiness },
+];
+
+export const mockProjectTracks = [
+  {
+    id: "pack_p1a2b3c4d5e6f7g8h9",
+    name: "Payments Codebase Walkthrough",
+    description: "Architecture, services, and the money-movement flow.",
+    status: "active",
+    sequence_order: 0,
+    estimated_minutes: 45,
+    due_offset_days: 7,
+    assignment_id: "asgn_p1a2b3c4d5e6f7g8h9",
+    my_status: "passed",
+    passed: true,
+  },
+  {
+    id: "pack_p2b3c4d5e6f7g8h9i0",
+    name: "PCI Compliance Basics",
+    description: "What you can and can't touch when handling card data.",
+    status: "active",
+    sequence_order: 1,
+    estimated_minutes: 30,
+    due_offset_days: 14,
+    assignment_id: "asgn_p2b3c4d5e6f7g8h9i0",
+    my_status: "assigned",
+    passed: false,
+  },
+  {
+    id: "pack_p3c4d5e6f7g8h9i0j1",
+    name: "On-call Runbook",
+    description: "Incident response for the payments oncall rotation.",
+    status: "draft",
+    sequence_order: 2,
+    estimated_minutes: null,
+    due_offset_days: null,
+    assignment_id: null,
+    my_status: "not_assigned",
+    passed: false,
+  },
+];
+
+export const mockProjectMembers = [
+  {
+    employee_id: "emp_a1b2c3d4e5f6g7h8i9",
+    name: "Priya Sharma",
+    role: "Backend Engineer",
+    app_role: "member",
+    github_handle: "priyash",
+    domain_name: "Developer",
+    readiness: readyReadiness,
+    is_go_to: true,
+  },
+  {
+    employee_id: "emp_b2c3d4e5f6g7h8i9j0",
+    name: "Diego Alvarez",
+    role: "Frontend Engineer",
+    app_role: "member",
+    github_handle: "dalvarez",
+    domain_name: "Developer",
+    readiness: lockedReadiness,
+    is_go_to: false,
+  },
+];
+
+/** Member's view of a locked project: gate not yet cleared, team panel hidden. */
+export const mockProjectDetailLocked = {
+  ...mockProjects[0],
+  repo_url: "https://github.com/example/payments-service",
+  tracks: mockProjectTracks,
+  my_readiness: lockedReadiness,
+  is_member: true,
+  is_admin: false,
+  locked: true,
+};
+
+/** Member's view of an unlocked project: gate cleared, team panel visible. */
+export const mockProjectDetailReady = {
+  ...mockProjectDetailLocked,
+  tracks: mockProjectTracks.map((t) => ({ ...t, passed: true, my_status: "passed" })),
+  my_readiness: readyReadiness,
+  locked: false,
+};
+
+/** Admin's view of a project (not a member — no personal readiness). */
+export const mockProjectDetailAdmin = {
+  ...mockProjectDetailLocked,
+  my_readiness: null,
+  is_member: false,
+  is_admin: true,
+  locked: false,
+};
+
 // --- Admin (admin.schema.ts — camelCase, no transform) ---
 export const mockTenants = [
   {

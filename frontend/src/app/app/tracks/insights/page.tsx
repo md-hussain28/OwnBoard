@@ -39,7 +39,7 @@ export default function TracksInsightsPage() {
           Onboarding overview
         </h1>
         <p className="text-sm text-muted-foreground text-pretty">
-          Track how the cohort is progressing across every onboarding track — who&apos;s passed,
+          Track how the cohort is progressing across every onboarding module — who&apos;s passed,
           who&apos;s overdue, and where people are stuck.
         </p>
       </header>

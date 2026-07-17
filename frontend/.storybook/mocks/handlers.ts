@@ -13,8 +13,13 @@ import {
   mockEmployees,
   mockExperts,
   mockMe,
+  mockMyProjects,
   mockOrgDomains,
   mockPendingInvitations,
+  mockProjectDetailAdmin,
+  mockProjectMembers,
+  mockProjects,
+  mockProjectTracks,
   mockQuizAnalytics,
   mockQuizAttempt,
   mockQuizDomains,
@@ -234,6 +239,39 @@ export const chatHandlers = [
   http.get("/api/experts", () => HttpResponse.json(mockExperts)),
 ];
 
+export const projectHandlers = [
+  // `/projects/mine` must precede `/projects/:id` so MSW doesn't treat "mine" as an id.
+  http.get("/api/projects/mine", () => HttpResponse.json(mockMyProjects)),
+  http.get("/api/projects", () => HttpResponse.json(mockProjects)),
+  http.post("/api/projects", async ({ request }) => {
+    const body = (await request.json()) as { name: string; description?: string | null };
+    return HttpResponse.json(
+      {
+        ...mockProjects[0],
+        id: "proj_new1234567890abcd",
+        name: body.name,
+        description: body.description ?? null,
+      },
+      { status: 201 },
+    );
+  }),
+  http.get("/api/projects/:id/members", () => HttpResponse.json(mockProjectMembers)),
+  http.post("/api/projects/:id/members", () =>
+    HttpResponse.json(mockProjectMembers, { status: 201 }),
+  ),
+  http.delete(
+    "/api/projects/:id/members/:employeeId",
+    () => new HttpResponse(null, { status: 204 }),
+  ),
+  http.get("/api/projects/:id/tracks", () => HttpResponse.json(mockProjectTracks)),
+  http.get("/api/projects/:id", () => HttpResponse.json(mockProjectDetailAdmin)),
+  http.patch("/api/projects/:id", async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    return HttpResponse.json({ ...mockProjects[0], ...body });
+  }),
+  http.delete("/api/projects/:id", () => new HttpResponse(null, { status: 204 })),
+];
+
 export const adminHandlers = [
   http.get("/api/admin/me", () =>
     HttpResponse.json({ isPlatformAdmin: true, email: "admin@ownboard.dev" }),
@@ -252,5 +290,6 @@ export const handlers = [
   ...assignmentHandlers,
   ...quizHandlers,
   ...chatHandlers,
+  ...projectHandlers,
   ...adminHandlers,
 ];

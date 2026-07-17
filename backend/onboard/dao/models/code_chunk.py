@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING
+
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from onboard.config.constants import EMBEDDING_DIMENSION
 from onboard.dao.models.base import AuditBase
+
+if TYPE_CHECKING:
+    from onboard.dao.models.repo import Repo
 
 
 class CodeChunk(AuditBase):

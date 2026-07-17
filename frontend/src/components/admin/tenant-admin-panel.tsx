@@ -10,6 +10,7 @@ import { Button } from "@/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
 import { Input } from "@/ui/input";
 import { Skeleton } from "@/ui/skeleton";
+import { Spinner } from "@/ui/spinner";
 
 export function TenantAdminPanel() {
   const { data: tenants, isLoading, isError, error } = useTenants();
@@ -116,6 +117,7 @@ export function TenantAdminPanel() {
             </div>
             <div className="sm:col-span-2">
               <Button type="submit" disabled={createTenant.isPending}>
+                {createTenant.isPending && <Spinner />}
                 {createTenant.isPending ? "Creating..." : "Create tenant & invite admin"}
               </Button>
             </div>
@@ -168,6 +170,9 @@ export function TenantAdminPanel() {
                       disabled={deleteTenant.isPending}
                       onClick={() => handleDelete(tenant.id, tenant.name)}
                     >
+                      {deleteTenant.isPending && deleteTenant.variables === tenant.id && (
+                        <Spinner className="size-3.5" />
+                      )}
                       Delete
                     </Button>
                   </div>

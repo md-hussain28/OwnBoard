@@ -163,11 +163,13 @@ function RosterList({
   assignments,
   employeeById,
   revokePending,
+  revokingId,
   onRevoke,
 }: {
   assignments: PackAssignment[];
   employeeById: Map<string, Employee>;
   revokePending: boolean;
+  revokingId: string | null;
   onRevoke: (assignmentId: string) => void;
 }) {
   return (
@@ -203,6 +205,7 @@ function RosterList({
               disabled={revokePending}
               onClick={() => onRevoke(assignment.id)}
             >
+              {revokingId === assignment.id && <Loader2Icon className="size-3.5 animate-spin" />}
               Revoke
             </Button>
           </div>
@@ -351,6 +354,7 @@ export function AssignmentRoster({
                 assignments={assignments}
                 employeeById={employeeById}
                 revokePending={revoke.isPending}
+                revokingId={revoke.isPending ? (revoke.variables ?? null) : null}
                 onRevoke={handleRevoke}
               />
             )}

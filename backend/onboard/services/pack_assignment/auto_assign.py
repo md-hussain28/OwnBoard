@@ -21,6 +21,7 @@ from onboard.dao.employee_dao import EmployeeDAO
 from onboard.dao.models.doc_pack import PackAssignmentStatus
 from onboard.dao.models.quiz_template import QuizType
 from onboard.dao.pack_assignment_dao import PackAssignmentDAO
+from onboard.dao.project_dao import ProjectMemberDAO
 from onboard.dao.quiz_template_dao import QuizTemplateDAO
 from onboard.services.pack_assignment.assign_helpers import compute_due_at, notify_assigned
 
@@ -43,11 +44,16 @@ async def assign_pack_to_audience(session: AsyncSession, org_id: str, pack_id: s
         return 0  # No published quiz yet — nothing to point assignments at.
 
     audience_domain_ids = {a.org_domain_id for a in pack.audience_domains}
-    if not pack.assign_to_all and not audience_domain_ids:
+    is_project_track = pack.project_id is not None
+    if not is_project_track and not pack.assign_to_all and not audience_domain_ids:
         return 0  # Manual-only track.
 
     employees = await employee_dao.list_for_org(org_id, limit=1000)
-    if pack.assign_to_all:
+    if pack.project_id is not None:
+        # Project tracks target the project's members, not a domain/everyone audience.
+        member_ids = await ProjectMemberDAO(session).list_employee_ids_for_project(pack.project_id)
+        targets = [e for e in employees if e.id in member_ids]
+    elif pack.assign_to_all:
         targets = employees
     else:
         targets = [e for e in employees if e.domain_id is not None and e.domain_id in audience_domain_ids]
@@ -111,4 +117,37 @@ async def assign_matching_packs_to_employee(session: AsyncSession, org_id: str, 
         created += 1
     if created:
         logger.info("auto_assign_employee employee_id=%s created=%s", employee_id, created)
+    return created
+
+
+async def assign_project_tracks_to_member(session: AsyncSession, org_id: str, project_id: str, employee_id: str) -> int:
+    """Assign every published track of a project to a newly added member (Projects PRD §1). Returns count."""
+    pack_dao = DocPackDAO(session)
+    assignment_dao = PackAssignmentDAO(session)
+    template_dao = QuizTemplateDAO(session)
+
+    packs = await pack_dao.list_for_project(org_id, project_id)
+    now = datetime.now(UTC)
+    created = 0
+    for pack in packs:
+        published = await template_dao.get_latest_published_for_source(pack.id, QuizType.doc_pack)
+        if published is None:
+            continue  # Draft project track — not gating yet.
+        existing = await assignment_dao.get_for_pack_and_employee(pack.id, employee_id)
+        if existing is not None:
+            continue
+        assignment = await assignment_dao.create(
+            org_id=org_id,
+            doc_pack_id=pack.id,
+            employee_id=employee_id,
+            assigned_by=None,
+            auto_assigned=True,
+            status=PackAssignmentStatus.assigned,
+            quiz_template_id=published.id,
+            due_at=compute_due_at(pack, now),
+        )
+        await notify_assigned(session, org_id, employee_id, pack, assignment.id)
+        created += 1
+    if created:
+        logger.info("assign_project_tracks project_id=%s employee_id=%s created=%s", project_id, employee_id, created)
     return created

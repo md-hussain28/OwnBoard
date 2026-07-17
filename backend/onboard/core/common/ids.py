@@ -28,7 +28,14 @@ ID_PREFIXES = frozenset(
         "ntf",  # notification
         "pack",  # doc_pack
         "paud",  # doc_pack_audience_domain
+        "pfun",  # project_function_type
+        "pmasgn",  # project_module_assignment
+        "pmem",  # project_member
+        "pmod",  # project_module
+        "pmty",  # project_module_type
         "pol",  # policy_doc
+        "prepo",  # project_repo
+        "proj",  # project
         "qdom",  # quiz_domain (Policy, Holiday, …)
         "ques",  # quiz_question
         "quiz",  # quiz_template

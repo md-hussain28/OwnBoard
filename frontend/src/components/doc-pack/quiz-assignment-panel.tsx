@@ -100,7 +100,7 @@ function QuizAssignmentPanelLoaded({ pack }: { pack: DocPackListItem }) {
           packId={pack.id}
           quizPublished={quizPublished}
           chooseHeading="Choose people"
-          rosterHeading="Who has this track"
+          rosterHeading="Who has this module"
           emptyRosterHint="No one is assigned yet. Select people above."
           emptyOrgHint={
             <>

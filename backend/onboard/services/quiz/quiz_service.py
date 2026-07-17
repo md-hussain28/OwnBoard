@@ -21,7 +21,7 @@ from onboard.dao.quiz_attempt_dao import QuizAttemptDAO
 from onboard.dao.quiz_question_dao import QuizQuestionDAO
 from onboard.dao.quiz_template_dao import QuizTemplateDAO
 from onboard.services.notification.notification_service import NotificationService
-from onboard.services.quiz.generation_graph import (
+from onboard.services.quiz.generation import (
     ChunkForPlanning,
     DocumentForPlanning,
     RejectedSlot,

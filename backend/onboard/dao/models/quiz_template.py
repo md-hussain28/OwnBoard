@@ -1,9 +1,14 @@
 import enum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Enum, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from onboard.dao.models.base import AuditBase
+
+if TYPE_CHECKING:
+    from onboard.dao.models.quiz_attempt import QuizAttempt
+    from onboard.dao.models.quiz_question import QuizQuestion
 
 
 class QuizType(str, enum.Enum):

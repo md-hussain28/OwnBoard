@@ -125,10 +125,10 @@ export function QuizDesk() {
       <div className="mx-auto max-w-md space-y-4 px-4 py-12 text-center">
         <p className="font-medium">Admins only</p>
         <p className="text-sm text-muted-foreground text-pretty">
-          Track creation and assignment live here. Your assigned reading is under My tracks.
+          Module creation and assignment live here. Your assigned reading is under My modules.
         </p>
         <Button asChild>
-          <Link href="/app/onboarding/packs">Go to My tracks</Link>
+          <Link href="/app/onboarding/packs">Go to My modules</Link>
         </Button>
       </div>
     );
@@ -183,7 +183,7 @@ export function QuizDesk() {
                   </Badge>
                 </div>
                 <SheetDescription className="sr-only">
-                  Track details — view only. Use Edit to change documents or the quiz.
+                  Module details — view only. Use Edit to change documents or the quiz.
                 </SheetDescription>
               </SheetHeader>
               <ViewPackPanel
@@ -197,7 +197,7 @@ export function QuizDesk() {
           )}
 
           {!showViewLoading && viewSheetOpen && !viewPack && (
-            <p className="text-sm text-muted-foreground">This track could not be found.</p>
+            <p className="text-sm text-muted-foreground">This module could not be found.</p>
           )}
         </SheetContent>
       </Sheet>
@@ -233,7 +233,7 @@ export function QuizDesk() {
           )}
 
           {!showAssignLoading && assignSheetOpen && !assignPack && (
-            <p className="text-sm text-muted-foreground">This track could not be found.</p>
+            <p className="text-sm text-muted-foreground">This module could not be found.</p>
           )}
         </DialogContent>
       </Dialog>

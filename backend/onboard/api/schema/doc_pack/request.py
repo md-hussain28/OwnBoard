@@ -5,6 +5,9 @@ class DocPackCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     description: str | None = None
     domain_id: str | None = None
+    # When set, this is a project-specific track owned by the project (it gates entry to that project).
+    # Omit/null for a general company onboarding track.
+    project_id: str | None = None
     # Audience for auto-assignment: everyone in the org, or the listed employee OrgDomains.
     assign_to_all: bool = False
     audience_domain_ids: list[str] = Field(default_factory=list)

@@ -80,11 +80,15 @@ export const projectService = {
   /** Create a project-specific track (draft). Reuses the doc-pack create endpoint with project_id set;
    * the caller then authors documents/quiz on the existing /app/tracks/[id] surface. */
   async createTrack(projectId: string, input: CreateProjectTrackInput): Promise<{ id: string }> {
-    const { data } = await getApiClient().post(API_ENDPOINTS.docPacks, {
+    const body: Record<string, unknown> = {
       name: input.name,
       description: input.description ?? null,
       project_id: projectId,
-    });
+    };
+    if (input.sequenceOrder !== undefined) body.sequence_order = input.sequenceOrder;
+    if (input.estimatedMinutes != null) body.estimated_minutes = input.estimatedMinutes;
+    if (input.dueOffsetDays != null) body.due_offset_days = input.dueOffsetDays;
+    const { data } = await getApiClient().post(API_ENDPOINTS.docPacks, body);
     return { id: (data as { id: string }).id };
   },
 };

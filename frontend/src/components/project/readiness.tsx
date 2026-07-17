@@ -43,8 +43,8 @@ export function ReadinessBar({ readiness }: { readiness: ProjectReadiness }) {
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
           {totalTracks === 0
-            ? "No onboarding tracks yet"
-            : `${passedTracks} of ${totalTracks} tracks passed`}
+            ? "No onboarding modules yet"
+            : `${passedTracks} of ${totalTracks} modules passed`}
         </span>
         <span>{progressPct}%</span>
       </div>

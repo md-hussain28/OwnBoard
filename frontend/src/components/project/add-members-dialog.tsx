@@ -30,7 +30,8 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
     () => new Set((currentMembers ?? []).map((m) => m.employeeId)),
     [currentMembers],
   );
-  const candidates = (employees ?? []).filter((e) => !existing.has(e.id));
+  // Only employees (not admins) can be members / receive onboarding tracks.
+  const candidates = (employees ?? []).filter((e) => e.appRole === "member" && !existing.has(e.id));
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -47,7 +48,7 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
         setOpen(false);
         setSelected(new Set());
         notify.success("Members added", {
-          description: "Their project onboarding tracks were assigned.",
+          description: "Their project onboarding modules were assigned.",
         });
       },
       onError: (err) => notify.apiError(err, "Could not add members"),
@@ -63,8 +64,8 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
         <DialogHeader>
           <DialogTitle>Add members</DialogTitle>
           <DialogDescription>
-            Added members are auto-assigned this project&apos;s onboarding tracks and must pass them
-            to unlock the project.
+            Added members are auto-assigned this project&apos;s onboarding modules and must pass
+            them to unlock the project.
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-72 space-y-1 overflow-y-auto py-2">

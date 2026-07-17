@@ -82,6 +82,7 @@ export const projectTrackSchema = z
     status: z.string(),
     sequence_order: z.number(),
     estimated_minutes: z.number().nullable(),
+    due_offset_days: z.number().nullable().optional(),
     assignment_id: z.string().nullable(),
     my_status: z.string(),
     passed: z.boolean(),
@@ -93,6 +94,7 @@ export const projectTrackSchema = z
     status: t.status,
     sequenceOrder: t.sequence_order,
     estimatedMinutes: t.estimated_minutes,
+    dueOffsetDays: t.due_offset_days ?? null,
     assignmentId: t.assignment_id,
     myStatus: t.my_status,
     passed: t.passed,
@@ -161,4 +163,7 @@ export type UpdateProjectInput = {
 export type CreateProjectTrackInput = {
   name: string;
   description?: string | null;
+  sequenceOrder?: number;
+  estimatedMinutes?: number | null;
+  dueOffsetDays?: number | null;
 };

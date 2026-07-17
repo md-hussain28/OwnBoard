@@ -8,6 +8,7 @@ import { useDeleteProject } from "@/hooks/queries/project/project.mutations";
 import { useProject } from "@/hooks/queries/project/project.queries";
 import { appPath } from "@/lib/routes";
 import { notify } from "@/lib/toast";
+import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import {
@@ -23,6 +24,7 @@ import { Skeleton } from "@/ui/skeleton";
 import { Spinner } from "@/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { AddMembersDialog } from "./add-members-dialog";
+import { EditProjectDialog } from "./edit-project-dialog";
 import { ProjectMemberPanel } from "./project-member-panel";
 import { ProjectTracksTab } from "./project-tracks-tab";
 
@@ -42,7 +44,7 @@ function DeleteProjectButton({ projectId, name }: { projectId: string; name: str
           <DialogTitle>Delete project?</DialogTitle>
           <DialogDescription>
             This permanently deletes <span className="font-medium">{name}</span>, its
-            project-specific tracks, and all memberships. This cannot be undone.
+            project-specific modules, and all memberships. This cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -97,7 +99,10 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
       <BackLink />
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
+            {project.status === "archived" && <Badge variant="secondary">Archived</Badge>}
+          </div>
           {project.description && <p className="text-muted-foreground">{project.description}</p>}
           {project.repoName && (
             <p className="inline-flex items-center gap-1 text-sm text-muted-foreground">
@@ -117,13 +122,16 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
             </p>
           )}
         </div>
-        <DeleteProjectButton projectId={project.id} name={project.name} />
+        <div className="flex shrink-0 items-center gap-1">
+          <EditProjectDialog project={project} />
+          <DeleteProjectButton projectId={project.id} name={project.name} />
+        </div>
       </div>
 
       <Tabs defaultValue="members">
         <TabsList>
           <TabsTrigger value="members">Members ({project.memberCount})</TabsTrigger>
-          <TabsTrigger value="tracks">Tracks ({project.trackCount})</TabsTrigger>
+          <TabsTrigger value="tracks">Modules ({project.trackCount})</TabsTrigger>
         </TabsList>
         <TabsContent value="members">
           <Card>

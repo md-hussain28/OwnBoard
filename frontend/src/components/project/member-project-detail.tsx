@@ -3,7 +3,9 @@
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
+  CalendarClockIcon,
   CheckCircle2Icon,
+  ClockIcon,
   GitBranchIcon,
   LockIcon,
   UnlockIcon,
@@ -49,6 +51,21 @@ function TrackRow({ track }: { track: ProjectTrack }) {
           <p className="truncate font-medium">{track.name}</p>
           {track.description && (
             <p className="truncate text-sm text-muted-foreground">{track.description}</p>
+          )}
+          {(track.estimatedMinutes != null || track.dueOffsetDays != null) && (
+            <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              {track.estimatedMinutes != null && (
+                <span className="inline-flex items-center gap-1">
+                  <ClockIcon className="size-3.5" /> {track.estimatedMinutes} min
+                </span>
+              )}
+              {track.dueOffsetDays != null && (
+                <span className="inline-flex items-center gap-1">
+                  <CalendarClockIcon className="size-3.5" /> due in {track.dueOffsetDays} day
+                  {track.dueOffsetDays === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -105,11 +122,11 @@ export function MemberProjectDetail({ project }: { project: ProjectDetail }) {
       {/* Onboarding tracks that gate the project. */}
       <div className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Onboarding tracks
+          Onboarding modules
         </h2>
         {project.tracks.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            This project has no onboarding tracks yet.
+            This project has no onboarding modules yet.
           </p>
         ) : (
           <div className="space-y-2">
@@ -125,7 +142,7 @@ export function MemberProjectDetail({ project }: { project: ProjectDetail }) {
         <Card>
           <CardContent className="flex items-center gap-3 py-5 text-sm text-muted-foreground">
             <LockIcon className="size-4 shrink-0" />
-            The team panel unlocks once you&apos;ve passed every onboarding track above.
+            The team panel unlocks once you&apos;ve passed every onboarding module above.
           </CardContent>
         </Card>
       ) : (

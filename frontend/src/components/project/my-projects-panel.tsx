@@ -16,7 +16,7 @@ export function MyProjectsPanel() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">My projects</h1>
         <p className="text-muted-foreground">
-          Projects you&apos;ve been added to. Pass a project&apos;s onboarding tracks to unlock it.
+          Projects you&apos;ve been added to. Pass a project&apos;s onboarding modules to unlock it.
         </p>
       </div>
 

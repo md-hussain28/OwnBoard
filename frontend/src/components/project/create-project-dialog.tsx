@@ -65,8 +65,8 @@ export function CreateProjectDialog() {
           <DialogHeader>
             <DialogTitle>New project</DialogTitle>
             <DialogDescription>
-              A project bundles its own onboarding tracks. Members must pass every track before the
-              project unlocks for them.
+              A project bundles its own onboarding modules. Members must pass every module before
+              the project unlocks for them.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

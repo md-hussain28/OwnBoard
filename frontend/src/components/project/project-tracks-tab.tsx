@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRightIcon, FileStackIcon } from "lucide-react";
+import { ArrowRightIcon, CalendarClockIcon, ClockIcon, FileStackIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { QueryState } from "@/components/shared/query-state";
@@ -29,30 +29,50 @@ function statusVariant(status: string): "success" | "secondary" | "warning" {
   return "secondary";
 }
 
+function parseOptionalInt(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const n = Number.parseInt(trimmed, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
 function CreateTrackDialog({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [order, setOrder] = useState("");
+  const [estimatedMinutes, setEstimatedMinutes] = useState("");
+  const [dueInDays, setDueInDays] = useState("");
   const create = useCreateProjectTrack(projectId);
   const router = useRouter();
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!name.trim()) return;
+    const sequenceOrder = parseOptionalInt(order);
     create.mutate(
-      { name: name.trim(), description: description.trim() || null },
+      {
+        name: name.trim(),
+        description: description.trim() || null,
+        ...(sequenceOrder != null ? { sequenceOrder } : {}),
+        estimatedMinutes: parseOptionalInt(estimatedMinutes),
+        dueOffsetDays: parseOptionalInt(dueInDays),
+      },
       {
         onSuccess: (track) => {
           setOpen(false);
           setName("");
           setDescription("");
-          notify.success("Track created", {
+          setOrder("");
+          setEstimatedMinutes("");
+          setDueInDays("");
+          notify.success("Module created", {
             description: "Upload documents and build its quiz next.",
           });
           // Hand off to the existing track authoring surface (docs + quiz builder).
           router.push(appPath("tracks", track.id));
         },
-        onError: (err) => notify.apiError(err, "Could not create track"),
+        onError: (err) => notify.apiError(err, "Could not create module"),
       },
     );
   }
@@ -60,14 +80,14 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Add track</Button>
+        <Button>Add module</Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>New project track</DialogTitle>
+            <DialogTitle>New project module</DialogTitle>
             <DialogDescription>
-              Create the track, then you&apos;ll be taken to upload its documents and build the
+              Create the module, then you&apos;ll be taken to upload its documents and build the
               grounded quiz. Members must pass it to unlock this project.
             </DialogDescription>
           </DialogHeader>
@@ -94,6 +114,51 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium" htmlFor="track-order">
+                  Order
+                </label>
+                <Input
+                  id="track-order"
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  value={order}
+                  onChange={(e) => setOrder(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium" htmlFor="track-minutes">
+                  Est. minutes
+                </label>
+                <Input
+                  id="track-minutes"
+                  type="number"
+                  min={1}
+                  placeholder="—"
+                  value={estimatedMinutes}
+                  onChange={(e) => setEstimatedMinutes(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium" htmlFor="track-due">
+                  Due in (days)
+                </label>
+                <Input
+                  id="track-due"
+                  type="number"
+                  min={0}
+                  placeholder="—"
+                  value={dueInDays}
+                  onChange={(e) => setDueInDays(e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Order controls the sequence members see. Due-in-days sets each member&apos;s deadline
+              from when they&apos;re assigned. All optional.
+            </p>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={create.isPending || !name.trim()}>
@@ -115,7 +180,7 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Onboarding tracks that gate entry to this project.
+          Onboarding modules that gate entry to this project.
         </p>
         <CreateTrackDialog projectId={projectId} />
       </div>
@@ -128,7 +193,7 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
           <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border py-10 text-center">
             <FileStackIcon className="size-6 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              No tracks yet. Add one so new members have something to pass.
+              No modules yet. Add one so new members have something to pass.
             </p>
           </div>
         }
@@ -145,6 +210,22 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
                   <p className="truncate font-medium">{track.name}</p>
                   {track.description && (
                     <p className="truncate text-sm text-muted-foreground">{track.description}</p>
+                  )}
+                  {(track.estimatedMinutes != null || track.dueOffsetDays != null) && (
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      {track.estimatedMinutes != null && (
+                        <span className="inline-flex items-center gap-1">
+                          <ClockIcon className="size-3.5" /> {track.estimatedMinutes} min
+                        </span>
+                      )}
+                      {track.dueOffsetDays != null && (
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarClockIcon className="size-3.5" /> due in {track.dueOffsetDays}{" "}
+                          day
+                          {track.dueOffsetDays === 1 ? "" : "s"}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-3">

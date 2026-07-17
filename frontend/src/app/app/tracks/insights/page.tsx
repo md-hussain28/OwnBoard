@@ -11,7 +11,7 @@ export default function TracksInsightsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
+      <div className="mx-auto w-full max-w-3xl space-y-3">
         <Skeleton className="h-8 w-56" />
         <Skeleton className="h-40 w-full" />
       </div>
@@ -20,7 +20,7 @@ export default function TracksInsightsPage() {
 
   if (!isAdmin) {
     return (
-      <div className="rounded-xl border border-border px-5 py-8 text-center">
+      <div className="mx-auto w-full max-w-3xl rounded-xl border border-border px-5 py-8 text-center">
         <p className="font-medium">Admins only</p>
         <p className="mt-1 text-sm text-muted-foreground">
           Only organization admins can view onboarding insights.
@@ -33,9 +33,11 @@ export default function TracksInsightsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-3xl space-y-6">
       <header className="space-y-1">
-        <h1 className="font-heading text-2xl font-semibold tracking-tight">Onboarding overview</h1>
+        <h1 className="font-heading text-2xl font-semibold tracking-tight text-balance">
+          Onboarding overview
+        </h1>
         <p className="text-sm text-muted-foreground text-pretty">
           Track how the cohort is progressing across every onboarding track — who&apos;s passed,
           who&apos;s overdue, and where people are stuck.

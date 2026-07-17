@@ -1,6 +1,12 @@
 "use client";
 
-import { PencilIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
+import {
+  GaugeIcon,
+  PencilIcon,
+  PlusIcon,
+  SearchIcon,
+  UserPlusIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { FilterSelect } from "@/components/shared/filter-select";
@@ -349,8 +355,8 @@ export function QuizPackList({
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0 space-y-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0 flex-1 space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight text-balance">Tracks</h1>
           <p className="text-sm text-muted-foreground text-pretty">
             {isAdmin
@@ -359,12 +365,29 @@ export function QuizPackList({
           </p>
         </div>
         {isAdmin && (
-          <Button asChild className="w-full sm:w-auto">
-            <Link href="/app/tracks/new">
-              <PlusIcon className="size-4" />
-              Create track
-            </Link>
-          </Button>
+          <div className="flex shrink-0 flex-row flex-wrap items-center justify-end gap-2 self-end sm:self-start">
+            <Button
+              variant="outline"
+              asChild
+              className={cn(
+                "border-border/80 bg-background font-medium text-foreground/80 shadow-none",
+                "hover:border-brand-teal/35 hover:bg-brand-teal-soft/60 hover:text-foreground",
+              )}
+            >
+              <Link href="/app/tracks/insights">
+                <span className="flex size-5 items-center justify-center rounded-md bg-brand-teal-soft text-brand-teal">
+                  <GaugeIcon className="size-3" strokeWidth={2.25} aria-hidden />
+                </span>
+                Onboarding overview
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/app/tracks/new">
+                <PlusIcon className="size-4" />
+                Create track
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
 

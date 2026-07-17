@@ -1,7 +1,6 @@
 "use client";
 
 import { useOrganization } from "@clerk/nextjs";
-import { LayoutDashboardIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -43,15 +42,6 @@ function orgInitials(name: string) {
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
   return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
 }
-
-/** Admin-only cohort insights link, injected right after the Tracks item. */
-const INSIGHTS_NAV_ITEM: NavItem = {
-  href: appPath("tracks", "insights"),
-  label: "Onboarding overview",
-  description: "Cohort progress",
-  icon: LayoutDashboardIcon,
-  roles: ["admin"],
-};
 
 function NavItems({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
@@ -128,12 +118,7 @@ function NavItems({ items }: { items: NavItem[] }) {
 export function AppSidebar() {
   const { appRole, isLoading } = useAppRole();
   const { organization, isLoaded: orgLoaded } = useOrganization();
-  const baseItems = navItemsForRole(appRole);
-  const tracksHref = appPath("tracks");
-  const items =
-    appRole === "admin"
-      ? baseItems.flatMap((item) => (item.href === tracksHref ? [item, INSIGHTS_NAV_ITEM] : [item]))
-      : baseItems;
+  const items = navItemsForRole(appRole);
 
   const orgName = organization?.name?.trim() || "OwnBoard";
   const showLogo = !!organization?.imageUrl && !isClerkDefaultLogo(organization.imageUrl);

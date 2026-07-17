@@ -58,7 +58,7 @@ function StatTile({
 function StatRow({ data }: { data: CohortDashboardData }) {
   const completion = Math.round(data.completionPct);
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       <StatTile icon={GaugeIcon} label="Completion" value={`${completion}%`} tone="teal">
         <Progress value={completion} className="mt-1" />
       </StatTile>
@@ -170,7 +170,7 @@ function CompletionMatrix({ data }: { data: CohortDashboardData }) {
 function CohortDashboardSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-24 w-full rounded-xl" />
         ))}

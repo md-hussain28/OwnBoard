@@ -1,6 +1,5 @@
 "use client";
 
-import { LayoutDashboardIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo } from "react";
@@ -142,15 +141,6 @@ export function QuizDesk() {
 
   return (
     <>
-      <div className="mb-3 flex items-center justify-end px-4 lg:px-0">
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/app/tracks/insights">
-            <LayoutDashboardIcon className="size-4" />
-            Onboarding overview
-          </Link>
-        </Button>
-      </div>
-
       <QuizPackList onAssignPack={openAssign} onViewPack={openView} />
 
       <Sheet

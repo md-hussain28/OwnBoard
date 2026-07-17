@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  AtSignIcon,
-  BriefcaseIcon,
-  FolderIcon,
-  PencilIcon,
-  ShieldIcon,
-} from "lucide-react";
+import { AtSignIcon, BriefcaseIcon, FolderIcon, PencilIcon, ShieldIcon } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useId, useState } from "react";
 import { Field } from "@/components/team/field";
 import { RoleSelect } from "@/components/team/role-select";
@@ -98,13 +92,7 @@ function MemberHeader({
 }
 
 /** Read-only profile facts — view mode only. */
-function MemberDetails({
-  employee,
-  appRole,
-}: {
-  employee: Employee;
-  appRole: AppRole;
-}) {
+function MemberDetails({ employee, appRole }: { employee: Employee; appRole: AppRole }) {
   const roleMeta = ROLE_META[appRole];
   return (
     <ul className="grid gap-1 rounded-lg border border-border bg-muted/40 px-2.5 py-2 text-sm">

@@ -63,9 +63,7 @@ function OutcomeRow({
         <span
           className={cn(
             "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg",
-            passed
-              ? "bg-brand-moss-soft text-brand-moss"
-              : "bg-brand-coral-soft text-brand-coral",
+            passed ? "bg-brand-moss-soft text-brand-moss" : "bg-brand-coral-soft text-brand-coral",
           )}
         >
           <Icon className="size-3.5" />
@@ -197,9 +195,7 @@ export function AdminOutcomeNotifications() {
 
   const newKeys = useMemo(() => {
     if (!hydrated) return new Set<string>();
-    return new Set(
-      outcomes.map(outcomeSeenKey).filter((key) => !seenKeys.has(key)),
-    );
+    return new Set(outcomes.map(outcomeSeenKey).filter((key) => !seenKeys.has(key)));
   }, [outcomes, seenKeys, hydrated]);
 
   const newCount = newKeys.size;
@@ -207,10 +203,7 @@ export function AdminOutcomeNotifications() {
   function handleOpenChange(next: boolean) {
     setOpen(next);
     if (next && employeeId) {
-      markOutcomesSeen(
-        employeeId,
-        outcomes.map(outcomeSeenKey),
-      );
+      markOutcomesSeen(employeeId, outcomes.map(outcomeSeenKey));
       setSeenKeys(getSeenOutcomeKeys(employeeId));
     }
   }

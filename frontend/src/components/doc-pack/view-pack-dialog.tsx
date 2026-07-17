@@ -72,9 +72,7 @@ export function ViewPackDialog({
         <DialogHeader className="gap-2 sm:text-left">
           <div className="space-y-1.5">
             <DialogTitle className="text-base leading-tight text-balance">{pack.name}</DialogTitle>
-            <DialogDescription className="sr-only">
-              View details for {pack.name}.
-            </DialogDescription>
+            <DialogDescription className="sr-only">View details for {pack.name}.</DialogDescription>
             <div className="flex flex-wrap items-center gap-1">
               {pack.domainName && (
                 <Badge variant="outline" className="h-5 gap-1 px-1.5 text-[0.6875rem] font-normal">
@@ -153,15 +151,7 @@ export function ViewPackDialog({
   );
 }
 
-function DetailRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: ReactNode;
-}) {
+function DetailRow({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
   return (
     <li className="flex items-baseline gap-2 py-0.5">
       <span className="mt-0.5 shrink-0 self-start text-muted-foreground">{icon}</span>

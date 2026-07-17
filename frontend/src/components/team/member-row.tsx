@@ -2,10 +2,7 @@
 
 import { AtSignIcon, PencilIcon } from "lucide-react";
 import { useState } from "react";
-import {
-  EditMemberDialog,
-  type MemberDialogMode,
-} from "@/components/team/edit-member-dialog";
+import { EditMemberDialog, type MemberDialogMode } from "@/components/team/edit-member-dialog";
 import { RoleSelect } from "@/components/team/role-select";
 import { initials, memberSubtitle } from "@/components/team/team-constants";
 import { useUpdateEmployee } from "@/hooks/queries/employee/employee.mutations";

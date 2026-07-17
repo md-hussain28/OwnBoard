@@ -1,7 +1,7 @@
 "use client";
 
 import { BookOpenIcon, CheckCircle2Icon, Loader2Icon, XCircleIcon } from "lucide-react";
-import { useCallback, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import { AssignmentQuizPane } from "@/components/doc-pack/assignment-quiz-pane";
 import { AssignmentReadingCard } from "@/components/doc-pack/assignment-reading-card";
 import {
@@ -12,6 +12,7 @@ import { useAssignmentDetail } from "@/hooks/queries/pack-assignment/pack-assign
 import { useGradeAttempt } from "@/hooks/queries/quiz/quiz.mutations";
 import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import type { AssignmentDetail } from "@/schemas/packAssignment.schema";
 import type { QuizAttempt, QuizTemplate } from "@/schemas/quiz.schema";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
@@ -59,8 +60,31 @@ function QuizResultBanner({
   );
 }
 
-export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) {
-  const { data: detail, isLoading, isError } = useAssignmentDetail(assignmentId);
+function LockedCard({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          {icon}
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">{children}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function useAssignmentQuizFlow(assignmentId: string, detail: AssignmentDetail) {
   const ack = useAckDocument(assignmentId);
   const startQuiz = useStartQuiz(assignmentId);
   const grade = useGradeAttempt();
@@ -82,23 +106,6 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
     });
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-[min(72vh,40rem)] w-full rounded-2xl" />
-      </div>
-    );
-  }
-
-  if (isError || !detail) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Could not load this assignment. Start the FastAPI service and refresh.
-      </p>
-    );
-  }
-
   const allAcked = detail.quizUnlocked;
   const questions = activeQuiz?.template.questions ?? [];
   const allAnswered = questions.length > 0 && questions.every((q) => answers[q.id]);
@@ -106,7 +113,6 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
     allAcked || Boolean(activeQuiz) || detail.status === "passed" || detail.status === "failed";
   const openBook = activeQuiz?.template.openBook ?? false;
   const showReading = !(activeQuiz && !openBook);
-  const quizTakesFocus = Boolean(activeQuiz) && !openBook;
 
   function handleStartQuiz() {
     setResult(null);
@@ -156,86 +162,128 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
     );
   }
 
+  function handleAck(documentId: string) {
+    ack.mutate(documentId, {
+      onSuccess: () => {
+        notify.success("Marked as read", { id: `ack:${documentId}` });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Could not mark as read", { id: `ack-error:${documentId}` });
+      },
+    });
+  }
+
+  return {
+    ackPending: ack.isPending,
+    startPending: startQuiz.isPending,
+    gradePending: grade.isPending,
+    activeQuiz,
+    answers,
+    result,
+    viewedIds,
+    allAcked,
+    showQuizPane,
+    openBook,
+    showReading,
+    quizTakesFocus: Boolean(activeQuiz) && !openBook,
+    markViewed,
+    handleAck,
+    handleStartQuiz,
+    handleSubmit,
+    setAnswer: (questionId: string, option: string) =>
+      setAnswers((prev) => ({ ...prev, [questionId]: option })),
+  };
+}
+
+function AssignmentWorkspaceLoaded({
+  assignmentId,
+  detail,
+}: {
+  assignmentId: string;
+  detail: AssignmentDetail;
+}) {
+  const quiz = useAssignmentQuizFlow(assignmentId, detail);
+
   return (
     <div className="space-y-6">
-      {result && (
+      {quiz.result && (
         <QuizResultBanner
-          result={result}
-          retakePending={startQuiz.isPending}
-          onRetake={handleStartQuiz}
+          result={quiz.result}
+          retakePending={quiz.startPending}
+          onRetake={quiz.handleStartQuiz}
         />
       )}
 
       <div
         className={cn(
           "grid gap-6",
-          showQuizPane && activeQuiz && showReading && openBook && "lg:grid-cols-2",
-          quizTakesFocus && "max-w-2xl",
+          quiz.showQuizPane &&
+            quiz.activeQuiz &&
+            quiz.showReading &&
+            quiz.openBook &&
+            "lg:grid-cols-2",
+          quiz.quizTakesFocus && "max-w-2xl",
         )}
       >
         {/* Keep the reading pane mounted (hidden) for closed-book — unmounting a PDF iframe stalls Start. */}
-        <div className={cn(!showReading && "hidden")} aria-hidden={!showReading}>
+        <div className={cn(!quiz.showReading && "hidden")} aria-hidden={!quiz.showReading}>
           <AssignmentReadingCard
             detail={detail}
-            allAcked={allAcked}
-            ackPending={ack.isPending}
-            viewedIds={viewedIds}
-            onOpened={markViewed}
-            onAck={(documentId) =>
-              ack.mutate(documentId, {
-                onSuccess: () => {
-                  notify.success("Marked as read", { id: `ack:${documentId}` });
-                },
-                onError: (err) => {
-                  notify.apiError(err, "Could not mark as read", { id: `ack-error:${documentId}` });
-                },
-              })
-            }
+            allAcked={quiz.allAcked}
+            ackPending={quiz.ackPending}
+            viewedIds={quiz.viewedIds}
+            onOpened={quiz.markViewed}
+            onAck={quiz.handleAck}
           />
         </div>
-        {!showReading && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpenIcon className="size-4" /> Reading locked
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                This is a closed-book quiz. Documents stay hidden until you submit your answers.
-              </p>
-            </CardContent>
-          </Card>
+        {!quiz.showReading && (
+          <LockedCard title="Reading locked" icon={<BookOpenIcon className="size-4" />}>
+            This is a closed-book quiz. Documents stay hidden until you submit your answers.
+          </LockedCard>
         )}
 
-        {showQuizPane ? (
+        {quiz.showQuizPane ? (
           <AssignmentQuizPane
             status={detail.status}
-            allAcked={allAcked}
-            activeQuiz={activeQuiz}
-            answers={answers}
-            startPending={startQuiz.isPending}
-            gradePending={grade.isPending}
-            onStart={handleStartQuiz}
-            onAnswer={(questionId, option) =>
-              setAnswers((prev) => ({ ...prev, [questionId]: option }))
-            }
-            onSubmit={handleSubmit}
+            allAcked={quiz.allAcked}
+            activeQuiz={quiz.activeQuiz}
+            answers={quiz.answers}
+            startPending={quiz.startPending}
+            gradePending={quiz.gradePending}
+            onStart={quiz.handleStartQuiz}
+            onAnswer={quiz.setAnswer}
+            onSubmit={quiz.handleSubmit}
           />
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Quiz</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Finish reading every document above. The quiz appears only after you’ve opened and
-                marked each one as read.
-              </p>
-            </CardContent>
-          </Card>
+          <LockedCard title="Quiz">
+            Finish reading every document above. The quiz appears only after you’ve opened and
+            marked each one as read.
+          </LockedCard>
         )}
       </div>
     </div>
   );
+}
+
+export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) {
+  const { data: detail, isLoading, isError } = useAssignmentDetail(assignmentId);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-[min(72vh,40rem)] w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (isError || !detail) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Could not load this assignment. Start the FastAPI service and refresh.
+      </p>
+    );
+  }
+
+  return <AssignmentWorkspaceLoaded assignmentId={assignmentId} detail={detail} />;
 }

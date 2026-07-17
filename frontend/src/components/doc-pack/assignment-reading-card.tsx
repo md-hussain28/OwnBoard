@@ -14,6 +14,8 @@ import type { AssignmentDetail } from "@/schemas/packAssignment.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 
+type AssignmentDocument = AssignmentDetail["documents"][number];
+
 function docTabTone(done: boolean, selected: boolean) {
   if (done) return "bg-success/15 text-success";
   if (selected) return "bg-primary/20 text-foreground";
@@ -58,6 +60,71 @@ function DocumentTabs({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function ActiveDocumentToolbar({
+  activeDoc,
+  activeIndex,
+  total,
+  canAck,
+  hasViewed,
+  ackPending,
+  onPrev,
+  onNext,
+  onMarkRead,
+}: {
+  activeDoc: AssignmentDocument;
+  activeIndex: number;
+  total: number;
+  canAck: boolean;
+  hasViewed: boolean;
+  ackPending: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+  onMarkRead: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+      <div className="min-w-0">
+        <p className="truncate font-medium text-balance">{activeDoc.title}</p>
+        <p className="text-xs text-muted-foreground tabular-nums">
+          {activeDoc.fileType.toUpperCase()} · Document {activeIndex + 1} of {total}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          size="icon"
+          variant="outline"
+          aria-label="Previous document"
+          disabled={activeIndex <= 0}
+          onClick={onPrev}
+        >
+          <ChevronLeftIcon className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="outline"
+          aria-label="Next document"
+          disabled={activeIndex >= total - 1}
+          onClick={onNext}
+        >
+          <ChevronRightIcon className="size-4" />
+        </Button>
+        {activeDoc.acknowledgedAt ? (
+          <Badge>
+            <CheckCircle2Icon className="size-3" /> Read
+          </Badge>
+        ) : (
+          <Button type="button" size="sm" disabled={!canAck || ackPending} onClick={onMarkRead}>
+            {ackPending && <Loader2Icon className="size-4 animate-spin" />}
+            {!ackPending && (hasViewed ? "Mark as read" : "Open first")}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -125,53 +192,17 @@ export function AssignmentReadingCard({
 
           {activeDoc && (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-balance">{activeDoc.title}</p>
-                  <p className="text-xs text-muted-foreground tabular-nums">
-                    {activeDoc.fileType.toUpperCase()} · Document {activeIndex + 1} of{" "}
-                    {detail.documents.length}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="outline"
-                    aria-label="Previous document"
-                    disabled={activeIndex <= 0}
-                    onClick={() => setActiveId(detail.documents[activeIndex - 1]?.id ?? null)}
-                  >
-                    <ChevronLeftIcon className="size-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="outline"
-                    aria-label="Next document"
-                    disabled={activeIndex >= detail.documents.length - 1}
-                    onClick={() => setActiveId(detail.documents[activeIndex + 1]?.id ?? null)}
-                  >
-                    <ChevronRightIcon className="size-4" />
-                  </Button>
-                  {activeDoc.acknowledgedAt ? (
-                    <Badge>
-                      <CheckCircle2Icon className="size-3" /> Read
-                    </Badge>
-                  ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={!canAck || ackPending}
-                      onClick={handleMarkRead}
-                    >
-                      {ackPending && <Loader2Icon className="size-4 animate-spin" />}
-                      {!ackPending && (hasViewed ? "Mark as read" : "Open first")}
-                    </Button>
-                  )}
-                </div>
-              </div>
-
+              <ActiveDocumentToolbar
+                activeDoc={activeDoc}
+                activeIndex={activeIndex}
+                total={detail.documents.length}
+                canAck={canAck}
+                hasViewed={hasViewed}
+                ackPending={ackPending}
+                onPrev={() => setActiveId(detail.documents[activeIndex - 1]?.id ?? null)}
+                onNext={() => setActiveId(detail.documents[activeIndex + 1]?.id ?? null)}
+                onMarkRead={handleMarkRead}
+              />
               <AssignmentDocumentReader
                 assignmentId={detail.id}
                 documentId={activeDoc.id}

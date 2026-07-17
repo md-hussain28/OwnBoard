@@ -8,8 +8,8 @@ export default function EmployeePacksPage() {
       <div>
         <h1 className="text-2xl font-semibold text-balance">My quizzes</h1>
         <p className="text-pretty text-muted-foreground">
-          Read every document in a pack, then pass its quiz at 100% to complete it. New
-          assignments also show up on the bell in the top right.
+          Read every document in a pack, then pass its quiz at 100% to complete it. New assignments
+          also show up on the bell in the top right.
         </p>
       </div>
       <EmployeePackList />

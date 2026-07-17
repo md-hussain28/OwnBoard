@@ -187,7 +187,7 @@ _DRAFT_SYSTEM_PROMPT = (
     "precisely rather than inventing a weak scenario.\n"
     "- Wrong options must be plausible near-misses (common misreads, off-by-one thresholds, related but "
     "incorrect owners/steps) — never joke answers, absurd options, or 'all/none of the above'.\n"
-    "- Never ask trivial True/False restatements of a single sentence (\"X is required. True/False\"). "
+    '- Never ask trivial True/False restatements of a single sentence ("X is required. True/False"). '
     "If using true/false, the stem must be a nuanced claim that could reasonably be mistaken.\n"
     "- Do not quote the passage verbatim as the question stem; paraphrase and force comprehension.\n\n"
     'Format: for true/false, `options` must be exactly ["True", "False"] and `correct_answer` must be '

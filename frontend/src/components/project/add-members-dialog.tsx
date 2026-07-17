@@ -4,7 +4,10 @@ import { CheckIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useEmployees } from "@/hooks/queries/employee/employee.queries";
 import { useAddProjectMembers } from "@/hooks/queries/project/project.mutations";
-import { useProjectMembers } from "@/hooks/queries/project/project.queries";
+import {
+  useProjectFunctionTypes,
+  useProjectMembers,
+} from "@/hooks/queries/project/project.queries";
 import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
@@ -17,13 +20,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Spinner } from "@/ui/spinner";
+
+const NO_FUNCTION = "__none__";
 
 export function AddMembersDialog({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [functionTypeId, setFunctionTypeId] = useState<string>(NO_FUNCTION);
   const { data: employees } = useEmployees({ enabled: open });
   const { data: currentMembers } = useProjectMembers(projectId, open);
+  const { data: functionTypes } = useProjectFunctionTypes(projectId, open);
   const add = useAddProjectMembers(projectId);
 
   const existing = useMemo(
@@ -43,16 +51,23 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
 
   function handleAdd() {
     if (selected.size === 0) return;
-    add.mutate(Array.from(selected), {
-      onSuccess: () => {
-        setOpen(false);
-        setSelected(new Set());
-        notify.success("Members added", {
-          description: "Their project onboarding modules were assigned.",
-        });
+    add.mutate(
+      {
+        employeeIds: Array.from(selected),
+        functionTypeId: functionTypeId === NO_FUNCTION ? null : functionTypeId,
       },
-      onError: (err) => notify.apiError(err, "Could not add members"),
-    });
+      {
+        onSuccess: () => {
+          setOpen(false);
+          setSelected(new Set());
+          setFunctionTypeId(NO_FUNCTION);
+          notify.success("Members added", {
+            description: "Their onboarding tracks and function modules were assigned.",
+          });
+        },
+        onError: (err) => notify.apiError(err, "Could not add members"),
+      },
+    );
   }
 
   return (
@@ -100,6 +115,29 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
             );
           })}
         </div>
+        {(functionTypes?.length ?? 0) > 0 && (
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">
+              Function <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <Select value={functionTypeId} onValueChange={setFunctionTypeId}>
+              <SelectTrigger>
+                <SelectValue placeholder="No function" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_FUNCTION}>No function</SelectItem>
+                {functionTypes?.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Modules matching this function auto-assign to everyone added here.
+            </p>
+          </div>
+        )}
         <DialogFooter>
           <Button onClick={handleAdd} disabled={add.isPending || selected.size === 0}>
             {add.isPending && <Spinner />}

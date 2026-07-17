@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import type { ProjectDetail, ProjectTrack } from "@/schemas/project.schema";
 import { Badge } from "@/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { MemberModulesList } from "./member-modules-list";
+import { ProjectContextView } from "./project-context-view";
 import { ProjectMemberPanel } from "./project-member-panel";
 import { ReadinessBar } from "./readiness";
 
@@ -136,6 +138,24 @@ export function MemberProjectDetail({ project }: { project: ProjectDetail }) {
           </div>
         )}
       </div>
+
+      {/* Reference context to help a new joinee understand the project — available even while locked. */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          About this project
+        </h2>
+        <ProjectContextView project={project} />
+      </div>
+
+      {/* Dev-facing modules assigned to this member by their function. */}
+      {project.modules.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Your modules
+          </h2>
+          <MemberModulesList projectId={project.id} modules={project.modules} />
+        </div>
+      )}
 
       {/* The member panel + go-to people are revealed once the project is unlocked. */}
       {locked ? (

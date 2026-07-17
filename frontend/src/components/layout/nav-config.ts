@@ -30,6 +30,14 @@ export const WORKSPACE_NAV: NavGroup = {
   label: "Evidence desk",
   items: [
     {
+      href: appPath("tracks"),
+      label: "Onboarding",
+      description: "Assign & track",
+      icon: BookOpenCheckIcon,
+      matchPrefix: true,
+      roles: ["admin"],
+    },
+    {
       href: appPath("projects"),
       label: "Projects",
       description: "Teams & onboarding",
@@ -44,14 +52,6 @@ export const WORKSPACE_NAV: NavGroup = {
       icon: FolderKanbanIcon,
       matchPrefix: true,
       roles: ["member"],
-    },
-    {
-      href: appPath("tracks"),
-      label: "Onboarding",
-      description: "Assign & track",
-      icon: BookOpenCheckIcon,
-      matchPrefix: true,
-      roles: ["admin"],
     },
     {
       href: appPath("onboarding", "packs"),

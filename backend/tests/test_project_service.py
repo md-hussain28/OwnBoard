@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from onboard.core.common.exceptions import ValidationError
+from onboard.core.common.exceptions import ForbiddenError, ValidationError
 from onboard.dao.models.doc_pack import DocPackStatus, PackAssignmentStatus
 from onboard.dao.models.quiz_template import QuizType
 from onboard.dao.organization_dao import OrganizationDAO
@@ -43,7 +43,7 @@ async def test_project_lifecycle_readiness_and_revoke(db_session):
         created_pack_ids += [pack_a.id, pack_b.id]
 
         # --- add member auto-assigns published project tracks ---
-        await service.add_members(org_id, project_id, [member.id], added_by=admin.id)
+        await service.add_members(org_id, project_id, [member.id], added_by=admin.id, viewer=admin)
         assignments = await service.assignment_dao.list_for_project(org_id, project_id)
         member_assignments = [a for a in assignments if a.employee_id == member.id]
         assert len(member_assignments) == 2
@@ -69,7 +69,7 @@ async def test_project_lifecycle_readiness_and_revoke(db_session):
         assert row.is_go_to is True
 
         # --- remove_member revokes the member's project-track assignments (P1) ---
-        await service.remove_member(org_id, project_id, member.id)
+        await service.remove_member(org_id, project_id, member.id, viewer=admin)
         remaining = await service.assignment_dao.list_for_project(org_id, project_id)
         assert [a for a in remaining if a.employee_id == member.id] == []
         my_projects = await service.list_my_projects(org_id, member)
@@ -90,6 +90,65 @@ async def test_project_lifecycle_readiness_and_revoke(db_session):
 
 
 @pytest.mark.asyncio
+async def test_modules_function_autoassign_and_team_lead(db_session):
+    org_id = f"org_test_{uuid.uuid4().hex[:8]}"
+    await OrganizationDAO(db_session).get_or_create(org_id)
+    service = ProjectService(db_session)
+
+    admin = await service.employee_dao.create(org_id=org_id, name="Ada Admin", app_role="admin")
+    fe = await service.employee_dao.create(org_id=org_id, name="Fran Frontend", app_role="member")
+    be = await service.employee_dao.create(org_id=org_id, name="Ben Backend", app_role="member")
+    project_id: str | None = None
+    try:
+        project = await service.create_project(
+            org_id=org_id, name="Console", description=None, repo_id=None, created_by=admin.id
+        )
+        project_id = project.id
+
+        # Per-project function types.
+        frontend = await service.create_function_type(org_id, project_id, admin, name="Frontend", sort_order=0)
+        await service.create_function_type(org_id, project_id, admin, name="Backend", sort_order=1)
+
+        # An active module targeting Frontend.
+        module = await service.create_module(
+            org_id, project_id, admin,
+            name="Frontend architecture", description=None, content="How the UI is laid out.",
+            resource_links=None, function_type_ids=[frontend.id], sequence_order=0,
+            estimated_minutes=15, status="active", created_by=admin.id,
+        )
+
+        # Adding a Frontend member auto-assigns the Frontend module; a Backend member does not get it.
+        await service.add_members(org_id, project_id, [fe.id], added_by=admin.id, viewer=admin, function_type_id=frontend.id)
+        await service.add_members(org_id, project_id, [be.id], added_by=admin.id, viewer=admin)
+        assert await service.module_assignment_dao.get_for_module_and_employee(module.id, fe.id) is not None
+        assert await service.module_assignment_dao.get_for_module_and_employee(module.id, be.id) is None
+
+        # The Frontend member sees the module in their member view and can complete it.
+        fe_modules = await service.list_modules(org_id, project_id, fe)
+        assert any(m.id == module.id and m.my_status == "assigned" for m in fe_modules)
+        done = await service.set_module_progress(org_id, project_id, module.id, fe, status="completed")
+        assert done.my_completed is True
+
+        # A plain member cannot manage; promoting them to lead grants scoped management.
+        with pytest.raises(ForbiddenError):
+            await service.create_function_type(org_id, project_id, fe, name="QA", sort_order=2)
+        await service.update_member(org_id, project_id, fe.id, admin, is_lead=True)
+        qa = await service.create_function_type(org_id, project_id, fe, name="QA", sort_order=2)
+        assert qa.name == "QA"
+
+        # can_manage is reflected for the lead but not the plain member.
+        assert (await service.get_project_detail(org_id, project_id, fe)).can_manage is True
+        assert (await service.get_project_detail(org_id, project_id, be)).can_manage is False
+    finally:
+        if project_id is not None:
+            await service.project_dao.delete(project_id)
+        await service.employee_dao.delete(admin.id)
+        await service.employee_dao.delete(fe.id)
+        await service.employee_dao.delete(be.id)
+        await OrganizationDAO(db_session).delete(org_id)
+
+
+@pytest.mark.asyncio
 async def test_add_members_rejects_admin(db_session):
     org_id = f"org_test_{uuid.uuid4().hex[:8]}"
     await OrganizationDAO(db_session).get_or_create(org_id)
@@ -103,7 +162,7 @@ async def test_add_members_rejects_admin(db_session):
         )
         project_id = project.id
         with pytest.raises(ValidationError):
-            await service.add_members(org_id, project_id, [admin.id], added_by=admin.id)
+            await service.add_members(org_id, project_id, [admin.id], added_by=admin.id, viewer=admin)
     finally:
         if project_id is not None:
             await service.project_dao.delete(project_id)

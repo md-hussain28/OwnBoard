@@ -7,6 +7,8 @@ export const projectKeys = {
   detail: (id: string) => ["projects", id] as const,
   members: (id: string) => ["projects", id, "members"] as const,
   tracks: (id: string) => ["projects", id, "tracks"] as const,
+  functionTypes: (id: string) => ["projects", id, "function-types"] as const,
+  modules: (id: string) => ["projects", id, "modules"] as const,
 };
 
 /** Admin: every project in the org. */
@@ -39,6 +41,22 @@ export function useProjectTracks(id: string, enabled = true) {
   return useQuery({
     queryKey: projectKeys.tracks(id),
     queryFn: () => projectService.listTracks(id),
+    enabled: !!id && enabled,
+  });
+}
+
+export function useProjectFunctionTypes(id: string, enabled = true) {
+  return useQuery({
+    queryKey: projectKeys.functionTypes(id),
+    queryFn: () => projectService.listFunctionTypes(id),
+    enabled: !!id && enabled,
+  });
+}
+
+export function useProjectModules(id: string, enabled = true) {
+  return useQuery({
+    queryKey: projectKeys.modules(id),
+    queryFn: () => projectService.listModules(id),
     enabled: !!id && enabled,
   });
 }

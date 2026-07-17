@@ -21,6 +21,15 @@ export const API_ENDPOINTS = {
   projectMembers: (id: string) => `/projects/${id}/members`,
   projectMember: (id: string, employeeId: string) => `/projects/${id}/members/${employeeId}`,
   projectTracks: (id: string) => `/projects/${id}/tracks`,
+  projectRepos: (id: string) => `/projects/${id}/repos`,
+  projectRepo: (id: string, repoId: string) => `/projects/${id}/repos/${repoId}`,
+  projectFunctionTypes: (id: string) => `/projects/${id}/function-types`,
+  projectFunctionType: (id: string, functionTypeId: string) =>
+    `/projects/${id}/function-types/${functionTypeId}`,
+  projectModules: (id: string) => `/projects/${id}/modules`,
+  projectModule: (id: string, moduleId: string) => `/projects/${id}/modules/${moduleId}`,
+  projectModuleProgress: (id: string, moduleId: string) =>
+    `/projects/${id}/modules/${moduleId}/progress`,
 
   quizDomains: "/quiz-domains",
   quizDomain: (id: string) => `/quiz-domains/${id}`,

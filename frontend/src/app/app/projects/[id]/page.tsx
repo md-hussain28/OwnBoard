@@ -29,8 +29,8 @@ export default function ProjectDetailPage() {
     );
   }
 
-  // Admins get the management view; members get their gated onboarding view.
-  return project.isAdmin ? (
+  // Admins and this project's team lead get the management view; members get their gated view.
+  return project.canManage ? (
     <AdminProjectDetail projectId={id} />
   ) : (
     <MemberProjectDetail project={project} />

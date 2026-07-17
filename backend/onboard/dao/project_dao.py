@@ -3,7 +3,12 @@ from sqlalchemy.orm import selectinload
 
 from onboard.dao.base_dao import BaseDAO
 from onboard.dao.models.employee import Employee
-from onboard.dao.models.project import Project, ProjectMember
+from onboard.dao.models.project import (
+    Project,
+    ProjectFunctionType,
+    ProjectMember,
+    ProjectRepo,
+)
 
 
 class ProjectDAO(BaseDAO[Project]):
@@ -13,7 +18,7 @@ class ProjectDAO(BaseDAO[Project]):
         result = await self.session.execute(
             select(Project)
             .where(Project.org_id == org_id)
-            .options(selectinload(Project.repo))
+            .options(selectinload(Project.repo), selectinload(Project.repos).selectinload(ProjectRepo.repo))
             .order_by(Project.created_at.desc())
             .limit(limit)
             .offset(offset)
@@ -24,7 +29,46 @@ class ProjectDAO(BaseDAO[Project]):
         result = await self.session.execute(
             select(Project)
             .where(Project.id == project_id, Project.org_id == org_id)
-            .options(selectinload(Project.repo))
+            .options(selectinload(Project.repo), selectinload(Project.repos).selectinload(ProjectRepo.repo))
+        )
+        return result.scalar_one_or_none()
+
+
+class ProjectRepoDAO(BaseDAO[ProjectRepo]):
+    model = ProjectRepo
+
+    async def list_for_project(self, project_id: str) -> list[ProjectRepo]:
+        result = await self.session.execute(
+            select(ProjectRepo)
+            .where(ProjectRepo.project_id == project_id)
+            .options(selectinload(ProjectRepo.repo))
+            .order_by(ProjectRepo.is_primary.desc(), ProjectRepo.created_at.asc())
+        )
+        return list(result.scalars().all())
+
+    async def get_for_project_and_repo(self, project_id: str, repo_id: str) -> ProjectRepo | None:
+        result = await self.session.execute(
+            select(ProjectRepo).where(ProjectRepo.project_id == project_id, ProjectRepo.repo_id == repo_id)
+        )
+        return result.scalar_one_or_none()
+
+
+class ProjectFunctionTypeDAO(BaseDAO[ProjectFunctionType]):
+    model = ProjectFunctionType
+
+    async def list_for_project(self, project_id: str) -> list[ProjectFunctionType]:
+        result = await self.session.execute(
+            select(ProjectFunctionType)
+            .where(ProjectFunctionType.project_id == project_id)
+            .order_by(ProjectFunctionType.sort_order.asc(), ProjectFunctionType.name.asc())
+        )
+        return list(result.scalars().all())
+
+    async def get_by_id_for_project(self, project_id: str, function_type_id: str) -> ProjectFunctionType | None:
+        result = await self.session.execute(
+            select(ProjectFunctionType).where(
+                ProjectFunctionType.id == function_type_id, ProjectFunctionType.project_id == project_id
+            )
         )
         return result.scalar_one_or_none()
 
@@ -36,7 +80,10 @@ class ProjectMemberDAO(BaseDAO[ProjectMember]):
         result = await self.session.execute(
             select(ProjectMember)
             .where(ProjectMember.project_id == project_id)
-            .options(selectinload(ProjectMember.employee).selectinload(Employee.domain))
+            .options(
+                selectinload(ProjectMember.employee).selectinload(Employee.domain),
+                selectinload(ProjectMember.function_type),
+            )
             .order_by(ProjectMember.created_at.asc())
         )
         return list(result.scalars().all())

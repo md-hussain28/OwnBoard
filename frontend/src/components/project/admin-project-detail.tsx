@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon, GitBranchIcon, Trash2Icon } from "lucide-react";
+import { ArrowLeftIcon, CrownIcon, GitBranchIcon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -25,7 +25,9 @@ import { Spinner } from "@/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { AddMembersDialog } from "./add-members-dialog";
 import { EditProjectDialog } from "./edit-project-dialog";
+import { ProjectContextTab } from "./project-context-tab";
 import { ProjectMemberPanel } from "./project-member-panel";
+import { ProjectModulesTab } from "./project-modules-tab";
 import { ProjectTracksTab } from "./project-tracks-tab";
 
 function DeleteProjectButton({ projectId, name }: { projectId: string; name: string }) {
@@ -102,6 +104,11 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
             {project.status === "archived" && <Badge variant="secondary">Archived</Badge>}
+            {project.myIsLead && !project.isAdmin && (
+              <Badge variant="default">
+                <CrownIcon className="size-3" /> You lead this
+              </Badge>
+            )}
           </div>
           {project.description && <p className="text-muted-foreground">{project.description}</p>}
           {project.repoName && (
@@ -124,14 +131,17 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <EditProjectDialog project={project} />
-          <DeleteProjectButton projectId={project.id} name={project.name} />
+          {/* Deleting a project is admin-only; a team lead manages but can't delete. */}
+          {project.isAdmin && <DeleteProjectButton projectId={project.id} name={project.name} />}
         </div>
       </div>
 
       <Tabs defaultValue="members">
         <TabsList>
           <TabsTrigger value="members">Members ({project.memberCount})</TabsTrigger>
-          <TabsTrigger value="tracks">Modules ({project.trackCount})</TabsTrigger>
+          <TabsTrigger value="modules">Modules ({project.moduleCount})</TabsTrigger>
+          <TabsTrigger value="tracks">Onboarding ({project.trackCount})</TabsTrigger>
+          <TabsTrigger value="context">Context</TabsTrigger>
         </TabsList>
         <TabsContent value="members">
           <Card>
@@ -144,12 +154,18 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="modules">
+          <ProjectModulesTab project={project} />
+        </TabsContent>
         <TabsContent value="tracks">
           <Card>
             <CardContent className="pt-6">
               <ProjectTracksTab projectId={project.id} />
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="context">
+          <ProjectContextTab project={project} />
         </TabsContent>
       </Tabs>
     </div>

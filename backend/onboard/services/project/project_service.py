@@ -191,6 +191,7 @@ class ProjectService:
                     status=pack.status.value,
                     sequence_order=pack.sequence_order,
                     estimated_minutes=pack.estimated_minutes,
+                    due_offset_days=pack.due_offset_days,
                     assignment_id=a.id if a else None,
                     my_status=a.status.value if a else "not_assigned",
                     passed=a is not None and a.status == PackAssignmentStatus.passed,
@@ -251,6 +252,8 @@ class ProjectService:
             employee = await self.employee_dao.get_by_id_for_org(org_id, employee_id)
             if employee is None:
                 raise ValidationError(f"Employee {employee_id} not found")
+            if employee.app_role == APP_ROLE_ADMIN:
+                raise ValidationError("Admins can't be added as project members")
             if await self.member_dao.get_for_project_and_employee(project_id, employee_id) is not None:
                 continue  # already a member — idempotent
             await self.member_dao.create(
@@ -266,6 +269,9 @@ class ProjectService:
         if membership is None:
             raise NotFoundError(f"Employee {employee_id} is not a member of project {project_id}")
         await self.member_dao.delete(membership.id)
+        # Revoke the member's assignments for this project's tracks so their gate/readiness don't linger
+        # (general/company tracks and other projects' tracks are untouched — the query is project-scoped).
+        await self.assignment_dao.delete_for_project_and_employee(org_id, project_id, employee_id)
 
     async def list_project_tracks(self, org_id: str, project_id: str, viewer: Employee) -> list[ProjectTrackResponse]:
         detail = await self.get_project_detail(org_id, project_id, viewer)

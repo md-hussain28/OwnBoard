@@ -44,6 +44,7 @@ class ProjectTrackResponse(BaseModel):
     status: str
     sequence_order: int
     estimated_minutes: int | None
+    due_offset_days: int | None  # days after assignment the track is due; null = no deadline
     # Viewer-specific: their assignment for this track (if any) and whether they've passed it.
     assignment_id: str | None
     my_status: str  # PackAssignmentStatus value, or "not_assigned"

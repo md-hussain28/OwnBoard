@@ -43,20 +43,21 @@ export function MemberRow({
   return (
     <li
       className={cn(
-        "group/row flex flex-col gap-3 rounded-xl px-3 py-3.5 transition-colors duration-150",
-        "hover:bg-muted/60 sm:flex-row sm:items-center sm:justify-between",
+        "group/row flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl px-2 py-2.5",
+        "transition-colors duration-150 sm:gap-x-3 sm:px-3 sm:py-3",
+        "hover:bg-muted/60",
       )}
     >
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg text-left outline-none sm:gap-3 focus-visible:ring-2 focus-visible:ring-ring/50"
         aria-label={`View details for ${employee.name}`}
       >
         <span
           aria-hidden
           className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold tracking-wide",
+            "flex size-8 shrink-0 items-center justify-center rounded-full text-[0.6875rem] font-semibold tracking-wide sm:size-9 sm:text-xs",
             employee.appRole === "admin"
               ? "bg-brand-honey-soft text-brand-honey"
               : "bg-muted text-muted-foreground",
@@ -64,14 +65,14 @@ export function MemberRow({
         >
           {initials(employee.name)}
         </span>
-        <div className="min-w-0">
-          <p className="truncate font-medium leading-snug">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium leading-snug sm:text-base">
             {employee.name}
             {isSelf && (
-              <span className="ml-2 text-xs font-normal text-muted-foreground">(you)</span>
+              <span className="ml-1.5 text-xs font-normal text-muted-foreground">(you)</span>
             )}
           </p>
-          <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
+          <p className="truncate text-xs text-muted-foreground sm:text-sm">{subtitle}</p>
           {github && (
             <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
               <AtSignIcon className="size-3 shrink-0" aria-hidden />
@@ -81,7 +82,7 @@ export function MemberRow({
         </div>
       </button>
 
-      <div className="flex items-center gap-1.5 pl-12 sm:pl-0">
+      <div className="flex shrink-0 items-center gap-1">
         <Button
           type="button"
           variant="ghost"
@@ -98,11 +99,12 @@ export function MemberRow({
           disabled={updateEmployee.isPending}
           id={`role-${employee.id}`}
           size="sm"
+          className="w-[6.75rem] min-w-0 sm:w-auto sm:min-w-[7.5rem]"
         />
       </div>
 
       {updateEmployee.isError && (
-        <p className="text-sm text-destructive sm:basis-full sm:pl-12">
+        <p className="basis-full pl-10 text-sm text-destructive sm:pl-12">
           {getApiErrorMessage(updateEmployee.error)}
         </p>
       )}

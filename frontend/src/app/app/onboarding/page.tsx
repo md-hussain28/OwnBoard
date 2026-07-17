@@ -1,6 +1,15 @@
 "use client";
 
+import {
+  BookOpenCheckIcon,
+  CheckCircle2Icon,
+  CircleIcon,
+  Code2Icon,
+  LockIcon,
+  UnlockIcon,
+} from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { IncomingBadge } from "@/components/layout/incoming-feature";
 import { cn } from "@/lib/utils";
 import {
@@ -10,83 +19,243 @@ import {
 } from "@/stores/onboarding-store";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 
-const STEPS: { key: OnboardingStep; label: string; href: string }[] = [
-  { key: "policy-quiz", label: "Policy quiz", href: "/app/onboarding/policy-quiz" },
-  { key: "codebase-quiz", label: "Codebase quiz", href: "/app/onboarding/codebase-quiz" },
-  { key: "unlocked", label: "Repo access unlocked", href: "/app/onboarding/unlocked" },
+type QuizAssignment = {
+  key: Exclude<OnboardingStep, "unlocked">;
+  label: string;
+  description: string;
+  href: string;
+  icon: ReactNode;
+};
+
+const QUIZ_ASSIGNMENTS: QuizAssignment[] = [
+  {
+    key: "policy-quiz",
+    label: "Policy quiz",
+    description: "Open-book check on company policy. Pass this before the codebase quiz.",
+    href: "/app/onboarding/policy-quiz",
+    icon: <BookOpenCheckIcon className="size-4" />,
+  },
+  {
+    key: "codebase-quiz",
+    label: "Codebase quiz",
+    description: "Scenario questions grounded in your team's real git history.",
+    href: "/app/onboarding/codebase-quiz",
+    icon: <Code2Icon className="size-4" />,
+  },
 ];
 
-function stepResult(
-  step: OnboardingStep,
-  results: Partial<Record<OnboardingStep, StepResult>>,
-): StepResult {
-  return results[step] ?? "pending";
+function resultLabel(result: StepResult, isCurrent: boolean): string {
+  if (result === "passed") return "Passed";
+  if (result === "failed") return "Failed — retry";
+  if (isCurrent) return "Up next";
+  return "Not started";
+}
+
+function resultVariant(
+  result: StepResult,
+  isCurrent: boolean,
+): "success" | "destructive" | "default" | "secondary" {
+  if (result === "passed") return "success";
+  if (result === "failed") return "destructive";
+  if (isCurrent) return "default";
+  return "secondary";
+}
+
+function ctaLabel(result: StepResult, isCurrent: boolean): string {
+  if (result === "passed") return "Review";
+  if (result === "failed") return "Retry";
+  if (isCurrent) return "Start quiz";
+  return "Open";
+}
+
+function StepMarker({
+  isPassed,
+  isCurrent,
+  icon,
+}: {
+  isPassed: boolean;
+  isCurrent: boolean;
+  icon: ReactNode;
+}) {
+  if (isPassed) return <CheckCircle2Icon className="size-4" />;
+  if (isCurrent) return icon;
+  return <CircleIcon className="size-3.5" />;
+}
+
+function QuizAssignmentRow({
+  quiz,
+  index,
+  result,
+  isCurrent,
+  showConnector,
+}: {
+  quiz: QuizAssignment;
+  index: number;
+  result: StepResult;
+  isCurrent: boolean;
+  showConnector: boolean;
+}) {
+  const isPassed = result === "passed";
+
+  return (
+    <li
+      className={cn(
+        "relative flex gap-4 p-4 transition-colors",
+        isCurrent && "bg-primary/5",
+        showConnector && "border-b",
+      )}
+    >
+      <div className="flex flex-col items-center pt-0.5" aria-hidden>
+        <span
+          className={cn(
+            "flex size-8 shrink-0 items-center justify-center rounded-full",
+            isPassed && "bg-success/15 text-success",
+            isCurrent && !isPassed && "bg-primary text-primary-foreground",
+            !isCurrent && !isPassed && "bg-muted text-muted-foreground",
+          )}
+        >
+          <StepMarker isPassed={isPassed} isCurrent={isCurrent} icon={quiz.icon} />
+        </span>
+        {showConnector && (
+          <span
+            className={cn("mt-2 min-h-4 w-px flex-1", isPassed ? "bg-success/40" : "bg-border")}
+          />
+        )}
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium tabular-nums text-muted-foreground">
+              Quiz {index + 1}
+            </span>
+            <Badge variant={resultVariant(result, isCurrent)}>
+              {resultLabel(result, isCurrent)}
+            </Badge>
+          </div>
+          <p className="font-medium text-foreground">{quiz.label}</p>
+          <p className="text-pretty text-sm text-muted-foreground">{quiz.description}</p>
+        </div>
+        <Button
+          asChild
+          size="sm"
+          variant={isCurrent && !isPassed ? "default" : "outline"}
+          className="shrink-0 self-start sm:self-center"
+        >
+          <Link href={quiz.href}>{ctaLabel(result, isCurrent)}</Link>
+        </Button>
+      </div>
+    </li>
+  );
 }
 
 export default function OnboardingPage() {
   const { currentStep, policyQuizResult, codebaseQuizResult } = useOnboardingStore();
-  const stepResults: Partial<Record<OnboardingStep, StepResult>> = {
+  const results: Record<Exclude<OnboardingStep, "unlocked">, StepResult> = {
     "policy-quiz": policyQuizResult,
     "codebase-quiz": codebaseQuizResult,
   };
 
+  const quizzesPassed =
+    (policyQuizResult === "passed" ? 1 : 0) + (codebaseQuizResult === "passed" ? 1 : 0);
+  const unlocked = currentStep === "unlocked" && quizzesPassed === 2;
+
   return (
-    <div className="space-y-8">
-      <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold">Onboarding</h1>
+    <div className="mx-auto max-w-2xl space-y-8">
+      <header className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-semibold text-balance">Your assigned quizzes</h1>
           <IncomingBadge />
         </div>
-        <p className="text-muted-foreground">
-          Complete the policy quiz, then the codebase quiz, to unlock repo access.
+        <p className="max-w-prose text-pretty text-muted-foreground">
+          Your admin assigned these checks. Finish them in order to unlock repo access.
         </p>
-      </div>
+        <p className="text-sm tabular-nums text-muted-foreground">
+          <span className="font-medium text-foreground">{quizzesPassed} of 2</span> gate quizzes
+          complete
+        </p>
+      </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Assigned reading packs</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
-            Doc packs assigned by your admin — read every document, then pass the open-book quiz at
-            100%.
-          </p>
-          <Button asChild size="sm" variant="outline">
-            <Link href="/app/onboarding/packs">Open</Link>
+      <section className="space-y-3" aria-labelledby="reading-heading">
+        <h2 id="reading-heading" className="text-sm font-medium text-muted-foreground">
+          Reading packs
+        </h2>
+        <div className="flex flex-col gap-4 rounded-xl border bg-card p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 space-y-1">
+            <p className="font-medium text-foreground">Doc packs from your admin</p>
+            <p className="text-pretty text-sm text-muted-foreground">
+              Read every document in a pack, then pass its open-book quiz at 100%.
+            </p>
+          </div>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="shrink-0 self-start sm:self-center"
+          >
+            <Link href="/app/onboarding/packs">View assignments</Link>
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <ol className="grid gap-4 sm:grid-cols-3">
-        {STEPS.map((step, index) => {
-          const isCurrent = step.key === currentStep;
-          const result = stepResult(step.key, stepResults);
+      <section className="space-y-3" aria-labelledby="gate-heading">
+        <h2 id="gate-heading" className="text-sm font-medium text-muted-foreground">
+          Access gate — complete in order
+        </h2>
 
-          return (
-            <Card key={step.key} className={cn(isCurrent && "border-foreground/40")}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between text-base">
-                  <span>
-                    {index + 1}. {step.label}
-                  </span>
-                  {result !== "pending" && (
-                    <Badge variant={result === "passed" ? "default" : "destructive"}>
-                      {result}
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button asChild size="sm" variant={isCurrent ? "default" : "outline"}>
-                  <Link href={step.href}>{isCurrent ? "Start" : "Open"}</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </ol>
+        <ol className="overflow-hidden rounded-xl border bg-card shadow-soft">
+          {QUIZ_ASSIGNMENTS.map((quiz, index) => (
+            <QuizAssignmentRow
+              key={quiz.key}
+              quiz={quiz}
+              index={index}
+              result={results[quiz.key]}
+              isCurrent={quiz.key === currentStep}
+              showConnector={index < QUIZ_ASSIGNMENTS.length - 1}
+            />
+          ))}
+        </ol>
+      </section>
+
+      <section
+        className={cn(
+          "flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between",
+          unlocked ? "border-success/30 bg-success/5" : "border-dashed bg-muted/30",
+        )}
+        aria-labelledby="unlock-heading"
+      >
+        <div className="flex gap-3">
+          <span
+            className={cn(
+              "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full",
+              unlocked ? "bg-success/15 text-success" : "bg-muted text-muted-foreground",
+            )}
+            aria-hidden
+          >
+            {unlocked ? <UnlockIcon className="size-4" /> : <LockIcon className="size-4" />}
+          </span>
+          <div className="space-y-1">
+            <h2 id="unlock-heading" className="font-medium text-foreground">
+              {unlocked ? "Repo access unlocked" : "Repo access locked"}
+            </h2>
+            <p className="text-pretty text-sm text-muted-foreground">
+              {unlocked
+                ? "Both gate quizzes are complete. You can use the archaeology Q&A and related tools."
+                : "Pass the policy quiz, then the codebase quiz, to unlock access."}
+            </p>
+          </div>
+        </div>
+        {unlocked ? (
+          <Button asChild size="sm" className="shrink-0 self-start sm:self-center">
+            <Link href="/app/onboarding/unlocked">Open</Link>
+          </Button>
+        ) : (
+          <Badge variant="secondary" className="shrink-0 self-start sm:self-center">
+            After quizzes
+          </Badge>
+        )}
+      </section>
     </div>
   );
 }

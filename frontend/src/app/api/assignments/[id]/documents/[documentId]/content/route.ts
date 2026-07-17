@@ -5,7 +5,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string; documentId: string }> },
 ) {
   const { id, documentId } = await params;
-  // Downloads + re-extracts the file server-side, so give it more than the 15s default.
+  // PDFs only mint a signed URL; text docs still download + extract.
   return proxyRequest("get", `/assignments/${id}/documents/${documentId}/content`, {
     timeout: 60_000,
   });

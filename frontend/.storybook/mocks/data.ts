@@ -314,6 +314,7 @@ export const mockAdminQuizTemplate = {
   source_ref: "pack_a1b2c3d4e5f6g7h8i9",
   custom_instructions: null,
   is_published: true,
+  open_book: false,
   questions: [
     {
       id: "qq_a1b2c3d4e5f6g7h8i9",

@@ -46,6 +46,7 @@ export const quizTemplateSchema = z
     source_ref: z.string(),
     custom_instructions: z.string().nullable(),
     is_published: z.boolean(),
+    open_book: z.boolean().optional().default(false),
     questions: z.array(quizQuestionSchema).default([]),
   })
   .transform((t) => ({
@@ -54,6 +55,7 @@ export const quizTemplateSchema = z
     sourceRef: t.source_ref,
     customInstructions: t.custom_instructions,
     isPublished: t.is_published,
+    openBook: t.open_book,
     questions: t.questions,
   }));
 
@@ -64,6 +66,7 @@ export const adminQuizTemplateSchema = z
     source_ref: z.string(),
     custom_instructions: z.string().nullable(),
     is_published: z.boolean(),
+    open_book: z.boolean().optional().default(false),
     questions: z.array(adminQuizQuestionSchema).default([]),
   })
   .transform((t) => ({
@@ -72,6 +75,7 @@ export const adminQuizTemplateSchema = z
     sourceRef: t.source_ref,
     customInstructions: t.custom_instructions,
     isPublished: t.is_published,
+    openBook: t.open_book,
     questions: t.questions,
   }));
 

@@ -1,9 +1,9 @@
 "use client";
 
 import { BookOpenIcon, CheckCircle2Icon, Loader2Icon, XCircleIcon } from "lucide-react";
-import { useCallback, useState } from "react";
-import { AssignmentDocumentReader } from "@/components/doc-pack/assignment-document-reader";
+import { type ReactNode, useCallback, useState } from "react";
 import { AssignmentQuizPane } from "@/components/doc-pack/assignment-quiz-pane";
+import { AssignmentReadingCard } from "@/components/doc-pack/assignment-reading-card";
 import {
   useAckDocument,
   useStartQuiz,
@@ -14,7 +14,6 @@ import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { AssignmentDetail } from "@/schemas/packAssignment.schema";
 import type { QuizAttempt, QuizTemplate } from "@/schemas/quiz.schema";
-import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Skeleton } from "@/ui/skeleton";
@@ -49,7 +48,7 @@ function QuizResultBanner({
         <p className="text-sm text-muted-foreground">
           {result.passed
             ? "This pack is complete."
-            : "Every question must be correct to pass. The documents stay open — review and retake."}
+            : "Every question must be correct to pass. Review the documents and retake."}
         </p>
       </div>
       {!result.passed && (
@@ -61,129 +60,31 @@ function QuizResultBanner({
   );
 }
 
-function ReadingDocumentRow({
-  assignmentId,
-  doc,
-  isOpen,
-  hasViewed,
-  ackPending,
-  onToggle,
-  onOpened,
-  onAck,
+function LockedCard({
+  title,
+  icon,
+  children,
 }: {
-  assignmentId: string;
-  doc: AssignmentDetail["documents"][number];
-  isOpen: boolean;
-  hasViewed: boolean;
-  ackPending: boolean;
-  onToggle: () => void;
-  onOpened: (documentId: string) => void;
-  onAck: () => void;
+  title: string;
+  icon?: ReactNode;
+  children: ReactNode;
 }) {
-  const canAck = !doc.acknowledgedAt && hasViewed;
-
-  return (
-    <div className="space-y-2 rounded-xl border border-border p-3">
-      <div className="flex items-center justify-between gap-2">
-        <button type="button" className="min-w-0 flex-1 text-left" onClick={onToggle}>
-          <p className="truncate font-medium">{doc.title}</p>
-          <p className="text-xs text-muted-foreground">
-            {doc.fileType.toUpperCase()} · {isOpen ? "Hide" : "Open to read"}
-          </p>
-        </button>
-        {doc.acknowledgedAt ? (
-          <Badge>
-            <CheckCircle2Icon className="size-3" /> Read
-          </Badge>
-        ) : (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={!canAck || ackPending}
-            onClick={onAck}
-          >
-            {ackPending && <Loader2Icon className="size-4 animate-spin" />}
-            {!ackPending && (hasViewed ? "Mark as read" : "Open first")}
-          </Button>
-        )}
-      </div>
-      {isOpen && (
-        <AssignmentDocumentReader
-          assignmentId={assignmentId}
-          documentId={doc.id}
-          title={doc.title}
-          onOpened={onOpened}
-        />
-      )}
-    </div>
-  );
-}
-
-function ReadingCard({
-  detail,
-  allAcked,
-  ackPending,
-  viewedIds,
-  onOpened,
-  onAck,
-}: {
-  detail: AssignmentDetail;
-  allAcked: boolean;
-  ackPending: boolean;
-  viewedIds: Set<string>;
-  onOpened: (documentId: string) => void;
-  onAck: (documentId: string) => void;
-}) {
-  const firstUnread = detail.documents.find((d) => !d.acknowledgedAt)?.id ?? null;
-  const [openDocumentId, setOpenDocumentId] = useState<string | null>(firstUnread);
-  const ackedCount = detail.documents.filter((d) => d.acknowledgedAt).length;
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <BookOpenIcon className="size-4" /> Reading
-          </span>
-          <Badge variant={allAcked ? "default" : "secondary"}>
-            {ackedCount}/{detail.documents.length} read
-          </Badge>
+        <CardTitle className="flex items-center gap-2">
+          {icon}
+          {title}
         </CardTitle>
-        {!allAcked && (
-          <p className="text-sm font-normal text-muted-foreground">
-            Open each document (PDF opens in the viewer), then mark it as read. The quiz unlocks
-            only after every document is acknowledged.
-          </p>
-        )}
       </CardHeader>
-      <CardContent className="space-y-3">
-        {detail.documents.length === 0 && (
-          <p className="text-sm text-muted-foreground">This pack has no documents.</p>
-        )}
-        {detail.documents.map((doc) => {
-          const isOpen = openDocumentId === doc.id;
-          return (
-            <ReadingDocumentRow
-              key={doc.id}
-              assignmentId={detail.id}
-              doc={doc}
-              isOpen={isOpen}
-              hasViewed={viewedIds.has(doc.id) || Boolean(doc.acknowledgedAt)}
-              ackPending={ackPending}
-              onToggle={() => setOpenDocumentId(isOpen ? null : doc.id)}
-              onOpened={onOpened}
-              onAck={() => onAck(doc.id)}
-            />
-          );
-        })}
+      <CardContent>
+        <p className="text-sm text-muted-foreground">{children}</p>
       </CardContent>
     </Card>
   );
 }
 
-export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) {
-  const { data: detail, isLoading, isError } = useAssignmentDetail(assignmentId);
+function useAssignmentQuizFlow(assignmentId: string, detail: AssignmentDetail) {
   const ack = useAckDocument(assignmentId);
   const startQuiz = useStartQuiz(assignmentId);
   const grade = useGradeAttempt();
@@ -205,29 +106,13 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
     });
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-40 w-full" />
-      </div>
-    );
-  }
-
-  if (isError || !detail) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Could not load this assignment. Start the FastAPI service and refresh.
-      </p>
-    );
-  }
-
   const allAcked = detail.quizUnlocked;
   const questions = activeQuiz?.template.questions ?? [];
   const allAnswered = questions.length > 0 && questions.every((q) => answers[q.id]);
-  // Read-first: hide the quiz pane until every document is acknowledged (unless already in a quiz / passed).
   const showQuizPane =
     allAcked || Boolean(activeQuiz) || detail.status === "passed" || detail.status === "failed";
+  const openBook = activeQuiz?.template.openBook ?? false;
+  const showReading = !(activeQuiz && !openBook);
 
   function handleStartQuiz() {
     setResult(null);
@@ -236,7 +121,9 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
       onSuccess: (data) => {
         setActiveQuiz(data);
         notify.info("Quiz started", {
-          description: "Open-book — the reading pane stays available.",
+          description: data.template.openBook
+            ? "Open-book — the reading pane stays available."
+            : "Closed-book — reading materials are hidden until you finish.",
           id: `quiz-start:${assignmentId}`,
         });
       },
@@ -275,63 +162,128 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
     );
   }
 
+  function handleAck(documentId: string) {
+    ack.mutate(documentId, {
+      onSuccess: () => {
+        notify.success("Marked as read", { id: `ack:${documentId}` });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Could not mark as read", { id: `ack-error:${documentId}` });
+      },
+    });
+  }
+
+  return {
+    ackPending: ack.isPending,
+    startPending: startQuiz.isPending,
+    gradePending: grade.isPending,
+    activeQuiz,
+    answers,
+    result,
+    viewedIds,
+    allAcked,
+    showQuizPane,
+    openBook,
+    showReading,
+    quizTakesFocus: Boolean(activeQuiz) && !openBook,
+    markViewed,
+    handleAck,
+    handleStartQuiz,
+    handleSubmit,
+    setAnswer: (questionId: string, option: string) =>
+      setAnswers((prev) => ({ ...prev, [questionId]: option })),
+  };
+}
+
+function AssignmentWorkspaceLoaded({
+  assignmentId,
+  detail,
+}: {
+  assignmentId: string;
+  detail: AssignmentDetail;
+}) {
+  const quiz = useAssignmentQuizFlow(assignmentId, detail);
+
   return (
     <div className="space-y-6">
-      {result && (
+      {quiz.result && (
         <QuizResultBanner
-          result={result}
-          retakePending={startQuiz.isPending}
-          onRetake={handleStartQuiz}
+          result={quiz.result}
+          retakePending={quiz.startPending}
+          onRetake={quiz.handleStartQuiz}
         />
       )}
 
-      <div className={cn("grid gap-6", showQuizPane && activeQuiz && "lg:grid-cols-2")}>
-        <ReadingCard
-          detail={detail}
-          allAcked={allAcked}
-          ackPending={ack.isPending}
-          viewedIds={viewedIds}
-          onOpened={markViewed}
-          onAck={(documentId) =>
-            ack.mutate(documentId, {
-              onSuccess: () => {
-                notify.success("Marked as read", { id: `ack:${documentId}` });
-              },
-              onError: (err) => {
-                notify.apiError(err, "Could not mark as read", { id: `ack-error:${documentId}` });
-              },
-            })
-          }
-        />
+      <div
+        className={cn(
+          "grid gap-6",
+          quiz.showQuizPane &&
+            quiz.activeQuiz &&
+            quiz.showReading &&
+            quiz.openBook &&
+            "lg:grid-cols-2",
+          quiz.quizTakesFocus && "max-w-2xl",
+        )}
+      >
+        {/* Keep the reading pane mounted (hidden) for closed-book — unmounting a PDF iframe stalls Start. */}
+        <div className={cn(!quiz.showReading && "hidden")} aria-hidden={!quiz.showReading}>
+          <AssignmentReadingCard
+            detail={detail}
+            allAcked={quiz.allAcked}
+            ackPending={quiz.ackPending}
+            viewedIds={quiz.viewedIds}
+            onOpened={quiz.markViewed}
+            onAck={quiz.handleAck}
+          />
+        </div>
+        {!quiz.showReading && (
+          <LockedCard title="Reading locked" icon={<BookOpenIcon className="size-4" />}>
+            This is a closed-book quiz. Documents stay hidden until you submit your answers.
+          </LockedCard>
+        )}
 
-        {showQuizPane ? (
+        {quiz.showQuizPane ? (
           <AssignmentQuizPane
             status={detail.status}
-            allAcked={allAcked}
-            activeQuiz={activeQuiz}
-            answers={answers}
-            startPending={startQuiz.isPending}
-            gradePending={grade.isPending}
-            onStart={handleStartQuiz}
-            onAnswer={(questionId, option) =>
-              setAnswers((prev) => ({ ...prev, [questionId]: option }))
-            }
-            onSubmit={handleSubmit}
+            allAcked={quiz.allAcked}
+            activeQuiz={quiz.activeQuiz}
+            answers={quiz.answers}
+            startPending={quiz.startPending}
+            gradePending={quiz.gradePending}
+            onStart={quiz.handleStartQuiz}
+            onAnswer={quiz.setAnswer}
+            onSubmit={quiz.handleSubmit}
           />
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Quiz</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Finish reading every document above. The quiz appears only after you’ve opened and
-                marked each one as read.
-              </p>
-            </CardContent>
-          </Card>
+          <LockedCard title="Quiz">
+            Finish reading every document above. The quiz appears only after you’ve opened and
+            marked each one as read.
+          </LockedCard>
         )}
       </div>
     </div>
   );
+}
+
+export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) {
+  const { data: detail, isLoading, isError } = useAssignmentDetail(assignmentId);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-[min(72vh,40rem)] w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (isError || !detail) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Could not load this assignment. Start the FastAPI service and refresh.
+      </p>
+    );
+  }
+
+  return <AssignmentWorkspaceLoaded assignmentId={assignmentId} detail={detail} />;
 }

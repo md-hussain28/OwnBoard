@@ -13,6 +13,8 @@ type QuizQuestionEditorProps = {
   keptCount: number;
   droppedIds: string[];
   isPublished: boolean;
+  openBook: boolean;
+  onOpenBookChange: (value: boolean) => void;
   busy: boolean;
   regeneratePending: boolean;
   savePending: boolean;
@@ -27,6 +29,8 @@ export function QuizQuestionEditor({
   keptCount,
   droppedIds,
   isPublished,
+  openBook,
+  onOpenBookChange,
   busy,
   regeneratePending,
   savePending,
@@ -37,11 +41,28 @@ export function QuizQuestionEditor({
 }: QuizQuestionEditorProps) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
           {keptCount} kept · {droppedIds.length} dropped
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4 rounded border-border"
+              checked={openBook}
+              disabled={isPublished}
+              onChange={(e) => onOpenBookChange(e.target.checked)}
+            />
+            <span>
+              Open-book quiz
+              <span className="block text-xs text-muted-foreground">
+                {openBook
+                  ? "Reading stays available during the quiz"
+                  : "Closed-book (default) — reading hides when the quiz starts"}
+              </span>
+            </span>
+          </label>
           {droppedIds.length > 0 && (
             <Button
               type="button"

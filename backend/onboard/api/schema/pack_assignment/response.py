@@ -68,18 +68,12 @@ class PackAssignmentDetailResponse(BaseModel):
     quiz_unlocked: bool
 
 
-class StartQuizResponse(BaseModel):
-    """PRD §6 `POST /assignments/{id}/start-quiz` — the new/resumed attempt plus the open-book quiz."""
-
-    attempt: QuizAttemptResponse
-    template: QuizTemplateResponse
-
-
 class AssignmentDocumentContentResponse(BaseModel):
-    """Open-book reading payload for one document in an assignment (PRD §4).
+    """Reading payload for one document in an assignment (PRD §4).
 
-    `content` is extracted plain text (always). `file_url` is a short-lived signed
-    URL to the original file so PDFs can be shown in a browser viewer.
+    `content` is extracted plain text for text-like files (empty for PDFs).
+    `file_url` is a short-lived Supabase signed URL so the browser can load the PDF
+    directly from storage (no backend byte proxy).
     """
 
     document_id: str
@@ -87,3 +81,10 @@ class AssignmentDocumentContentResponse(BaseModel):
     file_type: str
     content: str
     file_url: str | None = None
+
+
+class StartQuizResponse(BaseModel):
+    """PRD §6 `POST /assignments/{id}/start-quiz` — the new/resumed attempt plus the quiz template."""
+
+    attempt: QuizAttemptResponse
+    template: QuizTemplateResponse

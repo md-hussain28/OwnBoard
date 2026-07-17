@@ -34,6 +34,8 @@ class QuizQuestionCurationItem(BaseModel):
 
 class SaveDocPackQuizRequest(BaseModel):
     questions: list[QuizQuestionCurationItem] = Field(min_length=1)
+    # Closed-book by default; admin opts into keeping the reading pane open during the quiz.
+    open_book: bool = False
 
 
 class RegenerateQuestionsRequest(BaseModel):

@@ -1,5 +1,6 @@
 import enum
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint, func
@@ -7,6 +8,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from onboard.config.constants import EMBEDDING_DIMENSION
 from onboard.dao.models.base import AuditBase
+
+if TYPE_CHECKING:
+    from onboard.dao.models.employee import Employee
+    from onboard.dao.models.org_domain import OrgDomain
+    from onboard.dao.models.organization import Organization
+    from onboard.dao.models.project import Project
+    from onboard.dao.models.quiz_domain import QuizDomain
 
 
 class DocPackStatus(str, enum.Enum):

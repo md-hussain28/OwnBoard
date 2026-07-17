@@ -1,10 +1,18 @@
 import enum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from onboard.dao.models.base import AuditBase
+
+if TYPE_CHECKING:
+    from onboard.dao.models.doc_pack import DocPack
+    from onboard.dao.models.employee import Employee
+    from onboard.dao.models.organization import Organization
+    from onboard.dao.models.project_module import ProjectModule
+    from onboard.dao.models.repo import Repo
 
 
 class ProjectStatus(str, enum.Enum):

@@ -1,6 +1,6 @@
 import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
-import { quizAttemptSchema, type QuizAttempt } from "@/schemas/quiz.schema";
+import { type QuizAttempt, quizAttemptSchema } from "@/schemas/quiz.schema";
 
 export const quizService = {
   /** Grade a completed attempt — reused across policy/codebase/doc_pack quizzes (PRD §9 path fix). */

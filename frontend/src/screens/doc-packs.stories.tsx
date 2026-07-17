@@ -1,8 +1,8 @@
-import { Suspense } from "react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import DocPacksPage from "@/app/(console)/doc-packs/page";
-import NewQuizPage from "@/app/(console)/doc-packs/new/page";
+import { Suspense } from "react";
 import DocPackDetailPage from "@/app/(console)/doc-packs/[id]/page";
+import NewQuizPage from "@/app/(console)/doc-packs/new/page";
+import DocPacksPage from "@/app/(console)/doc-packs/page";
 import { handlers, loadingForever, notImplemented } from "../../.storybook/mocks/handlers";
 import { withAppShell } from "./story-shell";
 

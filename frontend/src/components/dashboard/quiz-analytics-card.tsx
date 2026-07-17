@@ -1,11 +1,11 @@
 "use client";
 
-import { useQuizAnalytics } from "@/hooks/queries/dashboard/dashboard.queries";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
-import { Progress } from "@/ui/progress";
 import { IncomingFeature } from "@/components/layout/incoming-feature";
+import { useQuizAnalytics } from "@/hooks/queries/dashboard/dashboard.queries";
 import { isNotImplementedError } from "@/lib/api/errors";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { Progress } from "@/ui/progress";
+import { Skeleton } from "@/ui/skeleton";
 
 export function QuizAnalyticsCard({ repoId }: { repoId: string }) {
   const { data, isLoading, isError, error } = useQuizAnalytics(repoId);
@@ -21,7 +21,9 @@ export function QuizAnalyticsCard({ repoId }: { repoId: string }) {
           <IncomingFeature description="Readiness scoring across new hires is still being built." />
         )}
         {isError && !isNotImplementedError(error) && (
-          <p className="text-sm text-muted-foreground">Quiz analytics aren&apos;t available right now.</p>
+          <p className="text-sm text-muted-foreground">
+            Quiz analytics aren&apos;t available right now.
+          </p>
         )}
         {!isLoading && !isError && data && (
           <>

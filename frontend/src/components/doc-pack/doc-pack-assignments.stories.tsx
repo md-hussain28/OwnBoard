@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { http, HttpResponse } from "msw";
-import { employeeHandlers } from "../../../.storybook/mocks/handlers";
+import { HttpResponse, http } from "msw";
 import { DocPackAssignments } from "@/components/doc-pack/doc-pack-assignments";
+import { employeeHandlers } from "../../../.storybook/mocks/handlers";
 
 const meta = {
   title: "Components/DocPack/DocPackAssignments",

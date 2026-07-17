@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import { useTheme } from "next-themes";
 import {
   Building2Icon,
   ChevronRightIcon,
@@ -10,15 +8,13 @@ import {
   SettingsIcon,
   SunIcon,
 } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useId, useRef, useState } from "react";
 import { ManageOrgDialog } from "@/components/layout/manage-org-dialog";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { useSidebar } from "@/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
 
 const THEME_OPTIONS = [
   { value: "light", label: "Light", icon: SunIcon },
@@ -101,9 +97,7 @@ export function ThemeSettings({ className }: { className?: string }) {
             aria-label="Settings"
             className={cn(
               "absolute z-50 w-52 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-soft",
-              collapsed
-                ? "bottom-0 left-full ml-2"
-                : "bottom-full right-0 mb-2",
+              collapsed ? "bottom-0 left-full ml-2" : "bottom-full right-0 mb-2",
             )}
           >
             <div className="flex items-center justify-between gap-3 px-1.5 py-1">
@@ -141,7 +135,7 @@ export function ThemeSettings({ className }: { className?: string }) {
 
             {showWorkspaceSettings && (
               <>
-                <div className="my-1.5 h-px bg-border" role="separator" />
+                <div className="my-1.5 h-px bg-border" />
                 <button
                   type="button"
                   role="menuitem"
@@ -155,10 +149,7 @@ export function ThemeSettings({ className }: { className?: string }) {
                   }}
                 >
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-brand-honey/15">
-                    <Building2Icon
-                      className="size-3.5 text-brand-honey"
-                      strokeWidth={1.75}
-                    />
+                    <Building2Icon className="size-3.5 text-brand-honey" strokeWidth={1.75} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium leading-none text-foreground">
@@ -179,9 +170,7 @@ export function ThemeSettings({ className }: { className?: string }) {
         )}
       </div>
 
-      {showWorkspaceSettings && (
-        <ManageOrgDialog open={orgOpen} onOpenChange={setOrgOpen} />
-      )}
+      {showWorkspaceSettings && <ManageOrgDialog open={orgOpen} onOpenChange={setOrgOpen} />}
     </>
   );
 }

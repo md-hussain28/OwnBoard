@@ -1,6 +1,6 @@
-import { Badge } from "@/ui/badge";
 import { cn } from "@/lib/utils";
 import type { ChatMessage as ChatMessageType } from "@/schemas/chat.schema";
+import { Badge } from "@/ui/badge";
 
 export function ChatMessage({ message }: { message: ChatMessageType }) {
   const isUser = message.role === "user";
@@ -19,7 +19,7 @@ export function ChatMessage({ message }: { message: ChatMessageType }) {
         <Badge variant="secondary">
           {message.sourceCitation.commitSha
             ? `Commit ${message.sourceCitation.commitSha.slice(0, 7)}`
-            : message.sourceCitation.filePath ?? "Cited"}
+            : (message.sourceCitation.filePath ?? "Cited")}
         </Badge>
       )}
       {message.confidence === "low" && <Badge variant="destructive">Low confidence</Badge>}

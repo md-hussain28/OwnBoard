@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useOnboardingStore, type OnboardingStep } from "@/stores/onboarding-store";
 import { IncomingBadge } from "@/components/layout/incoming-feature";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Button } from "@/ui/button";
-import { Badge } from "@/ui/badge";
 import { cn } from "@/lib/utils";
+import { type OnboardingStep, useOnboardingStore } from "@/stores/onboarding-store";
+import { Badge } from "@/ui/badge";
+import { Button } from "@/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 
 const STEPS: { key: OnboardingStep; label: string; href: string }[] = [
   { key: "policy-quiz", label: "Policy quiz", href: "/onboarding/policy-quiz" },

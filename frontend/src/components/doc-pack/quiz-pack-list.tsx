@@ -1,29 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useQueries } from "@tanstack/react-query";
 import { PencilIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { FilterSelect } from "@/components/shared/filter-select";
 import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { packAssignmentKeys } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
+import { usePackAssignmentProgress } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { useQuizDomains } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
-import { packAssignmentService } from "@/services/pack-assignment.service";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import type { DocPackListItem } from "@/schemas/docPack.schema";
+import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Skeleton } from "@/ui/skeleton";
-import { Badge } from "@/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/ui/select";
-import { cn } from "@/lib/utils";
-import type { DocPackListItem } from "@/schemas/docPack.schema";
-import type { PackAssignment, PackAssignmentStatus } from "@/schemas/packAssignment.schema";
-import { getApiErrorMessage } from "@/lib/api/errors";
 
 type PackStatus = DocPackListItem["status"];
 type StatusFilter = "all" | PackStatus;
@@ -58,76 +48,7 @@ function packStatusVariant(status: PackStatus) {
   return "secondary" as const;
 }
 
-function FilterSelect<T extends string>({
-  value,
-  onChange,
-  options,
-  "aria-label": ariaLabel,
-}: {
-  value: T;
-  onChange: (value: T) => void;
-  options: { value: T; label: string }[];
-  "aria-label": string;
-}) {
-  const active = value !== "all";
-  return (
-    <Select value={value} onValueChange={(next) => onChange(next as T)}>
-      <SelectTrigger
-        size="sm"
-        aria-label={ariaLabel}
-        className={cn(
-          "shrink-0",
-          active && "border-primary/40 text-foreground",
-          !active && "text-muted-foreground",
-        )}
-      >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent align="end">
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
-const PROGRESS_ORDER: PackAssignmentStatus[] = [
-  "passed",
-  "failed",
-  "quiz_in_progress",
-  "ready_for_quiz",
-  "reading",
-  "assigned",
-];
-
-const PROGRESS_SHORT: Record<PackAssignmentStatus, string> = {
-  assigned: "assigned",
-  reading: "reading",
-  ready_for_quiz: "ready",
-  quiz_in_progress: "in quiz",
-  passed: "passed",
-  failed: "failed",
-};
-
-function summarizeProgress(assignments: PackAssignment[]): string {
-  if (assignments.length === 0) return "Not assigned yet";
-  const counts = new Map<PackAssignmentStatus, number>();
-  for (const a of assignments) {
-    counts.set(a.status, (counts.get(a.status) ?? 0) + 1);
-  }
-  return PROGRESS_ORDER.filter((s) => (counts.get(s) ?? 0) > 0)
-    .map((s) => `${counts.get(s)} ${PROGRESS_SHORT[s]}`)
-    .join(" · ");
-}
-
-export function QuizPackList({
-  onAssignPack,
-}: {
-  onAssignPack: (packId: string) => void;
-}) {
+export function QuizPackList({ onAssignPack }: { onAssignPack: (packId: string) => void }) {
   const { isAdmin } = useAppRole();
   const { data: packs, isLoading, isError, error } = useDocPacks();
   const domainsQuery = useQuizDomains({ enabled: isAdmin });
@@ -138,6 +59,7 @@ export function QuizPackList({
 
   const packIds = useMemo(() => (packs ?? []).map((p) => p.id), [packs]);
   const domains = domainsQuery.data ?? [];
+  const progressByPackId = usePackAssignmentProgress(packIds, isAdmin);
 
   const domainFilters: { value: DomainFilter; label: string }[] = useMemo(
     () => [
@@ -147,35 +69,6 @@ export function QuizPackList({
     ],
     [domains],
   );
-
-  const assignmentQueries = useQueries({
-    queries: packIds.map((packId) => ({
-      queryKey: packAssignmentKeys.forPack(packId),
-      queryFn: () => packAssignmentService.listForPack(packId),
-      enabled: isAdmin && packIds.length > 0,
-      staleTime: 30_000,
-    })),
-  });
-
-  const progressByPackId = useMemo(() => {
-    const map = new Map<string, { text: string; loading: boolean; count: number }>();
-    packIds.forEach((packId, index) => {
-      const q = assignmentQueries[index];
-      if (!q || q.isLoading) {
-        map.set(packId, { text: "", loading: true, count: 0 });
-      } else if (q.isError) {
-        map.set(packId, { text: "Progress unavailable", loading: false, count: 0 });
-      } else {
-        const data = q.data ?? [];
-        map.set(packId, {
-          text: summarizeProgress(data),
-          loading: false,
-          count: data.length,
-        });
-      }
-    });
-    return map;
-  }, [packIds, assignmentQueries]);
 
   const filteredPacks = useMemo(() => {
     const list = packs ?? [];
@@ -304,9 +197,8 @@ export function QuizPackList({
 
       {isError && (
         <p className="text-sm text-muted-foreground">
-          Could not reach the backend (
-          {getApiErrorMessage(error)}). Start the FastAPI service
-          and refresh.
+          Could not reach the backend ({getApiErrorMessage(error)}). Start the FastAPI service and
+          refresh.
         </p>
       )}
 
@@ -377,11 +269,7 @@ export function QuizPackList({
 
                 {isAdmin && (
                   <div className="flex shrink-0 items-center gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => onAssignPack(pack.id)}
-                    >
+                    <Button type="button" size="sm" onClick={() => onAssignPack(pack.id)}>
                       <UserPlusIcon className="size-3.5" />
                       Assign
                     </Button>

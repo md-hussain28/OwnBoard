@@ -2,20 +2,20 @@ import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
 import { isNotFoundError } from "@/lib/api/errors";
 import {
-  docPackDocumentListSchema,
-  docPackIngestStatusSchema,
-  docPackListSchema,
-  docPackSchema,
   type DocPack,
   type DocPackDocument,
   type DocPackIngestStatus,
   type DocPackListItem,
+  docPackDocumentListSchema,
+  docPackIngestStatusSchema,
+  docPackListSchema,
+  docPackSchema,
 } from "@/schemas/docPack.schema";
 import {
-  adminQuizTemplateSchema,
-  generateDocPackQuizResponseSchema,
   type AdminQuizTemplate,
+  adminQuizTemplateSchema,
   type GenerateDocPackQuizResponse,
+  generateDocPackQuizResponseSchema,
   type QuizQuestionCurationItem,
 } from "@/schemas/quiz.schema";
 
@@ -77,7 +77,11 @@ export const docPackService = {
 
   async generateQuiz(
     id: string,
-    input: { target_count: number; formats: ("mcq_4" | "true_false")[]; custom_instructions?: string },
+    input: {
+      target_count: number;
+      formats: ("mcq_4" | "true_false")[];
+      custom_instructions?: string;
+    },
   ): Promise<GenerateDocPackQuizResponse> {
     const { data } = await getApiClient().post(API_ENDPOINTS.docPackGenerateQuiz(id), input, {
       timeout: 300_000, // multi-step LLM pipeline — much slower than a CRUD call

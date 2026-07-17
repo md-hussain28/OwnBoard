@@ -1,20 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo } from "react";
+import { QuizAssignmentPanel } from "@/components/doc-pack/quiz-assignment-panel";
+import { QuizPackList } from "@/components/doc-pack/quiz-pack-list";
 import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { QuizPackList } from "@/components/doc-pack/quiz-pack-list";
-import { QuizAssignmentPanel } from "@/components/doc-pack/quiz-assignment-panel";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/ui/sheet";
 import { Button } from "@/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/ui/sheet";
 import { Skeleton } from "@/ui/skeleton";
 
 export function QuizDesk() {
@@ -97,10 +91,7 @@ export function QuizDesk() {
           if (!open) closeAssign();
         }}
       >
-        <SheetContent
-          side="right"
-          className="flex w-full flex-col gap-4 px-4 pb-6 sm:max-w-md"
-        >
+        <SheetContent side="right" className="flex w-full flex-col gap-4 px-4 pb-6 sm:max-w-md">
           {showSheetLoading && (
             <div className="space-y-3 pt-2">
               <Skeleton className="h-7 w-48" />

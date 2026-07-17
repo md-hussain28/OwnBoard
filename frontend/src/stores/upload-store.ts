@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { docPackService } from "@/services/doc-pack.service";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import { docPackService } from "@/services/doc-pack.service";
 
 // Mirror the backend limits (backend/onboard/config/constants.py) so bad batches fail
 // instantly in the browser instead of tying up the 512MB API instance.

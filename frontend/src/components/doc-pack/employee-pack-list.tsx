@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useEmployees } from "@/hooks/queries/employee/employee.queries";
-import { useMe, useAppRole } from "@/hooks/queries/me/me.queries";
-import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { useEffect, useState } from "react";
 import {
   ASSIGNMENT_STATUS_LABEL,
   assignmentStatusVariant,
-} from "@/components/doc-pack/doc-pack-assignments";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+} from "@/components/shared/assignment-status";
+import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { useEmployees } from "@/hooks/queries/employee/employee.queries";
+import { useAppRole, useMe } from "@/hooks/queries/me/me.queries";
+import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Skeleton } from "@/ui/skeleton";
 
 /**

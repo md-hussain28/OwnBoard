@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { quizDomainService } from "@/services/quiz-domain.service";
-import type { CreateQuizDomainInput } from "@/schemas/quiz-domain.schema";
 import { docPackKeys } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries/optimistic";
+import type { CreateQuizDomainInput, QuizDomain } from "@/schemas/quiz-domain.schema";
+import { quizDomainService } from "@/services/quiz-domain.service";
 
 export const quizDomainKeys = {
   all: ["quiz-domains"] as const,
@@ -19,8 +20,13 @@ export function useCreateQuizDomain() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateQuizDomainInput) => quizDomainService.create(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: quizDomainKeys.all });
+    onSuccess: (domain) => {
+      queryClient.setQueryData<QuizDomain[]>(quizDomainKeys.all, (prev) =>
+        prev ? [...prev, domain] : [domain],
+      );
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: quizDomainKeys.all });
     },
   });
 }
@@ -29,9 +35,20 @@ export function useDeleteQuizDomain() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => quizDomainService.remove(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: quizDomainKeys.all });
-      queryClient.invalidateQueries({ queryKey: docPackKeys.all });
+    onMutate: async (id) => {
+      const snapshot = await optimisticUpdate<QuizDomain[]>(
+        queryClient,
+        quizDomainKeys.all,
+        (prev) => prev?.filter((d) => d.id !== id),
+      );
+      return snapshot;
+    },
+    onError: (_err, _id, context) => {
+      rollbackOptimistic(queryClient, quizDomainKeys.all, context);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: quizDomainKeys.all });
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.all });
     },
   });
 }

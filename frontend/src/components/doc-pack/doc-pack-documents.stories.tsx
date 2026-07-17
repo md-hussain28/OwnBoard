@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { DocPackDocuments } from "@/components/doc-pack/doc-pack-documents";
 import { docPackDocumentListSchema } from "@/schemas/docPack.schema";
 import { mockDocuments } from "../../../.storybook/mocks/data";
-import { DocPackDocuments } from "@/components/doc-pack/doc-pack-documents";
 
 // Parse the wire-format mocks through the real zod schema so the story
 // receives exactly what the service layer would produce.
@@ -22,7 +22,9 @@ export const MixedStatuses: Story = {
 };
 
 export const AllProcessed: Story = {
-  args: { documents: documents.map((d) => ({ ...d, status: "processed" as const, errorMessage: null })) },
+  args: {
+    documents: documents.map((d) => ({ ...d, status: "processed" as const, errorMessage: null })),
+  },
 };
 
 export const Empty: Story = {

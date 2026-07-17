@@ -1,8 +1,17 @@
 "use client";
 
+import { useOrganization } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useOrganization } from "@clerk/nextjs";
+import {
+  isNavItemActive,
+  type NavItem,
+  navItemsForRole,
+  WORKSPACE_NAV,
+} from "@/components/layout/nav-config";
+import { SidebarAccountFooter } from "@/components/layout/sidebar-account-footer";
+import { useAppRole } from "@/hooks/queries/me/me.queries";
+import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarContent,
@@ -16,16 +25,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/ui/sidebar";
-import {
-  WORKSPACE_NAV,
-  isNavItemActive,
-  navItemsForRole,
-  type NavItem,
-} from "@/components/layout/nav-config";
-import { SidebarAccountFooter } from "@/components/layout/sidebar-account-footer";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { Skeleton } from "@/ui/skeleton";
-import { cn } from "@/lib/utils";
 
 /** Clerk's auto-generated default logos encode `"type":"default"` in the path. */
 function isClerkDefaultLogo(url?: string | null) {
@@ -118,8 +118,7 @@ export function AppSidebar() {
   const items = navItemsForRole(appRole);
 
   const orgName = organization?.name?.trim() || "OwnBoard";
-  const showLogo =
-    !!organization?.imageUrl && !isClerkDefaultLogo(organization.imageUrl);
+  const showLogo = !!organization?.imageUrl && !isClerkDefaultLogo(organization.imageUrl);
 
   return (
     <Sidebar collapsible="icon" variant="sidebar" className="font-sans">
@@ -135,14 +134,12 @@ export function AppSidebar() {
               <Link href={appRole === "member" ? "/onboarding/packs" : "/"}>
                 <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient text-[0.6875rem] font-bold leading-none tracking-tight text-white shadow-button">
                   {showLogo ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- custom org logos only
-                    <img
-                      src={organization!.imageUrl}
-                      alt=""
-                      className="size-full object-cover"
-                    />
+                    {/* Custom org logos from Clerk */}
+                    <img src={organization!.imageUrl} alt="" className="size-full object-cover" />
+                  ) : orgLoaded ? (
+                    orgInitials(orgName)
                   ) : (
-                    orgLoaded ? orgInitials(orgName) : "Ob"
+                    "Ob"
                   )}
                 </span>
                 <span className="truncate text-[0.9375rem] font-semibold leading-none tracking-tight text-sidebar-foreground group-data-[collapsible=icon]:hidden">

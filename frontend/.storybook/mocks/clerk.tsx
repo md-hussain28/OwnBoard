@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 
 /**
  * Storybook stand-in for `@clerk/nextjs`, aliased in `.storybook/main.ts`.

@@ -1,8 +1,10 @@
-import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { docPackService } from "@/services/doc-pack.service";
-import type { QuizQuestionCurationItem } from "@/schemas/quiz.schema";
+import { useCallback } from "react";
 import { docPackKeys } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries/optimistic";
+import type { DocPack, DocPackListItem } from "@/schemas/docPack.schema";
+import type { QuizQuestionCurationItem } from "@/schemas/quiz.schema";
+import { docPackService } from "@/services/doc-pack.service";
 import { useUploadStore } from "@/stores/upload-store";
 
 export function useCreateDocPack() {
@@ -10,7 +12,25 @@ export function useCreateDocPack() {
   return useMutation({
     mutationFn: (input: { name: string; description?: string; domain_id?: string | null }) =>
       docPackService.create(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: docPackKeys.all }),
+    onSuccess: (pack) => {
+      queryClient.setQueryData(docPackKeys.detail(pack.id), pack);
+      queryClient.setQueryData<DocPackListItem[]>(docPackKeys.all, (prev) => {
+        const item: DocPackListItem = {
+          id: pack.id,
+          name: pack.name,
+          description: pack.description,
+          status: pack.status,
+          createdBy: pack.createdBy,
+          createdAt: pack.createdAt,
+          domainId: pack.domainId,
+          domainName: pack.domainName,
+        };
+        return prev ? [item, ...prev.filter((p) => p.id !== pack.id)] : [item];
+      });
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.all });
+    },
   });
 }
 
@@ -19,9 +39,65 @@ export function useUpdateDocPack(packId: string) {
   return useMutation({
     mutationFn: (input: { name?: string; description?: string; domain_id?: string | null }) =>
       docPackService.update(packId, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: docPackKeys.all });
-      queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
+    onMutate: async (input) => {
+      const detailSnap = await optimisticUpdate<DocPack>(
+        queryClient,
+        docPackKeys.detail(packId),
+        (prev) =>
+          prev
+            ? {
+                ...prev,
+                name: input.name ?? prev.name,
+                description:
+                  input.description !== undefined ? (input.description ?? null) : prev.description,
+                domainId: input.domain_id !== undefined ? input.domain_id : prev.domainId,
+              }
+            : prev,
+      );
+      const listSnap = await optimisticUpdate<DocPackListItem[]>(
+        queryClient,
+        docPackKeys.all,
+        (prev) =>
+          prev?.map((p) =>
+            p.id === packId
+              ? {
+                  ...p,
+                  name: input.name ?? p.name,
+                  description:
+                    input.description !== undefined ? (input.description ?? null) : p.description,
+                  domainId: input.domain_id !== undefined ? input.domain_id : p.domainId,
+                }
+              : p,
+          ),
+      );
+      return { detailSnap, listSnap };
+    },
+    onError: (_err, _input, context) => {
+      rollbackOptimistic(queryClient, docPackKeys.detail(packId), context?.detailSnap);
+      rollbackOptimistic(queryClient, docPackKeys.all, context?.listSnap);
+    },
+    onSuccess: (pack) => {
+      queryClient.setQueryData(docPackKeys.detail(packId), pack);
+      queryClient.setQueryData<DocPackListItem[]>(docPackKeys.all, (prev) =>
+        prev?.map((p) =>
+          p.id === packId
+            ? {
+                id: pack.id,
+                name: pack.name,
+                description: pack.description,
+                status: pack.status,
+                createdBy: pack.createdBy,
+                createdAt: pack.createdAt,
+                domainId: pack.domainId,
+                domainName: pack.domainName,
+              }
+            : p,
+        ),
+      );
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.all });
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
     },
   });
 }
@@ -45,7 +121,6 @@ export function useBackgroundUpload(packId: string, packName: string) {
         packName,
         files,
         onUploaded: () => {
-          // New rows exist — refresh the pack and restart the ingest-status poll.
           void queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
           void queryClient.invalidateQueries({ queryKey: docPackKeys.ingestStatus(packId) });
         },
@@ -60,7 +135,21 @@ export function useDeleteDocument(packId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (documentId: string) => docPackService.deleteDocument(packId, documentId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) }),
+    onMutate: async (documentId) => {
+      const snapshot = await optimisticUpdate<DocPack>(
+        queryClient,
+        docPackKeys.detail(packId),
+        (prev) =>
+          prev ? { ...prev, documents: prev.documents.filter((d) => d.id !== documentId) } : prev,
+      );
+      return snapshot;
+    },
+    onError: (_err, _id, context) => {
+      rollbackOptimistic(queryClient, docPackKeys.detail(packId), context);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
+    },
   });
 }
 
@@ -73,8 +162,8 @@ export function useGenerateQuiz(packId: string) {
       custom_instructions?: string;
     }) => docPackService.generateQuiz(packId, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: docPackKeys.quiz(packId) });
-      queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.quiz(packId) });
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
     },
   });
 }
@@ -82,10 +171,11 @@ export function useGenerateQuiz(packId: string) {
 export function useSaveQuiz(packId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (questions: QuizQuestionCurationItem[]) => docPackService.saveQuiz(packId, questions),
+    mutationFn: (questions: QuizQuestionCurationItem[]) =>
+      docPackService.saveQuiz(packId, questions),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: docPackKeys.quiz(packId) });
-      queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.quiz(packId) });
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
     },
   });
 }
@@ -94,6 +184,8 @@ export function useRegenerateQuestions(packId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (questionIds: string[]) => docPackService.regenerateQuestions(packId, questionIds),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: docPackKeys.quiz(packId) }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.quiz(packId) });
+    },
   });
 }

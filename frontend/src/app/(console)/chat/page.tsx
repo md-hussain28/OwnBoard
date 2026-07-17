@@ -1,21 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useSendChatMessage } from "@/hooks/queries/chat/chat.mutations";
 import { ChatMessage } from "@/components/chat/chat-message";
 import { ExpertIntroCard } from "@/components/chat/expert-intro-card";
 import { IncomingBadge } from "@/components/layout/incoming-feature";
-import { Input } from "@/ui/input";
-import { Button } from "@/ui/button";
 import { DEMO_REPO_ID } from "@/constants/app";
+import { useSendChatMessage } from "@/hooks/queries/chat/chat.mutations";
 import { isNotImplementedError } from "@/lib/api/errors";
 import type { ChatMessage as ChatMessageType, ExpertRouting } from "@/schemas/chat.schema";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
 
 const WELCOME_MESSAGE: ChatMessageType = {
   id: "welcome",
   role: "assistant",
   content:
-    "Ask me why the code works the way it does — e.g. \"why is this retry loop here?\" — and I'll answer with a citation to the commit that explains it.",
+    'Ask me why the code works the way it does — e.g. "why is this retry loop here?" — and I\'ll answer with a citation to the commit that explains it.',
 };
 
 export default function ChatPage() {

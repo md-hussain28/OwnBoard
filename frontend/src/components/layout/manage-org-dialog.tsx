@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
 import { useOrganization } from "@clerk/nextjs";
 import {
   Building2Icon,
@@ -10,6 +8,9 @@ import {
   Trash2Icon,
   UsersRoundIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useId, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
 import {
   Dialog,
@@ -20,7 +21,6 @@ import {
   DialogTitle,
 } from "@/ui/dialog";
 import { Input } from "@/ui/input";
-import { cn } from "@/lib/utils";
 
 type ManageOrgDialogProps = {
   open: boolean;
@@ -118,9 +118,7 @@ export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
       }
       onOpenChange(false);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not update organization.",
-      );
+      setError(err instanceof Error ? err.message : "Could not update organization.");
     } finally {
       setSaving(false);
     }
@@ -128,8 +126,7 @@ export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
 
   const showPreview = !!previewUrl && !removeLogo;
   const ready = isLoaded && !!organization;
-  const nameChanged =
-    !!organization && name.trim() !== organization.name.trim();
+  const nameChanged = !!organization && name.trim() !== organization.name.trim();
   const logoChanged = !!logoFile || removeLogo;
   const dirty = nameChanged || logoChanged;
   const canSave = ready && dirty && name.trim().length > 0 && !saving;
@@ -139,9 +136,7 @@ export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
       <DialogContent className="gap-5 sm:max-w-md" showCloseButton>
         <DialogHeader className="pr-8">
           <DialogTitle>Workspace</DialogTitle>
-          <DialogDescription>
-            Update the name and logo shown across OwnBoard.
-          </DialogDescription>
+          <DialogDescription>Update the name and logo shown across OwnBoard.</DialogDescription>
         </DialogHeader>
 
         <form id="manage-org-form" onSubmit={handleSave} className="grid gap-5">
@@ -162,12 +157,8 @@ export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
               aria-label="Change organization logo"
             >
               {showPreview ? (
-                // eslint-disable-next-line @next/next/no-img-element -- org logo preview
-                <img
-                  src={previewUrl}
-                  alt=""
-                  className="size-full object-cover"
-                />
+                {/* Org logo preview — remote Clerk URL */}
+                <img src={previewUrl} alt="" className="size-full object-cover" />
               ) : (
                 orgInitials(name || organization?.name || "?")
               )}
@@ -209,9 +200,7 @@ export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
                   </Button>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                PNG or JPG · appears in the sidebar
-              </p>
+              <p className="text-xs text-muted-foreground">PNG or JPG · appears in the sidebar</p>
             </div>
 
             <input
@@ -224,10 +213,7 @@ export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label
-              htmlFor={nameId}
-              className="text-xs font-medium text-muted-foreground"
-            >
+            <label htmlFor={nameId} className="text-xs font-medium text-muted-foreground">
               Name
             </label>
             <div className="relative">
@@ -268,18 +254,11 @@ export function ManageOrgDialog({ open, onOpenChange }: ManageOrgDialogProps) {
           )}
         >
           <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-honey/15">
-            <UsersRoundIcon
-              className="size-3.5 text-brand-honey"
-              strokeWidth={1.75}
-            />
+            <UsersRoundIcon className="size-3.5 text-brand-honey" strokeWidth={1.75} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium text-foreground">
-              Manage Team
-            </span>
-            <span className="block text-xs text-muted-foreground">
-              Invites, roles, and domains
-            </span>
+            <span className="block text-sm font-medium text-foreground">Manage Team</span>
+            <span className="block text-xs text-muted-foreground">Invites, roles, and domains</span>
           </span>
         </Link>
 

@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FileTextIcon, Loader2Icon, Trash2Icon, UploadIcon } from "lucide-react";
-import { useBackgroundUpload, useDeleteDocument } from "@/hooks/queries/doc-pack/doc-pack.mutations";
+import { useEffect, useRef, useState } from "react";
+import {
+  useBackgroundUpload,
+  useDeleteDocument,
+} from "@/hooks/queries/doc-pack/doc-pack.mutations";
 import { docPackKeys, useDocPackIngestStatus } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import type { DocPackDocument } from "@/schemas/docPack.schema";
+import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Badge } from "@/ui/badge";
-import type { DocPackDocument } from "@/schemas/docPack.schema";
 
 const STATUS_LABEL: Record<DocPackDocument["status"], string> = {
   uploaded: "Queued",
@@ -45,7 +48,9 @@ export function DocPackDocuments({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const hasPendingDocuments = documents.some((d) => d.status === "uploaded" || d.status === "processing");
+  const hasPendingDocuments = documents.some(
+    (d) => d.status === "uploaded" || d.status === "processing",
+  );
   // Cheap column-only poll — the heavy pack query is only re-fetched on transitions.
   const { data: ingestStatus } = useDocPackIngestStatus(packId, hasPendingDocuments);
 
@@ -150,7 +155,9 @@ export function DocPackDocuments({
         )}
 
         {deleteDocument.isError && (
-          <p className="text-sm text-destructive">{getApiErrorMessage(deleteDocument.error, "Delete failed.")}</p>
+          <p className="text-sm text-destructive">
+            {getApiErrorMessage(deleteDocument.error, "Delete failed.")}
+          </p>
         )}
       </CardContent>
     </Card>

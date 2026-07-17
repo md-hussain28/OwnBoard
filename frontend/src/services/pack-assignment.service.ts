@@ -1,15 +1,15 @@
 import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
 import {
-  assignmentDetailSchema,
-  assignmentDocumentContentSchema,
-  packAssignmentListSchema,
-  packAssignmentSchema,
-  startQuizResponseSchema,
   type AssignmentDetail,
   type AssignmentDocumentContent,
+  assignmentDetailSchema,
+  assignmentDocumentContentSchema,
   type PackAssignment,
+  packAssignmentListSchema,
+  packAssignmentSchema,
   type StartQuizResponse,
+  startQuizResponseSchema,
 } from "@/schemas/packAssignment.schema";
 
 export const packAssignmentService = {
@@ -51,7 +51,9 @@ export const packAssignmentService = {
   },
 
   async ackDocument(assignmentId: string, documentId: string): Promise<PackAssignment> {
-    const { data } = await getApiClient().post(API_ENDPOINTS.assignmentAck(assignmentId, documentId));
+    const { data } = await getApiClient().post(
+      API_ENDPOINTS.assignmentAck(assignmentId, documentId),
+    );
     return packAssignmentSchema.parse(data);
   },
 

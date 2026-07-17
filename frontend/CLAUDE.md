@@ -44,8 +44,10 @@ Note: `repo.schema.ts` shows the pattern for backend fields that may arrive as e
 
 - Filenames: kebab-case. Components: PascalCase named exports (no default export except `app/**/page.tsx`).
 - Forms are plain controlled `useState` + native `<form onSubmit>` — there is no react-hook-form in this project; don't introduce it for a single form.
-- Loading/error/empty is a repeated 3-state pattern in every data-driven component: `isLoading` → `<Skeleton>`, `isError` → muted-foreground fallback text, empty array → a short "No X yet." message. Match this instead of inventing a new pattern.
+- Loading/error/empty is a repeated 3-state pattern in every data-driven component: `isLoading` → `<Skeleton>`, `isError` → muted-foreground fallback text, empty array → a short "No X yet." message. Prefer [`components/shared/query-state.tsx`](src/components/shared/query-state.tsx) when wiring a new list. Match this instead of inventing a new pattern.
 - Query key factories: export a `<domain>Keys` object next to each domain's query hooks (see `dashboardKeys`, `quizKeys`) rather than inlining key arrays at call sites.
+- Optimistic mutations: for list delete/update/revoke/ack, use [`hooks/queries/optimistic.ts`](src/hooks/queries/optimistic.ts) (`optimisticUpdate` + `rollbackOptimistic`) with `onMutate` / `onError` / `onSettled` invalidate. Skip optimistic UI for async server jobs (generate quiz, upload, chat).
+- Shared list chrome: [`FilterSelect`](src/components/shared/filter-select.tsx), [`AssignmentRoster`](src/components/shared/assignment-roster.tsx), assignment status helpers in [`assignment-status.ts`](src/components/shared/assignment-status.ts).
 - Icons: `lucide-react` only.
 
 ## Package manager
@@ -58,9 +60,13 @@ Both `bun.lock` and `package-lock.json` exist, but `README.md`/`Makefile`/root `
 make setup   # copy .env.local + npm install
 make dev     # npm run dev — :3000
 make build   # npm run build
-make lint    # next lint
+make lint    # biome check .
+make format  # biome format --write .
+npm run check       # biome check --write . (lint + format + safe fixes)
 npm run storybook   # component workbench — :6006, no backend needed
 ```
+
+Lint/format is **Biome** (`biome.json`) — not ESLint. Prefer fixing via `npm run check` before committing.
 
 ## Storybook
 

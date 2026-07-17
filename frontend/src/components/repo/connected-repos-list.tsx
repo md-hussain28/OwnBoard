@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
-import { useCreateRepo } from "@/hooks/queries/repo/repo.mutations";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
-import { Badge } from "@/ui/badge";
+import { useCreateRepo } from "@/hooks/queries/repo/repo.mutations";
+import { useRepos } from "@/hooks/queries/repo/repo.queries";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import { Badge } from "@/ui/badge";
+import { Button } from "@/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { Input } from "@/ui/input";
+import { Skeleton } from "@/ui/skeleton";
 
 export function ConnectedReposList() {
   const { isAdmin } = useAppRole();
@@ -40,16 +40,8 @@ export function ConnectedReposList() {
       <CardContent className="space-y-4">
         {isAdmin && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
-            <Input
-              placeholder="Repo name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <Input
-              placeholder="Repo URL"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
+            <Input placeholder="Repo name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input placeholder="Repo URL" value={url} onChange={(e) => setUrl(e.target.value)} />
             <Button type="submit" disabled={createRepo.isPending}>
               {createRepo.isPending ? "Adding..." : "Add repo"}
             </Button>
@@ -65,8 +57,8 @@ export function ConnectedReposList() {
 
         {isError && (
           <p className="text-sm text-muted-foreground">
-            Could not reach the backend ({getApiErrorMessage(error)}).
-            Start the FastAPI service and refresh.
+            Could not reach the backend ({getApiErrorMessage(error)}). Start the FastAPI service and
+            refresh.
           </p>
         )}
 

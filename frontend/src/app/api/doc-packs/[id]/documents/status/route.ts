@@ -1,4 +1,4 @@
-import { type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { proxyRequest } from "@/lib/api/proxy";
 
 /** Lightweight ingestion-progress poll — keep this cheap, it fires every few seconds during processing. */

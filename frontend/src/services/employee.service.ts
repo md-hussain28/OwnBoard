@@ -1,11 +1,11 @@
 import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
 import {
+  type Employee,
+  type EmployeeInvitation,
   employeeInviteSchema,
   employeeListSchema,
   employeeSchema,
-  type Employee,
-  type EmployeeInvitation,
   type InviteEmployeeInput,
   type UpdateEmployeeInput,
 } from "@/schemas/employee.schema";

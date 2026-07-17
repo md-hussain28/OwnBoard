@@ -1,4 +1,4 @@
-import { delay, http, HttpResponse } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import {
   mockAdminQuizTemplate,
   mockAssignmentDetail,
@@ -36,7 +36,10 @@ export const repoHandlers = [
   http.get("/api/repos", () => HttpResponse.json(mockRepos)),
   http.post("/api/repos", async ({ request }) => {
     const body = (await request.json()) as { url: string; name: string };
-    return HttpResponse.json({ id: "repo_new1234567890abcd", ...body, ingested_at: null }, { status: 201 });
+    return HttpResponse.json(
+      { id: "repo_new1234567890abcd", ...body, ingested_at: null },
+      { status: 201 },
+    );
   }),
 ];
 
@@ -73,14 +76,13 @@ export const employeeHandlers = [
         ? null
         : body.domain_id === null
           ? null
-          : mockOrgDomains.find((d) => d.id === body.domain_id) ?? null;
+          : (mockOrgDomains.find((d) => d.id === body.domain_id) ?? null);
     return HttpResponse.json({
       ...existing,
       app_role: body.app_role ?? existing.app_role,
       role: body.role !== undefined ? body.role : existing.role,
       domain_id: body.domain_id !== undefined ? body.domain_id : existing.domain_id,
-      domain_name:
-        body.domain_id !== undefined ? (domain?.name ?? null) : existing.domain_name,
+      domain_name: body.domain_id !== undefined ? (domain?.name ?? null) : existing.domain_name,
     });
   }),
 ];
@@ -166,7 +168,9 @@ export const docPackHandlers = [
   http.get("/api/doc-packs/:id/quiz", () => HttpResponse.json(mockAdminQuizTemplate)),
   http.put("/api/doc-packs/:id/quiz", () => HttpResponse.json(mockAdminQuizTemplate)),
   http.get("/api/doc-packs/:id/assignments", () => HttpResponse.json(mockAssignments)),
-  http.post("/api/doc-packs/:id/assignments", () => HttpResponse.json(mockAssignments, { status: 201 })),
+  http.post("/api/doc-packs/:id/assignments", () =>
+    HttpResponse.json(mockAssignments, { status: 201 }),
+  ),
 ];
 
 export const assignmentHandlers = [
@@ -186,7 +190,12 @@ export const quizHandlers = [
   // Grading is pass/fail on 100% — the mock passes when every answer matches.
   http.post("/api/quizzes/attempts/:attemptId/grade", async () => {
     await delay(400);
-    return HttpResponse.json({ ...mockQuizAttempt, score: 1, passed: true, completed_at: "2026-07-16T12:05:00Z" });
+    return HttpResponse.json({
+      ...mockQuizAttempt,
+      score: 1,
+      passed: true,
+      completed_at: "2026-07-16T12:05:00Z",
+    });
   }),
 ];
 
@@ -199,7 +208,9 @@ export const chatHandlers = [
 ];
 
 export const adminHandlers = [
-  http.get("/api/admin/me", () => HttpResponse.json({ isPlatformAdmin: true, email: "admin@ownboard.dev" })),
+  http.get("/api/admin/me", () =>
+    HttpResponse.json({ isPlatformAdmin: true, email: "admin@ownboard.dev" }),
+  ),
   http.get("/api/admin/tenants", () => HttpResponse.json(mockTenants)),
 ];
 

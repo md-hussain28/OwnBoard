@@ -1,12 +1,12 @@
 "use client";
 
-import { useBusFactor } from "@/hooks/queries/dashboard/dashboard.queries";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
-import { Badge } from "@/ui/badge";
 import { IncomingFeature } from "@/components/layout/incoming-feature";
+import { useBusFactor } from "@/hooks/queries/dashboard/dashboard.queries";
 import { isNotImplementedError } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { Skeleton } from "@/ui/skeleton";
 
 const RISK_STYLES: Record<string, string> = {
   low: "bg-success/10 text-success",

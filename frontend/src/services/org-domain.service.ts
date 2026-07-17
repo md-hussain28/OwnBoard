@@ -1,10 +1,10 @@
 import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
 import {
-  orgDomainListSchema,
-  orgDomainSchema,
   type CreateOrgDomainInput,
   type OrgDomain,
+  orgDomainListSchema,
+  orgDomainSchema,
   type UpdateOrgDomainInput,
 } from "@/schemas/org-domain.schema";
 

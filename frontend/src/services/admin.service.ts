@@ -2,13 +2,13 @@ import { isAxiosError } from "axios";
 import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
 import {
-  createTenantResponseSchema,
-  platformAdminMeSchema,
-  tenantListSchema,
   type CreateTenantInput,
   type CreateTenantResponse,
+  createTenantResponseSchema,
   type PlatformAdminMe,
+  platformAdminMeSchema,
   type Tenant,
+  tenantListSchema,
 } from "@/schemas/admin.schema";
 
 function apiErrorMessage(err: unknown, fallback: string): Error {

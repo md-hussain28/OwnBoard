@@ -1,24 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowRightIcon, CheckIcon } from "lucide-react";
-import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { useUpdateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
-import { useQuizDomains } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
+import Link from "next/link";
 import { DocPackDocuments } from "@/components/doc-pack/doc-pack-documents";
 import { DocPackQuizBuilder } from "@/components/doc-pack/doc-pack-quiz-builder";
-import { Skeleton } from "@/ui/skeleton";
+import { useUpdateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
+import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { useQuizDomains } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/ui/select";
-import { cn } from "@/lib/utils";
-import { getApiErrorMessage } from "@/lib/api/errors";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
+import { Skeleton } from "@/ui/skeleton";
 
 const STEPS = [
   { id: 1, label: "Details", key: "details" },
@@ -64,13 +58,9 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight text-balance">
-                  {pack.name}
-                </h1>
+                <h1 className="text-2xl font-semibold tracking-tight text-balance">{pack.name}</h1>
                 {pack.domainName && <Badge variant="outline">{pack.domainName}</Badge>}
-                {pack.status === "needs_review" && (
-                  <Badge variant="warning">Needs review</Badge>
-                )}
+                {pack.status === "needs_review" && <Badge variant="warning">Needs review</Badge>}
                 {pack.status === "active" && <Badge variant="success">Active</Badge>}
                 {pack.status === "draft" && <Badge variant="secondary">Draft</Badge>}
                 {pack.status === "archived" && <Badge variant="outline">Archived</Badge>}
@@ -100,9 +90,7 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
                   </SelectContent>
                 </Select>
                 {updatePack.isError && (
-                  <p className="text-sm text-destructive">
-                    {getApiErrorMessage(updatePack.error)}
-                  </p>
+                  <p className="text-sm text-destructive">{getApiErrorMessage(updatePack.error)}</p>
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
@@ -183,10 +171,7 @@ export function QuizBuilderFlow({ packId }: { packId: string }) {
                 </span>
               )}
             </div>
-            <DocPackQuizBuilder
-              packId={pack.id}
-              hasProcessedDocuments={hasProcessedDocuments}
-            />
+            <DocPackQuizBuilder packId={pack.id} hasProcessedDocuments={hasProcessedDocuments} />
           </section>
 
           {quizPublished ? (

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircleIcon,
@@ -11,10 +10,11 @@ import {
   Loader2Icon,
   XIcon,
 } from "lucide-react";
+import { useEffect } from "react";
 import { docPackKeys, useDocPackIngestStatus } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { useUploadStore, type UploadJob } from "@/stores/upload-store";
-import { Progress } from "@/ui/progress";
 import { cn } from "@/lib/utils";
+import { type UploadJob, useUploadStore } from "@/stores/upload-store";
+import { Progress } from "@/ui/progress";
 
 const AUTO_DISMISS_MS = 8_000;
 
@@ -31,7 +31,9 @@ export function UploadProgressWidget() {
 
   if (jobs.length === 0) return null;
 
-  const activeCount = jobs.filter((j) => j.phase === "uploading" || j.phase === "processing").length;
+  const activeCount = jobs.filter(
+    (j) => j.phase === "uploading" || j.phase === "processing",
+  ).length;
   const failedCount = jobs.filter((j) => j.phase === "failed").length;
 
   return (
@@ -117,7 +119,8 @@ function UploadJobRow({ job }: { job: UploadJob }) {
   }, [dismissJob, job.id, job.phase]);
 
   const processedInJob =
-    status?.documents.filter((d) => job.documentIds.includes(d.id) && d.status === "processed").length ?? 0;
+    status?.documents.filter((d) => job.documentIds.includes(d.id) && d.status === "processed")
+      .length ?? 0;
 
   return (
     <li className="space-y-1.5">
@@ -143,7 +146,9 @@ function UploadJobRow({ job }: { job: UploadJob }) {
       {job.phase === "uploading" && (
         <div className="flex items-center gap-2">
           <Progress value={job.progress} aria-label="Upload progress" />
-          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{job.progress}%</span>
+          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+            {job.progress}%
+          </span>
         </div>
       )}
 

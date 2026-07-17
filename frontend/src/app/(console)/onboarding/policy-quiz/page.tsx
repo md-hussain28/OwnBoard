@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useOnboardingStore } from "@/stores/onboarding-store";
-import { QuizQuestionCard } from "@/components/onboarding/quiz-question-card";
 import { IncomingFeature } from "@/components/layout/incoming-feature";
+import { QuizQuestionCard } from "@/components/onboarding/quiz-question-card";
+import { useOnboardingStore } from "@/stores/onboarding-store";
 import { Button } from "@/ui/button";
 
 const MOCK_QUESTION = {

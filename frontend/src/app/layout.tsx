@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { publicConfig } from "@/lib/api/config";
 import { AppClerkProvider } from "@/providers/app-clerk-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
-import { publicConfig } from "@/lib/api/config";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",

@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCreateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
+import { useState } from "react";
 import { QuizDomainsField } from "@/components/doc-pack/quiz-domains-field";
+import { useCreateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Textarea } from "@/ui/textarea";
-import { cn } from "@/lib/utils";
-import { getApiErrorMessage } from "@/lib/api/errors";
 
 const STEPS = [
   { id: 1, label: "Details" },
@@ -58,9 +58,7 @@ export function QuizCreateFlow() {
               <div
                 className={cn(
                   "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums",
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground",
+                  active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
                 )}
               >
                 {step.id}

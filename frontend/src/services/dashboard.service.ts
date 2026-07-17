@@ -1,10 +1,10 @@
 import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
 import {
-  busFactorListSchema,
-  quizAnalyticsSchema,
   type BusFactorEntry,
+  busFactorListSchema,
   type QuizAnalytics,
+  quizAnalyticsSchema,
 } from "@/schemas/dashboard.schema";
 
 export const dashboardService = {

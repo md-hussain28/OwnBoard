@@ -1,15 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { ChevronRightIcon, UsersRoundIcon } from "lucide-react";
+import Link from "next/link";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { useSidebar } from "@/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
 
 /**
  * Org-admin control — opens OwnBoard Team page (invite + app roles).
@@ -37,17 +33,11 @@ export function WorkspaceSwitcher() {
       )}
     >
       {collapsed ? (
-        <UsersRoundIcon
-          className="size-4 shrink-0 text-sidebar-foreground/80"
-          strokeWidth={1.75}
-        />
+        <UsersRoundIcon className="size-4 shrink-0 text-sidebar-foreground/80" strokeWidth={1.75} />
       ) : (
         <>
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-brand-honey/15">
-            <UsersRoundIcon
-              className="size-3.5 text-brand-honey"
-              strokeWidth={1.75}
-            />
+            <UsersRoundIcon className="size-3.5 text-brand-honey" strokeWidth={1.75} />
           </span>
           <span className="min-w-0 flex-1 truncate text-[0.8125rem] font-medium leading-none text-sidebar-foreground">
             Manage Team

@@ -320,6 +320,18 @@ export const mockExperts = [
 
 // --- Admin (admin.schema.ts — camelCase, no transform) ---
 export const mockTenants = [
-  { id: "org_2abcDEFghiJKLmno", name: "Acme Robotics", slug: "acme-robotics", membersCount: 24, createdAt: "2026-06-01T08:00:00Z" },
-  { id: "org_2pqrSTUvwxYZAbcd", name: "Nimbus Health", slug: null, membersCount: 7, createdAt: "2026-07-11T14:20:00Z" },
+  {
+    id: "org_2abcDEFghiJKLmno",
+    name: "Acme Robotics",
+    slug: "acme-robotics",
+    membersCount: 24,
+    createdAt: "2026-06-01T08:00:00Z",
+  },
+  {
+    id: "org_2pqrSTUvwxYZAbcd",
+    name: "Nimbus Health",
+    slug: null,
+    membersCount: 7,
+    createdAt: "2026-07-11T14:20:00Z",
+  },
 ];

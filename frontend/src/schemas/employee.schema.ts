@@ -32,17 +32,19 @@ export const employeeListSchema = z.array(employeeSchema);
 
 export type Employee = z.infer<typeof employeeSchema>;
 
-export const employeeInviteSchema = z.object({
-  id: z.string(),
-  email_address: z.string(),
-  app_role: appRoleSchema,
-  status: z.string(),
-}).transform((i) => ({
-  id: i.id,
-  emailAddress: i.email_address,
-  appRole: i.app_role,
-  status: i.status,
-}));
+export const employeeInviteSchema = z
+  .object({
+    id: z.string(),
+    email_address: z.string(),
+    app_role: appRoleSchema,
+    status: z.string(),
+  })
+  .transform((i) => ({
+    id: i.id,
+    emailAddress: i.email_address,
+    appRole: i.app_role,
+    status: i.status,
+  }));
 
 export type EmployeeInvitation = z.infer<typeof employeeInviteSchema>;
 

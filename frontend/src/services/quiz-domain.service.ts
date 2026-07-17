@@ -1,10 +1,10 @@
 import { getApiClient } from "@/lib/api/api-client";
 import { API_ENDPOINTS } from "@/lib/api/endpoint";
 import {
-  quizDomainListSchema,
-  quizDomainSchema,
   type CreateQuizDomainInput,
   type QuizDomain,
+  quizDomainListSchema,
+  quizDomainSchema,
 } from "@/schemas/quiz-domain.schema";
 
 export const quizDomainService = {

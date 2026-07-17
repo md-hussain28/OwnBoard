@@ -1,11 +1,11 @@
-import { Suspense } from "react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { Suspense } from "react";
+import CodebaseQuizPage from "@/app/(console)/onboarding/codebase-quiz/page";
+import AssignmentPage from "@/app/(console)/onboarding/packs/[assignmentId]/page";
+import EmployeePacksPage from "@/app/(console)/onboarding/packs/page";
 import OnboardingPage from "@/app/(console)/onboarding/page";
 import PolicyQuizPage from "@/app/(console)/onboarding/policy-quiz/page";
-import CodebaseQuizPage from "@/app/(console)/onboarding/codebase-quiz/page";
 import UnlockedPage from "@/app/(console)/onboarding/unlocked/page";
-import EmployeePacksPage from "@/app/(console)/onboarding/packs/page";
-import AssignmentPage from "@/app/(console)/onboarding/packs/[assignmentId]/page";
 import { useOnboardingStore } from "@/stores/onboarding-store";
 import { withAppShell } from "./story-shell";
 

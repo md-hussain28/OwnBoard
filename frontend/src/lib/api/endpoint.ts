@@ -31,7 +31,8 @@ export const API_ENDPOINTS = {
   assignment: (id: string) => `/assignments/${id}`,
   assignmentDocumentContent: (id: string, documentId: string) =>
     `/assignments/${id}/documents/${documentId}/content`,
-  assignmentAck: (id: string, documentId: string) => `/assignments/${id}/documents/${documentId}/ack`,
+  assignmentAck: (id: string, documentId: string) =>
+    `/assignments/${id}/documents/${documentId}/ack`,
   assignmentStartQuiz: (id: string) => `/assignments/${id}/start-quiz`,
 
   // Quiz grading — reused across policy/codebase/doc_pack (fixes PRD §9 path mismatch)

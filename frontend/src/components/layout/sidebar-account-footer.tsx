@@ -5,12 +5,8 @@ import { dark, shadcn } from "@clerk/ui/themes";
 import { ThemeSettings } from "@/components/layout/theme-settings";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
-import {
-  SidebarFooter,
-  SidebarSeparator,
-  useSidebar,
-} from "@/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { SidebarFooter, SidebarSeparator, useSidebar } from "@/ui/sidebar";
 
 /** Shared ghost trigger — matches nav item rhythm. */
 const sidebarTabTrigger = cn(
@@ -33,10 +29,7 @@ export function SidebarAccountFooter() {
     elements: {
       userButtonPopoverRootBox: "z-50 pointer-events-auto!",
       userButtonPopoverCard: "pointer-events-auto!",
-      rootBox: cn(
-        "relative z-20 flex! h-9! items-center!",
-        collapsed ? "w-auto!" : "w-full!",
-      ),
+      rootBox: cn("relative z-20 flex! h-9! items-center!", collapsed ? "w-auto!" : "w-full!"),
       // Clerk DOM is name-then-avatar; order forces avatar → name → (settings beside).
       userButtonBox: cn(
         "flex! h-9! flex-row items-center! justify-start gap-2.5",
@@ -74,10 +67,7 @@ export function SidebarAccountFooter() {
           </div>
 
           <SidebarSeparator
-            className={cn(
-              "mx-1 my-1 bg-sidebar-border/80",
-              collapsed && "mx-0 w-8",
-            )}
+            className={cn("mx-1 my-1 bg-sidebar-border/80", collapsed && "mx-0 w-8")}
           />
         </>
       )}
@@ -94,15 +84,9 @@ export function SidebarAccountFooter() {
             collapsed && "h-8 w-full flex-none justify-center",
           )}
         >
-          <UserButton
-            appearance={appearance}
-            showName={!collapsed}
-            userProfileMode="modal"
-          />
+          <UserButton appearance={appearance} showName={!collapsed} userProfileMode="modal" />
         </div>
-        {!collapsed && (
-          <ThemeSettings className="flex h-9 shrink-0 items-center justify-center" />
-        )}
+        {!collapsed && <ThemeSettings className="flex h-9 shrink-0 items-center justify-center" />}
       </div>
     </SidebarFooter>
   );

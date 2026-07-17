@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { PlusIcon, Trash2Icon } from "lucide-react";
+import { useState } from "react";
 import {
   useCreateQuizDomain,
   useDeleteQuizDomain,
   useQuizDomains,
 } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
-import { Badge } from "@/ui/badge";
 import { Skeleton } from "@/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { getApiErrorMessage } from "@/lib/api/errors";
 
 type QuizDomainsFieldProps = {
   /** Selected domain id, or `null` for no domain. */
@@ -62,8 +62,7 @@ export function QuizDomainsField({ value, onChange }: QuizDomainsFieldProps) {
     <div className="space-y-3" aria-labelledby="quiz-domains-heading">
       <div className="space-y-0.5">
         <h2 id="quiz-domains-heading" className="text-sm font-medium">
-          Domain{" "}
-          <span className="font-normal text-muted-foreground">(optional)</span>
+          Domain <span className="font-normal text-muted-foreground">(optional)</span>
         </h2>
         <p className="text-xs text-muted-foreground text-pretty">
           Label this quiz by topic (Policy, Holiday, …). Built-ins stay; add custom ones anytime.

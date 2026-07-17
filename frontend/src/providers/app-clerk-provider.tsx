@@ -3,7 +3,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark, shadcn } from "@clerk/ui/themes";
 import { useTheme } from "next-themes";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 export function AppClerkProvider({ children }: { children: ReactNode }) {
   const { resolvedTheme } = useTheme();
@@ -18,8 +18,7 @@ export function AppClerkProvider({ children }: { children: ReactNode }) {
     return {
       theme: isDark ? [shadcn, dark] : shadcn,
       variables: {
-        fontFamily:
-          "var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif",
+        fontFamily: "var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif",
         colorPrimary: "var(--primary)",
         borderRadius: "0.75rem",
       },

@@ -76,9 +76,14 @@ class StartQuizResponse(BaseModel):
 
 
 class AssignmentDocumentContentResponse(BaseModel):
-    """Open-book reading text for one document in an assignment (PRD §4)."""
+    """Open-book reading payload for one document in an assignment (PRD §4).
+
+    `content` is extracted plain text (always). `file_url` is a short-lived signed
+    URL to the original file so PDFs can be shown in a browser viewer.
+    """
 
     document_id: str
     title: str
     file_type: str
     content: str
+    file_url: str | None = None

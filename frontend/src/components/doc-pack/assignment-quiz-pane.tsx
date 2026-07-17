@@ -65,7 +65,6 @@ function QuizQuestionsForm({
           <QuizQuestionCard
             questionText={question.questionText}
             options={question.options}
-            sourceCitation={question.sourceCitation}
             selected={answers[question.id] ?? null}
             onSelect={(option) => onAnswer(question.id, option)}
           />

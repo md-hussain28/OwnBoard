@@ -137,13 +137,14 @@ async def get_assignment_document_content(
     actor: CurrentEmployee,
     services: ServiceContainer = Depends(get_service_container),
 ):
-    """Open-book reading text for one assigned document (Doc Pack PRD §4)."""
+    """Open-book reading payload for one assigned document (Doc Pack PRD §4)."""
     content = await services.pack_assignment.get_document_content(org_id, assignment_id, document_id, actor=actor)
     return AssignmentDocumentContentResponse(
         document_id=content.document_id,
         title=content.title,
         file_type=content.file_type,
         content=content.content,
+        file_url=content.file_url,
     )
 
 

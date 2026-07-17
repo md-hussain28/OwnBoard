@@ -85,12 +85,14 @@ export const assignmentDocumentContentSchema = z
     title: z.string(),
     file_type: z.string(),
     content: z.string(),
+    file_url: z.string().nullable().optional(),
   })
   .transform((d) => ({
     documentId: d.document_id,
     title: d.title,
     fileType: d.file_type,
     content: d.content,
+    fileUrl: d.file_url ?? null,
   }));
 
 export const startQuizResponseSchema = z.object({

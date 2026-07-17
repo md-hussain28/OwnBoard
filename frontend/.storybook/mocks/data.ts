@@ -303,6 +303,8 @@ export const mockAssignmentDocumentContent = {
   file_type: "pdf",
   content:
     "# Incident Response Runbook\n\n1. Page the on-call engineer within 5 minutes of a SEV-1.\n2. Open a dedicated incident channel and appoint an incident commander.\n3. Customer-visible impact must be posted to the status page within 30 minutes.\n4. A blameless postmortem is due within 5 business days.",
+  // Storybook has no real storage — empty file_url falls back to extracted text in the reader.
+  file_url: null,
 };
 
 // --- Quizzes (quiz.schema.ts — snake_case, admin shape includes correct_answer) ---

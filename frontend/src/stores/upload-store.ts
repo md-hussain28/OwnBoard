@@ -43,6 +43,16 @@ type UploadStore = {
   markJob: (jobId: string, patch: Partial<UploadJob>) => void;
 };
 
+/** First problem with a single file (type, emptiness, size), or null when it is acceptable. */
+function fileError(file: File): string | null {
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (!ALLOWED_EXTENSIONS.has(extension)) return `${file.name} is not a supported file type.`;
+  if (file.size === 0) return `${file.name} is empty.`;
+  if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES)
+    return `${file.name} is larger than ${MAX_UPLOAD_FILE_SIZE_BYTES / (1024 * 1024)} MB.`;
+  return null;
+}
+
 export const useUploadStore = create<UploadStore>()((set, get) => ({
   jobs: [],
   minimized: false,
@@ -61,11 +71,8 @@ export const useUploadStore = create<UploadStore>()((set, get) => ({
     if (files.length > MAX_UPLOAD_FILES_PER_BATCH)
       return `Upload at most ${MAX_UPLOAD_FILES_PER_BATCH} files at a time.`;
     for (const file of files) {
-      const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-      if (!ALLOWED_EXTENSIONS.has(extension)) return `${file.name} is not a supported file type.`;
-      if (file.size === 0) return `${file.name} is empty.`;
-      if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES)
-        return `${file.name} is larger than ${MAX_UPLOAD_FILE_SIZE_BYTES / (1024 * 1024)} MB.`;
+      const error = fileError(file);
+      if (error) return error;
     }
     return null;
   },

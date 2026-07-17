@@ -21,12 +21,73 @@ import {
 } from "@/ui/dialog";
 import { Input } from "@/ui/input";
 
+/** Inline rename controls for a domain row: input + save/cancel buttons. */
+function DomainNameEditor({
+  domainName,
+  draft,
+  onDraftChange,
+  onSave,
+  onCancel,
+  pending,
+}: {
+  domainName: string;
+  draft: string;
+  onDraftChange: (value: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  pending: boolean;
+}) {
+  const inputId = useId();
+  return (
+    <>
+      <Input
+        id={inputId}
+        value={draft}
+        onChange={(e) => onDraftChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onSave();
+          }
+          if (e.key === "Escape") {
+            e.preventDefault();
+            onCancel();
+          }
+        }}
+        aria-label={`Rename ${domainName}`}
+        className="h-8 flex-1"
+        autoFocus
+        disabled={pending}
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Save name"
+        disabled={pending || !draft.trim()}
+        onClick={onSave}
+      >
+        <CheckIcon className="size-3.5" />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Cancel rename"
+        disabled={pending}
+        onClick={onCancel}
+      >
+        <XIcon className="size-3.5" />
+      </Button>
+    </>
+  );
+}
+
 function DomainRow({ domain }: { domain: OrgDomain }) {
   const updateDomain = useUpdateOrgDomain();
   const deleteDomain = useDeleteOrgDomain();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(domain.name);
-  const inputId = useId();
 
   useEffect(() => {
     if (!editing) setDraft(domain.name);
@@ -59,47 +120,14 @@ function DomainRow({ domain }: { domain: OrgDomain }) {
   return (
     <li className="flex flex-wrap items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted/50">
       {editing ? (
-        <>
-          <Input
-            id={inputId}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                save();
-              }
-              if (e.key === "Escape") {
-                e.preventDefault();
-                cancelEditing();
-              }
-            }}
-            aria-label={`Rename ${domain.name}`}
-            className="h-8 flex-1"
-            autoFocus
-            disabled={updateDomain.isPending}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Save name"
-            disabled={updateDomain.isPending || !draft.trim()}
-            onClick={save}
-          >
-            <CheckIcon className="size-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Cancel rename"
-            disabled={updateDomain.isPending}
-            onClick={cancelEditing}
-          >
-            <XIcon className="size-3.5" />
-          </Button>
-        </>
+        <DomainNameEditor
+          domainName={domain.name}
+          draft={draft}
+          onDraftChange={setDraft}
+          onSave={save}
+          onCancel={cancelEditing}
+          pending={updateDomain.isPending}
+        />
       ) : (
         <>
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{domain.name}</span>

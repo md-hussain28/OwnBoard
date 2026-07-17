@@ -9,6 +9,7 @@
     "includes": [
       "**",
       "!!node_modules",
+      "!!.impeccable",
       "!!.next",
       "!!storybook-static",
       "!!public/mockServiceWorker.js"
@@ -42,7 +43,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "a11y": {
         "useButtonType": "off",
         "noSvgWithoutTitle": "off",

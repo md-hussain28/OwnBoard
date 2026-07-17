@@ -301,8 +301,11 @@
   *,
   *::before,
   *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: intentional — reduced-motion must override all animation styles */
     animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: intentional — reduced-motion must override all animation styles */
     animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: intentional — reduced-motion must override all animation styles */
     transition-duration: 0.01ms !important;
   }
 }

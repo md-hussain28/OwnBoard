@@ -48,6 +48,12 @@ export const dashboardHandlers = [
   http.get("/api/dashboard/quiz-analytics", () => HttpResponse.json(mockQuizAnalytics)),
 ];
 
+/** Mirrors the backend: an absent or null `domain_id` clears the domain; otherwise look it up. */
+function findMockDomain(domainId: string | null | undefined) {
+  if (domainId === undefined || domainId === null) return null;
+  return mockOrgDomains.find((d) => d.id === domainId) ?? null;
+}
+
 export const employeeHandlers = [
   http.get("/api/me", () => HttpResponse.json(mockMe)),
   http.get("/api/employees", () => HttpResponse.json(mockEmployees)),
@@ -71,12 +77,7 @@ export const employeeHandlers = [
       domain_id?: string | null;
     };
     const existing = mockEmployees.find((e) => e.id === params.id) ?? mockEmployees[0];
-    const domain =
-      body.domain_id === undefined
-        ? null
-        : body.domain_id === null
-          ? null
-          : (mockOrgDomains.find((d) => d.id === body.domain_id) ?? null);
+    const domain = findMockDomain(body.domain_id);
     return HttpResponse.json({
       ...existing,
       app_role: body.app_role ?? existing.app_role,

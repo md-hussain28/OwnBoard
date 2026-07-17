@@ -4,13 +4,12 @@ import { AtSignIcon, PencilIcon } from "lucide-react";
 import { useState } from "react";
 import { EditMemberDialog } from "@/components/team/edit-member-dialog";
 import { RoleSelect } from "@/components/team/role-select";
-import { initials, ROLE_META } from "@/components/team/team-constants";
+import { initials, memberSubtitle } from "@/components/team/team-constants";
 import { useUpdateEmployee } from "@/hooks/queries/employee/employee.mutations";
 import { getApiErrorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import type { AppRole, Employee } from "@/schemas/employee.schema";
 import type { OrgDomain } from "@/schemas/org-domain.schema";
-import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 
 export function MemberRow({
@@ -38,9 +37,8 @@ export function MemberRow({
   }
 
   const displayRole = pendingRole ?? employee.appRole;
-  const jobTitle = employee.role?.trim() || null;
   const github = employee.githubHandle?.trim() || null;
-  const domainLabel = employee.domainName?.trim() || null;
+  const subtitle = memberSubtitle(employee);
 
   return (
     <li
@@ -49,7 +47,12 @@ export function MemberRow({
         "hover:bg-muted/60 sm:flex-row sm:items-center sm:justify-between",
       )}
     >
-      <div className="flex min-w-0 items-center gap-3">
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        aria-label={`View details for ${employee.name}`}
+      >
         <span
           aria-hidden
           className={cn(
@@ -68,9 +71,7 @@ export function MemberRow({
               <span className="ml-2 text-xs font-normal text-muted-foreground">(you)</span>
             )}
           </p>
-          <p className="truncate text-sm text-muted-foreground">
-            {[domainLabel, jobTitle ?? "No job title"].filter(Boolean).join(" · ")}
-          </p>
+          <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
           {github && (
             <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
               <AtSignIcon className="size-3 shrink-0" aria-hidden />
@@ -78,7 +79,8 @@ export function MemberRow({
             </p>
           )}
         </div>
-      </div>
+      </button>
+
       <div className="flex items-center gap-1.5 pl-12 sm:pl-0">
         <Button
           type="button"
@@ -98,6 +100,7 @@ export function MemberRow({
           size="sm"
         />
       </div>
+
       {updateEmployee.isError && (
         <p className="text-sm text-destructive sm:basis-full sm:pl-12">
           {getApiErrorMessage(updateEmployee.error)}
@@ -109,6 +112,7 @@ export function MemberRow({
         open={editing}
         onOpenChange={setEditing}
         domains={domains}
+        isSelf={isSelf}
       />
     </li>
   );

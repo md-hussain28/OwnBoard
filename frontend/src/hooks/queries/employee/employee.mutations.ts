@@ -15,6 +15,18 @@ export function useInviteEmployee() {
   });
 }
 
+/** Applies an update payload to a cached employee — undefined fields keep their current value. */
+function withEmployeePatch(employee: Employee, input: UpdateEmployeeInput): Employee {
+  return {
+    ...employee,
+    name: input.name ?? employee.name,
+    role: input.role !== undefined ? input.role : employee.role,
+    githubHandle: input.githubHandle !== undefined ? input.githubHandle : employee.githubHandle,
+    appRole: input.appRole ?? employee.appRole,
+    domainId: input.domainId !== undefined ? input.domainId : employee.domainId,
+  };
+}
+
 export function useUpdateEmployee() {
   const queryClient = useQueryClient();
 
@@ -23,35 +35,12 @@ export function useUpdateEmployee() {
       employeeService.update(id, input),
     onMutate: async ({ id, input }) => {
       const listSnap = await optimisticUpdate<Employee[]>(queryClient, employeeKeys.all, (prev) =>
-        prev?.map((e) =>
-          e.id === id
-            ? {
-                ...e,
-                name: input.name ?? e.name,
-                role: input.role !== undefined ? input.role : e.role,
-                githubHandle:
-                  input.githubHandle !== undefined ? input.githubHandle : e.githubHandle,
-                appRole: input.appRole ?? e.appRole,
-                domainId: input.domainId !== undefined ? input.domainId : e.domainId,
-              }
-            : e,
-        ),
+        prev?.map((e) => (e.id === id ? withEmployeePatch(e, input) : e)),
       );
       const detailSnap = await optimisticUpdate<Employee>(
         queryClient,
         employeeKeys.detail(id),
-        (prev) =>
-          prev
-            ? {
-                ...prev,
-                name: input.name ?? prev.name,
-                role: input.role !== undefined ? input.role : prev.role,
-                githubHandle:
-                  input.githubHandle !== undefined ? input.githubHandle : prev.githubHandle,
-                appRole: input.appRole ?? prev.appRole,
-                domainId: input.domainId !== undefined ? input.domainId : prev.domainId,
-              }
-            : prev,
+        (prev) => (prev ? withEmployeePatch(prev, input) : prev),
       );
       return { listSnap, detailSnap, id };
     },

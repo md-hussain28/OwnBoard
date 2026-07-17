@@ -18,6 +18,24 @@ import { Progress } from "@/ui/progress";
 
 const AUTO_DISMISS_MS = 8_000;
 
+function summaryIcon(activeCount: number, failedCount: number) {
+  if (activeCount > 0) {
+    return <Loader2Icon className="size-4 shrink-0 animate-spin text-primary" />;
+  }
+  if (failedCount > 0) {
+    return <AlertCircleIcon className="size-4 shrink-0 text-destructive" />;
+  }
+  return <CheckCircle2Icon className="size-4 shrink-0 text-brand-moss" />;
+}
+
+function summaryLabel(activeCount: number, failedCount: number) {
+  if (activeCount > 0) {
+    return `Processing ${activeCount} upload${activeCount > 1 ? "s" : ""}…`;
+  }
+  if (failedCount > 0) return "Some uploads failed";
+  return "Uploads complete";
+}
+
 /**
  * Floating "minimized player" for background document uploads: shows transfer progress,
  * then live ingestion progress (via the cheap status poll), and a success/failure
@@ -49,19 +67,9 @@ export function UploadProgressWidget() {
         className="flex w-full items-center gap-2 px-4 py-3 text-left"
         aria-expanded={!minimized}
       >
-        {activeCount > 0 ? (
-          <Loader2Icon className="size-4 shrink-0 animate-spin text-primary" />
-        ) : failedCount > 0 ? (
-          <AlertCircleIcon className="size-4 shrink-0 text-destructive" />
-        ) : (
-          <CheckCircle2Icon className="size-4 shrink-0 text-brand-moss" />
-        )}
+        {summaryIcon(activeCount, failedCount)}
         <span className="min-w-0 flex-1 truncate text-sm font-medium">
-          {activeCount > 0
-            ? `Processing ${activeCount} upload${activeCount > 1 ? "s" : ""}…`
-            : failedCount > 0
-              ? "Some uploads failed"
-              : "Uploads complete"}
+          {summaryLabel(activeCount, failedCount)}
         </span>
         {minimized ? (
           <ChevronUpIcon className="size-4 shrink-0 text-muted-foreground" />

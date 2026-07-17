@@ -14,6 +14,8 @@ import {
 import { usePackAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { getApiErrorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
+import type { Employee } from "@/schemas/employee.schema";
+import type { PackAssignment } from "@/schemas/packAssignment.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Skeleton } from "@/ui/skeleton";
@@ -27,6 +29,137 @@ type AssignmentRosterProps = {
   rosterHeading?: string;
   className?: string;
 };
+
+function AssignEmployeePicker({
+  employees,
+  selectedIds,
+  assignPending,
+  assignError,
+  assignIsError,
+  onToggle,
+  onAssign,
+}: {
+  employees: Employee[];
+  selectedIds: string[];
+  assignPending: boolean;
+  assignError: unknown;
+  assignIsError: boolean;
+  onToggle: (id: string) => void;
+  onAssign: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <ul className="flex flex-wrap gap-2">
+        {employees.map((employee) => {
+          const selected = selectedIds.includes(employee.id);
+          return (
+            <li key={employee.id}>
+              <Button
+                type="button"
+                size="sm"
+                variant={selected ? "default" : "outline"}
+                onClick={() => onToggle(employee.id)}
+                aria-pressed={selected}
+              >
+                {selected && <CheckIcon className="size-3.5" />}
+                {employee.name}
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+      <Button
+        type="button"
+        size="sm"
+        disabled={selectedIds.length === 0 || assignPending}
+        onClick={onAssign}
+      >
+        {assignPending ? (
+          <Loader2Icon className="size-4 animate-spin" />
+        ) : (
+          <UserPlusIcon className="size-4" />
+        )}
+        Assign{selectedIds.length > 0 ? ` ${selectedIds.length}` : ""} selected
+      </Button>
+      {assignIsError && (
+        <p className="text-sm text-destructive">
+          {getApiErrorMessage(assignError, "Assigning failed.")}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function RosterList({
+  assignments,
+  employeeById,
+  revokePending,
+  onRevoke,
+}: {
+  assignments: PackAssignment[];
+  employeeById: Map<string, Employee>;
+  revokePending: boolean;
+  onRevoke: (assignmentId: string) => void;
+}) {
+  return (
+    <ul className="divide-y divide-border rounded-xl border border-border">
+      {assignments.map((assignment) => (
+        <li key={assignment.id} className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <p className="truncate font-medium">
+              {employeeById.get(assignment.employeeId)?.name ?? assignment.employeeId}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Assigned {new Date(assignment.assignedAt).toLocaleDateString()}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge variant={assignmentStatusVariant(assignment.status)}>
+              {ASSIGNMENT_STATUS_LABEL[assignment.status]}
+            </Badge>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className={cn(assignment.status === "passed" && "invisible")}
+              disabled={revokePending}
+              onClick={() => onRevoke(assignment.id)}
+            >
+              Revoke
+            </Button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AssignHint({
+  assignableCount,
+  assignmentsCount,
+  emptyOrgHint,
+}: {
+  assignableCount: number;
+  assignmentsCount: number;
+  emptyOrgHint?: ReactNode;
+}) {
+  if (assignableCount > 0) return null;
+
+  if (assignmentsCount === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {emptyOrgHint ??
+          "No organization members found. Invite people in Clerk, then reopen Assign — members sync automatically."}
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-sm text-muted-foreground">
+      Everyone in the org is already assigned to this quiz.
+    </p>
+  );
+}
 
 /** Shared assign/revoke roster used by pack detail Card and Quizzes Assign sheet. */
 export function AssignmentRoster({
@@ -87,59 +220,22 @@ export function AssignmentRoster({
               </h3>
             )}
 
-            {assignableEmployees.length === 0 && assignments.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                {emptyOrgHint ??
-                  "No organization members found. Invite people in Clerk, then reopen Assign — members sync automatically."}
-              </p>
-            )}
-
-            {assignableEmployees.length === 0 && assignments.length > 0 && (
-              <p className="text-sm text-muted-foreground">
-                Everyone in the org is already assigned to this quiz.
-              </p>
-            )}
+            <AssignHint
+              assignableCount={assignableEmployees.length}
+              assignmentsCount={assignments.length}
+              emptyOrgHint={emptyOrgHint}
+            />
 
             {assignableEmployees.length > 0 && (
-              <div className="space-y-3">
-                <ul className="flex flex-wrap gap-2">
-                  {assignableEmployees.map((employee) => {
-                    const selected = selectedIds.includes(employee.id);
-                    return (
-                      <li key={employee.id}>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={selected ? "default" : "outline"}
-                          onClick={() => toggleEmployee(employee.id)}
-                          aria-pressed={selected}
-                        >
-                          {selected && <CheckIcon className="size-3.5" />}
-                          {employee.name}
-                        </Button>
-                      </li>
-                    );
-                  })}
-                </ul>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={selectedIds.length === 0 || createAssignments.isPending}
-                  onClick={handleAssign}
-                >
-                  {createAssignments.isPending ? (
-                    <Loader2Icon className="size-4 animate-spin" />
-                  ) : (
-                    <UserPlusIcon className="size-4" />
-                  )}
-                  Assign{selectedIds.length > 0 ? ` ${selectedIds.length}` : ""} selected
-                </Button>
-                {createAssignments.isError && (
-                  <p className="text-sm text-destructive">
-                    {getApiErrorMessage(createAssignments.error, "Assigning failed.")}
-                  </p>
-                )}
-              </div>
+              <AssignEmployeePicker
+                employees={assignableEmployees}
+                selectedIds={selectedIds}
+                assignPending={createAssignments.isPending}
+                assignError={createAssignments.error}
+                assignIsError={createAssignments.isError}
+                onToggle={toggleEmployee}
+                onAssign={handleAssign}
+              />
             )}
           </section>
 
@@ -153,38 +249,12 @@ export function AssignmentRoster({
             {assignments.length === 0 ? (
               <p className="text-sm text-muted-foreground">{emptyRosterHint}</p>
             ) : (
-              <ul className="divide-y divide-border rounded-xl border border-border">
-                {assignments.map((assignment) => (
-                  <li
-                    key={assignment.id}
-                    className="flex items-center justify-between gap-3 px-4 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">
-                        {employeeById.get(assignment.employeeId)?.name ?? assignment.employeeId}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Assigned {new Date(assignment.assignedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Badge variant={assignmentStatusVariant(assignment.status)}>
-                        {ASSIGNMENT_STATUS_LABEL[assignment.status]}
-                      </Badge>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className={cn(assignment.status === "passed" && "invisible")}
-                        disabled={revoke.isPending}
-                        onClick={() => revoke.mutate(assignment.id)}
-                      >
-                        Revoke
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <RosterList
+                assignments={assignments}
+                employeeById={employeeById}
+                revokePending={revoke.isPending}
+                onRevoke={(assignmentId) => revoke.mutate(assignmentId)}
+              />
             )}
             {revoke.isError && (
               <p className="text-sm text-destructive">

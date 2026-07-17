@@ -37,7 +37,7 @@ export function RoleSelect({
         <meta.Icon
           className={cn("size-3.5", value === "admin" ? "text-primary" : "text-muted-foreground")}
         />
-        <SelectValue />
+        <SelectValue>{meta.label}</SelectValue>
       </SelectTrigger>
       <SelectContent align="end" className="min-w-[14rem]">
         {(Object.keys(ROLE_META) as AppRole[]).map((role) => {

@@ -27,6 +27,48 @@ function toEditable(template: AdminQuizTemplate): EditableQuestion[] {
   }));
 }
 
+function withUpdatedOption(
+  questions: EditableQuestion[],
+  id: string,
+  index: number,
+  value: string,
+): EditableQuestion[] {
+  return questions.map((q) => {
+    if (q.id !== id) return q;
+    const options = q.options.map((o, i) => (i === index ? value : o));
+    const correctAnswer = q.correctAnswer === q.options[index] ? value : q.correctAnswer;
+    return { ...q, options, correctAnswer };
+  });
+}
+
+function toSavePayload(questions: EditableQuestion[]) {
+  return questions.map((q) => ({
+    id: q.id,
+    question_text: q.questionText,
+    options: q.options,
+    correct_answer: q.correctAnswer,
+    format: q.format,
+    source_citation: q.sourceCitation,
+  }));
+}
+
+function RejectedSlotsNotice({ slots }: { slots: { citation: string; reason: string }[] }) {
+  return (
+    <div className="space-y-1 rounded-xl border border-warning/40 bg-warning/5 p-4">
+      <p className="text-sm font-medium">
+        {slots.length} slot{slots.length > 1 ? "s" : ""} could not produce a verifiable question:
+      </p>
+      <ul className="list-inside list-disc text-xs text-muted-foreground">
+        {slots.map((slot, i) => (
+          <li key={i}>
+            {slot.citation}: {slot.reason}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function DocPackQuizBuilder({
   packId,
   hasProcessedDocuments,
@@ -77,28 +119,12 @@ export function DocPackQuizBuilder({
   }
 
   function updateOption(id: string, index: number, value: string) {
-    setQuestions((prev) =>
-      prev.map((q) => {
-        if (q.id !== id) return q;
-        const options = q.options.map((o, i) => (i === index ? value : o));
-        const correctAnswer = q.correctAnswer === q.options[index] ? value : q.correctAnswer;
-        return { ...q, options, correctAnswer };
-      }),
-    );
+    setQuestions((prev) => withUpdatedOption(prev, id, index, value));
   }
 
   function handleSave() {
     if (keptQuestions.length === 0) return;
-    save.mutate(
-      keptQuestions.map((q) => ({
-        id: q.id,
-        question_text: q.questionText,
-        options: q.options,
-        correct_answer: q.correctAnswer,
-        format: q.format,
-        source_citation: q.sourceCitation,
-      })),
-    );
+    save.mutate(toSavePayload(keptQuestions));
   }
 
   const busy = generate.isPending || regenerate.isPending || save.isPending;
@@ -129,21 +155,7 @@ export function DocPackQuizBuilder({
           onSubmit={handleGenerate}
         />
 
-        {rejectedSlots.length > 0 && (
-          <div className="space-y-1 rounded-xl border border-warning/40 bg-warning/5 p-4">
-            <p className="text-sm font-medium">
-              {rejectedSlots.length} slot{rejectedSlots.length > 1 ? "s" : ""} could not produce a
-              verifiable question:
-            </p>
-            <ul className="list-inside list-disc text-xs text-muted-foreground">
-              {rejectedSlots.map((slot, i) => (
-                <li key={i}>
-                  {slot.citation}: {slot.reason}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {rejectedSlots.length > 0 && <RejectedSlotsNotice slots={rejectedSlots} />}
 
         {quizQuery.isLoading && <Skeleton className="h-24 w-full" />}
 

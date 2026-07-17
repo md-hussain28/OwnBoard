@@ -39,6 +39,13 @@ export function useRevokeAssignment(packId: string) {
   });
 }
 
+/** Status transition after acknowledging a document: reading → ready_for_quiz once every doc is acked, assigned → reading on the first ack. */
+function statusAfterAck(status: AssignmentDetail["status"], allAcked: boolean) {
+  if (allAcked && status === "reading") return "ready_for_quiz";
+  if (status === "assigned") return "reading";
+  return status;
+}
+
 export function useAckDocument(assignmentId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -58,12 +65,7 @@ export function useAckDocument(assignmentId: string) {
             ...prev,
             documents,
             quizUnlocked: allAcked || prev.quizUnlocked,
-            status:
-              allAcked && prev.status === "reading"
-                ? "ready_for_quiz"
-                : prev.status === "assigned"
-                  ? "reading"
-                  : prev.status,
+            status: statusAfterAck(prev.status, allAcked),
           };
         },
       );

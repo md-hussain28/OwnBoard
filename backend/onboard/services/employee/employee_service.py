@@ -72,11 +72,19 @@ def _normalize_github_handle(value: str | None) -> str | None:
     return cleaned or None
 
 
+def _is_clerk_role_slug(value: str) -> bool:
+    """True for Clerk org role slugs (org:member / org:admin) — not a job title."""
+    lowered = value.strip().lower()
+    return lowered.startswith("org:") or lowered in APP_ROLES
+
+
 def _normalize_job_title(value: str | None) -> str | None:
     if value is None:
         return None
     cleaned = " ".join(value.split()).strip()
-    return cleaned or None
+    if not cleaned or _is_clerk_role_slug(cleaned):
+        return None
+    return cleaned
 
 
 def _invite_profile_from_meta(public_metadata: Any) -> dict[str, Any]:
@@ -125,8 +133,8 @@ class EmployeeService:
         return await self.employee_dao.create(
             org_id=org_id,
             name=name,
-            role=role,
-            github_handle=github_handle,
+            role=_normalize_job_title(role),
+            github_handle=_normalize_github_handle(github_handle),
             app_role=normalized,
             clerk_user_id=clerk_user_id,
             domain_id=resolved_domain_id,
@@ -168,13 +176,13 @@ class EmployeeService:
             fields["app_role"] = normalized
 
         if role is not None:
-            fields["role"] = role or None
+            fields["role"] = _normalize_job_title(role)
         if name is not None:
             if not name.strip():
                 raise ValidationError("name cannot be empty")
             fields["name"] = name.strip()
         if github_handle is not None:
-            fields["github_handle"] = github_handle or None
+            fields["github_handle"] = _normalize_github_handle(github_handle)
         if clear_domain:
             fields["domain_id"] = None
         elif domain_id is not None:
@@ -425,9 +433,16 @@ class EmployeeService:
                             domain_id=resolved_domain_id,
                         )
                         upserted += 1
-                    elif existing.name != name:
-                        await self.employee_dao.update(existing.id, name=name)
-                        upserted += 1
+                    else:
+                        patch: dict[str, Any] = {}
+                        if existing.name != name:
+                            patch["name"] = name
+                        # Clear Clerk role slugs mistakenly stored as job titles.
+                        if existing.role and _is_clerk_role_slug(existing.role):
+                            patch["role"] = None
+                        if patch:
+                            await self.employee_dao.update(existing.id, **patch)
+                            upserted += 1
 
                 if len(memberships) < page_size:
                     break

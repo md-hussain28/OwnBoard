@@ -10,10 +10,90 @@ import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { useEmployees } from "@/hooks/queries/employee/employee.queries";
 import { useAppRole, useMe } from "@/hooks/queries/me/me.queries";
 import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
+import type { DocPackListItem } from "@/schemas/docPack.schema";
+import type { Employee } from "@/schemas/employee.schema";
+import type { PackAssignment } from "@/schemas/packAssignment.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Skeleton } from "@/ui/skeleton";
+
+function TestsLeftBadge({ testsLeft }: { testsLeft: number }) {
+  return (
+    <Badge variant={testsLeft > 0 ? "secondary" : "default"}>
+      {testsLeft > 0 ? `${testsLeft} test${testsLeft > 1 ? "s" : ""} left` : "All passed"}
+    </Badge>
+  );
+}
+
+function ViewingAsPicker({
+  employees,
+  employeeId,
+  onSelect,
+}: {
+  employees: Employee[];
+  employeeId: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium">Viewing as</p>
+      <div className="flex flex-wrap gap-2">
+        {employees.length === 0 && (
+          <p className="text-sm text-muted-foreground">No employees in this org yet.</p>
+        )}
+        {employees.map((employee) => (
+          <Button
+            key={employee.id}
+            type="button"
+            size="sm"
+            variant={employeeId === employee.id ? "default" : "outline"}
+            onClick={() => onSelect(employee.id)}
+          >
+            {employee.name}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AssignmentList({
+  assignments,
+  packById,
+}: {
+  assignments: PackAssignment[];
+  packById: Map<string, DocPackListItem>;
+}) {
+  if (assignments.length === 0) {
+    return <p className="text-sm text-muted-foreground">No packs assigned yet.</p>;
+  }
+
+  return (
+    <ul className="space-y-2">
+      {assignments.map((assignment) => (
+        <li key={assignment.id}>
+          <Link
+            href={`/onboarding/packs/${assignment.id}`}
+            className="flex items-center justify-between rounded-xl border border-border px-4 py-3 transition-shadow duration-200 hover:shadow-soft"
+          >
+            <div>
+              <p className="font-medium">
+                {assignment.docPackName ?? packById.get(assignment.docPackId)?.name ?? "Doc pack"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Assigned {new Date(assignment.assignedAt).toLocaleDateString()}
+              </p>
+            </div>
+            <Badge variant={assignmentStatusVariant(assignment.status)}>
+              {ASSIGNMENT_STATUS_LABEL[assignment.status]}
+            </Badge>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /**
  * Employee "tests left" list (Doc Pack PRD §7). Defaults to the signed-in member's
@@ -34,7 +114,6 @@ export function EmployeePackList() {
     }
   }, [employeeId, meQuery.data?.employeeId]);
 
-  const employees = employeesQuery.data ?? [];
   const assignments = assignmentsQuery.data ?? [];
   const packById = new Map((packsQuery.data ?? []).map((p) => [p.id, p]));
   const testsLeft = assignments.filter((a) => a.status !== "passed").length;
@@ -44,11 +123,7 @@ export function EmployeePackList() {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           Assigned packs
-          {employeeId && !assignmentsQuery.isLoading && (
-            <Badge variant={testsLeft > 0 ? "secondary" : "default"}>
-              {testsLeft > 0 ? `${testsLeft} test${testsLeft > 1 ? "s" : ""} left` : "All passed"}
-            </Badge>
-          )}
+          {employeeId && !assignmentsQuery.isLoading && <TestsLeftBadge testsLeft={testsLeft} />}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -60,25 +135,11 @@ export function EmployeePackList() {
         )}
 
         {isAdmin && !employeesQuery.isLoading && !employeesQuery.isError && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Viewing as</p>
-            <div className="flex flex-wrap gap-2">
-              {employees.length === 0 && (
-                <p className="text-sm text-muted-foreground">No employees in this org yet.</p>
-              )}
-              {employees.map((employee) => (
-                <Button
-                  key={employee.id}
-                  type="button"
-                  size="sm"
-                  variant={employeeId === employee.id ? "default" : "outline"}
-                  onClick={() => setEmployeeId(employee.id)}
-                >
-                  {employee.name}
-                </Button>
-              ))}
-            </div>
-          </div>
+          <ViewingAsPicker
+            employees={employeesQuery.data ?? []}
+            employeeId={employeeId}
+            onSelect={setEmployeeId}
+          />
         )}
 
         {employeeId && assignmentsQuery.isLoading && (
@@ -93,36 +154,7 @@ export function EmployeePackList() {
         )}
 
         {employeeId && !assignmentsQuery.isLoading && !assignmentsQuery.isError && (
-          <>
-            {assignments.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No packs assigned yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {assignments.map((assignment) => (
-                  <li key={assignment.id}>
-                    <Link
-                      href={`/onboarding/packs/${assignment.id}`}
-                      className="flex items-center justify-between rounded-xl border border-border px-4 py-3 transition-shadow duration-200 hover:shadow-soft"
-                    >
-                      <div>
-                        <p className="font-medium">
-                          {assignment.docPackName ??
-                            packById.get(assignment.docPackId)?.name ??
-                            "Doc pack"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Assigned {new Date(assignment.assignedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Badge variant={assignmentStatusVariant(assignment.status)}>
-                        {ASSIGNMENT_STATUS_LABEL[assignment.status]}
-                      </Badge>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
+          <AssignmentList assignments={assignments} packById={packById} />
         )}
       </CardContent>
     </Card>

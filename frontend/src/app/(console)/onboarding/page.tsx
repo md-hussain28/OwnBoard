@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { IncomingBadge } from "@/components/layout/incoming-feature";
 import { cn } from "@/lib/utils";
-import { type OnboardingStep, useOnboardingStore } from "@/stores/onboarding-store";
+import {
+  type OnboardingStep,
+  type StepResult,
+  useOnboardingStore,
+} from "@/stores/onboarding-store";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
@@ -14,8 +18,19 @@ const STEPS: { key: OnboardingStep; label: string; href: string }[] = [
   { key: "unlocked", label: "Repo access unlocked", href: "/onboarding/unlocked" },
 ];
 
+function stepResult(
+  step: OnboardingStep,
+  results: Partial<Record<OnboardingStep, StepResult>>,
+): StepResult {
+  return results[step] ?? "pending";
+}
+
 export default function OnboardingPage() {
   const { currentStep, policyQuizResult, codebaseQuizResult } = useOnboardingStore();
+  const stepResults: Partial<Record<OnboardingStep, StepResult>> = {
+    "policy-quiz": policyQuizResult,
+    "codebase-quiz": codebaseQuizResult,
+  };
 
   return (
     <div className="space-y-8">
@@ -47,12 +62,7 @@ export default function OnboardingPage() {
       <ol className="grid gap-4 sm:grid-cols-3">
         {STEPS.map((step, index) => {
           const isCurrent = step.key === currentStep;
-          const result =
-            step.key === "policy-quiz"
-              ? policyQuizResult
-              : step.key === "codebase-quiz"
-                ? codebaseQuizResult
-                : "pending";
+          const result = stepResult(step.key, stepResults);
 
           return (
             <Card key={step.key} className={cn(isCurrent && "border-foreground/40")}>

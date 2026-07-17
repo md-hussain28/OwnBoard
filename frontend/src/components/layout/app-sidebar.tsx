@@ -1,6 +1,7 @@
 "use client";
 
 import { useOrganization } from "@clerk/nextjs";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -119,6 +120,8 @@ export function AppSidebar() {
 
   const orgName = organization?.name?.trim() || "OwnBoard";
   const showLogo = !!organization?.imageUrl && !isClerkDefaultLogo(organization.imageUrl);
+  const logoUrl = showLogo && organization ? organization.imageUrl : null;
+  const fallbackMark = orgLoaded ? orgInitials(orgName) : "Ob";
 
   return (
     <Sidebar collapsible="icon" variant="sidebar" className="font-sans">
@@ -133,13 +136,17 @@ export function AppSidebar() {
             >
               <Link href={appRole === "member" ? "/onboarding/packs" : "/"}>
                 <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient text-[0.6875rem] font-bold leading-none tracking-tight text-white shadow-button">
-                  {showLogo ? (
+                  {logoUrl ? (
                     // Custom org logos from Clerk
-                    <img src={organization!.imageUrl} alt="" className="size-full object-cover" />
-                  ) : orgLoaded ? (
-                    orgInitials(orgName)
+                    <Image
+                      src={logoUrl}
+                      alt=""
+                      width={32}
+                      height={32}
+                      className="size-full object-cover"
+                    />
                   ) : (
-                    "Ob"
+                    fallbackMark
                   )}
                 </span>
                 <span className="truncate text-[0.9375rem] font-semibold leading-none tracking-tight text-sidebar-foreground group-data-[collapsible=icon]:hidden">

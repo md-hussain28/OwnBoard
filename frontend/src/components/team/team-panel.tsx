@@ -19,24 +19,267 @@ import { useEmployees } from "@/hooks/queries/employee/employee.queries";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { useOrgDomains } from "@/hooks/queries/org-domain/org-domain.queries";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import type { Employee } from "@/schemas/employee.schema";
+import type { OrgDomain } from "@/schemas/org-domain.schema";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Skeleton } from "@/ui/skeleton";
 
-export function TeamPanel() {
-  const { isAdmin, isLoading: roleLoading, employeeId } = useAppRole();
-  const employeesQuery = useEmployees();
-  const domainsQuery = useOrgDomains();
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [domainsOpen, setDomainsOpen] = useState(false);
-  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+type PeopleListState = "loading" | "error" | "empty" | "no-matches" | "list";
+
+function peopleListState(
+  isLoading: boolean,
+  isError: boolean,
+  totalCount: number,
+  filteredCount: number,
+): PeopleListState {
+  if (isLoading) return "loading";
+  if (isError) return "error";
+  if (totalCount === 0) return "empty";
+  if (filteredCount === 0) return "no-matches";
+  return "list";
+}
+
+function TeamPanelSkeleton() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-8 w-40" />
+      <Skeleton className="h-28 w-full rounded-xl" />
+      <Skeleton className="h-40 w-full rounded-xl" />
+    </div>
+  );
+}
+
+function AdminsOnlyNotice() {
+  return (
+    <div className="rounded-xl border border-border bg-card px-5 py-10 text-center shadow-soft">
+      <p className="font-medium">Admins only</p>
+      <p className="mt-1 text-sm text-muted-foreground text-pretty">
+        Ask an organization admin to manage team access.
+      </p>
+      <Button className="mt-5" variant="outline" asChild>
+        <Link href="/">Back to workspace</Link>
+      </Button>
+    </div>
+  );
+}
+
+function TeamHeader({
+  domainsDisabled,
+  onManageDomains,
+  onInvite,
+}: {
+  domainsDisabled: boolean;
+  onManageDomains: () => void;
+  onInvite: () => void;
+}) {
+  return (
+    <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+      <div className="min-w-0 space-y-1.5">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-balance">Team</h1>
+        <p className="max-w-md text-sm text-muted-foreground text-pretty">
+          Invite people, assign domains, and set who can manage the workspace.
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onManageDomains}
+          disabled={domainsDisabled}
+        >
+          Domains
+        </Button>
+        <Button type="button" size="sm" onClick={onInvite}>
+          <PlusIcon className="size-3.5" strokeWidth={1.75} />
+          Invite
+        </Button>
+      </div>
+    </header>
+  );
+}
+
+function PeopleToolbar({
+  query,
+  onQueryChange,
+  roleFilter,
+  onRoleFilterChange,
+  domainFilter,
+  onDomainFilterChange,
+  profileFilter,
+  onProfileFilterChange,
+  domainFilterOptions,
+  hasActiveFilters,
+  onClearFilters,
+}: {
+  query: string;
+  onQueryChange: (value: string) => void;
+  roleFilter: RoleFilter;
+  onRoleFilterChange: (value: RoleFilter) => void;
+  domainFilter: DomainFilter;
+  onDomainFilterChange: (value: DomainFilter) => void;
+  profileFilter: ProfileFilter;
+  onProfileFilterChange: (value: ProfileFilter) => void;
+  domainFilterOptions: { value: DomainFilter; label: string }[];
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="relative min-w-[12rem] flex-1 basis-48">
+        <SearchIcon
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          placeholder="Search name, title, or GitHub…"
+          aria-label="Search people"
+          className="pl-9"
+        />
+      </div>
+
+      <FilterSelect
+        value={roleFilter}
+        onChange={onRoleFilterChange}
+        options={ROLE_FILTERS}
+        aria-label="Filter by app role"
+      />
+      <FilterSelect
+        value={domainFilter}
+        onChange={onDomainFilterChange}
+        options={domainFilterOptions}
+        aria-label="Filter by domain"
+      />
+      <FilterSelect
+        value={profileFilter}
+        onChange={onProfileFilterChange}
+        options={PROFILE_FILTERS}
+        aria-label="Filter by profile completeness"
+      />
+
+      {hasActiveFilters && (
+        <button
+          type="button"
+          onClick={onClearFilters}
+          className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          Clear
+        </button>
+      )}
+    </div>
+  );
+}
+
+function InviteSentNotice({ message }: { message: string }) {
+  return (
+    <p
+      role="status"
+      className="flex items-center gap-1.5 rounded-lg border border-success/25 bg-success/5 px-3 py-2 text-sm text-success"
+    >
+      <CheckCircle2Icon className="size-3.5 shrink-0" aria-hidden />
+      {message}
+    </p>
+  );
+}
+
+function PeopleCount({
+  hasActiveFilters,
+  filteredCount,
+  totalCount,
+}: {
+  hasActiveFilters: boolean;
+  filteredCount: number;
+  totalCount: number;
+}) {
+  return (
+    <span className="text-xs tabular-nums text-muted-foreground">
+      {hasActiveFilters
+        ? `${filteredCount} of ${totalCount}`
+        : `${totalCount} ${totalCount === 1 ? "person" : "people"}`}
+    </span>
+  );
+}
+
+function PeopleListBody({
+  listState,
+  error,
+  filteredEmployees,
+  domains,
+  employeeId,
+  onClearFilters,
+}: {
+  listState: PeopleListState;
+  error: unknown;
+  filteredEmployees: Employee[];
+  domains: OrgDomain[];
+  employeeId: string | null | undefined;
+  onClearFilters: () => void;
+}) {
+  if (listState === "loading") {
+    return (
+      <div className="space-y-2 rounded-xl border border-border p-2">
+        <Skeleton className="h-14 w-full rounded-lg" />
+        <Skeleton className="h-14 w-full rounded-lg" />
+      </div>
+    );
+  }
+
+  if (listState === "error") {
+    return (
+      <p className="rounded-xl border border-border px-4 py-6 text-sm text-muted-foreground">
+        Could not load people ({getApiErrorMessage(error)}).
+      </p>
+    );
+  }
+
+  if (listState === "empty") {
+    return (
+      <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+        No one here yet. Invite someone to get started.
+      </p>
+    );
+  }
+
+  if (listState === "no-matches") {
+    return (
+      <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
+        <p className="text-sm text-muted-foreground">No one matches your search or filters.</p>
+        <button
+          type="button"
+          onClick={onClearFilters}
+          className="mt-2 text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          Clear filters
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="rounded-xl border border-border bg-card p-1.5 shadow-soft">
+      {filteredEmployees.map((employee) => (
+        <MemberRow
+          key={employee.id}
+          employee={employee}
+          isSelf={employee.id === employeeId}
+          domains={domains}
+        />
+      ))}
+    </ul>
+  );
+}
+
+/** Search/filter state for the people list plus everything derived from it. */
+function usePeopleFilters(employees: Employee[], domains: OrgDomain[]) {
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [profileFilter, setProfileFilter] = useState<ProfileFilter>("all");
   const [domainFilter, setDomainFilter] = useState<DomainFilter>("all");
 
-  const employees = employeesQuery.data ?? [];
-  const domains = domainsQuery.data ?? [];
   const normalizedQuery = query.trim().toLowerCase();
 
   const domainFilterOptions = useMemo(
@@ -69,72 +312,58 @@ export function TeamPanel() {
     setDomainFilter("all");
   }
 
-  if (roleLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-28 w-full rounded-xl" />
-        <Skeleton className="h-40 w-full rounded-xl" />
-      </div>
-    );
-  }
+  return {
+    query,
+    setQuery,
+    roleFilter,
+    setRoleFilter,
+    profileFilter,
+    setProfileFilter,
+    domainFilter,
+    setDomainFilter,
+    domainFilterOptions,
+    filteredEmployees,
+    hasActiveFilters,
+    clearFilters,
+  };
+}
 
-  if (!isAdmin) {
-    return (
-      <div className="rounded-xl border border-border bg-card px-5 py-10 text-center shadow-soft">
-        <p className="font-medium">Admins only</p>
-        <p className="mt-1 text-sm text-muted-foreground text-pretty">
-          Ask an organization admin to manage team access.
-        </p>
-        <Button className="mt-5" variant="outline" asChild>
-          <Link href="/">Back to workspace</Link>
-        </Button>
-      </div>
-    );
-  }
+export function TeamPanel() {
+  const { isAdmin, isLoading: roleLoading, employeeId } = useAppRole();
+  const employeesQuery = useEmployees();
+  const domainsQuery = useOrgDomains();
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [domainsOpen, setDomainsOpen] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+
+  const employees = employeesQuery.data ?? [];
+  const domains = domainsQuery.data ?? [];
+  const filters = usePeopleFilters(employees, domains);
+  const { filteredEmployees, hasActiveFilters, clearFilters } = filters;
+
+  const listState = peopleListState(
+    employeesQuery.isLoading,
+    employeesQuery.isError,
+    employees.length,
+    filteredEmployees.length,
+  );
+  const hasPeople = listState === "no-matches" || listState === "list";
+
+  if (roleLoading) return <TeamPanelSkeleton />;
+  if (!isAdmin) return <AdminsOnlyNotice />;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-        <div className="min-w-0 space-y-1.5">
-          <h1 className="font-display text-2xl font-bold tracking-tight text-balance">Team</h1>
-          <p className="max-w-md text-sm text-muted-foreground text-pretty">
-            Invite people, assign domains, and set who can manage the workspace.
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setDomainsOpen(true)}
-            disabled={domainsQuery.isLoading || domainsQuery.isError}
-          >
-            Domains
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => {
-              setInviteMessage(null);
-              setInviteOpen(true);
-            }}
-          >
-            <PlusIcon className="size-3.5" strokeWidth={1.75} />
-            Invite
-          </Button>
-        </div>
-      </header>
+      <TeamHeader
+        domainsDisabled={domainsQuery.isLoading || domainsQuery.isError}
+        onManageDomains={() => setDomainsOpen(true)}
+        onInvite={() => {
+          setInviteMessage(null);
+          setInviteOpen(true);
+        }}
+      />
 
-      {inviteMessage && (
-        <p
-          role="status"
-          className="flex items-center gap-1.5 rounded-lg border border-success/25 bg-success/5 px-3 py-2 text-sm text-success"
-        >
-          <CheckCircle2Icon className="size-3.5 shrink-0" aria-hidden />
-          {inviteMessage}
-        </p>
-      )}
+      {inviteMessage && <InviteSentNotice message={inviteMessage} />}
 
       <InviteMemberDialog
         open={inviteOpen}
@@ -152,112 +381,39 @@ export function TeamPanel() {
           <h2 id="members-heading" className="text-sm font-semibold">
             People
           </h2>
-          {!employeesQuery.isLoading && !employeesQuery.isError && employees.length > 0 && (
-            <span className="text-xs tabular-nums text-muted-foreground">
-              {hasActiveFilters
-                ? `${filteredEmployees.length} of ${employees.length}`
-                : `${employees.length} ${employees.length === 1 ? "person" : "people"}`}
-            </span>
+          {hasPeople && (
+            <PeopleCount
+              hasActiveFilters={hasActiveFilters}
+              filteredCount={filteredEmployees.length}
+              totalCount={employees.length}
+            />
           )}
         </div>
 
-        {!employeesQuery.isLoading && !employeesQuery.isError && employees.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative min-w-[12rem] flex-1 basis-48">
-              <SearchIcon
-                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden
-              />
-              <Input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search name, title, or GitHub…"
-                aria-label="Search people"
-                className="pl-9"
-              />
-            </div>
-
-            <FilterSelect
-              value={roleFilter}
-              onChange={setRoleFilter}
-              options={ROLE_FILTERS}
-              aria-label="Filter by app role"
-            />
-            <FilterSelect
-              value={domainFilter}
-              onChange={setDomainFilter}
-              options={domainFilterOptions}
-              aria-label="Filter by domain"
-            />
-            <FilterSelect
-              value={profileFilter}
-              onChange={setProfileFilter}
-              options={PROFILE_FILTERS}
-              aria-label="Filter by profile completeness"
-            />
-
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+        {hasPeople && (
+          <PeopleToolbar
+            query={filters.query}
+            onQueryChange={filters.setQuery}
+            roleFilter={filters.roleFilter}
+            onRoleFilterChange={filters.setRoleFilter}
+            domainFilter={filters.domainFilter}
+            onDomainFilterChange={filters.setDomainFilter}
+            profileFilter={filters.profileFilter}
+            onProfileFilterChange={filters.setProfileFilter}
+            domainFilterOptions={filters.domainFilterOptions}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearFilters}
+          />
         )}
 
-        {employeesQuery.isLoading && (
-          <div className="space-y-2 rounded-xl border border-border p-2">
-            <Skeleton className="h-14 w-full rounded-lg" />
-            <Skeleton className="h-14 w-full rounded-lg" />
-          </div>
-        )}
-
-        {employeesQuery.isError && (
-          <p className="rounded-xl border border-border px-4 py-6 text-sm text-muted-foreground">
-            Could not load people ({getApiErrorMessage(employeesQuery.error)}).
-          </p>
-        )}
-
-        {!employeesQuery.isLoading && !employeesQuery.isError && employees.length === 0 && (
-          <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-            No one here yet. Invite someone to get started.
-          </p>
-        )}
-
-        {!employeesQuery.isLoading &&
-          !employeesQuery.isError &&
-          employees.length > 0 &&
-          filteredEmployees.length === 0 && (
-            <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                No one matches your search or filters.
-              </p>
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="mt-2 text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-              >
-                Clear filters
-              </button>
-            </div>
-          )}
-
-        {!employeesQuery.isLoading && !employeesQuery.isError && filteredEmployees.length > 0 && (
-          <ul className="rounded-xl border border-border bg-card p-1.5 shadow-soft">
-            {filteredEmployees.map((employee) => (
-              <MemberRow
-                key={employee.id}
-                employee={employee}
-                isSelf={employee.id === employeeId}
-                domains={domains}
-              />
-            ))}
-          </ul>
-        )}
+        <PeopleListBody
+          listState={listState}
+          error={employeesQuery.error}
+          filteredEmployees={filteredEmployees}
+          domains={domains}
+          employeeId={employeeId}
+          onClearFilters={clearFilters}
+        />
       </section>
     </div>
   );

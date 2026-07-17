@@ -34,41 +34,35 @@ export function useCreateDocPack() {
   });
 }
 
+type UpdateDocPackInput = { name?: string; description?: string; domain_id?: string | null };
+
+/** Fields of a cached pack an update payload touches — undefined input fields keep their current value. */
+function docPackPatch(
+  current: Pick<DocPack, "name" | "description" | "domainId">,
+  input: UpdateDocPackInput,
+): Pick<DocPack, "name" | "description" | "domainId"> {
+  return {
+    name: input.name ?? current.name,
+    description:
+      input.description !== undefined ? (input.description ?? null) : current.description,
+    domainId: input.domain_id !== undefined ? input.domain_id : current.domainId,
+  };
+}
+
 export function useUpdateDocPack(packId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name?: string; description?: string; domain_id?: string | null }) =>
-      docPackService.update(packId, input),
+    mutationFn: (input: UpdateDocPackInput) => docPackService.update(packId, input),
     onMutate: async (input) => {
       const detailSnap = await optimisticUpdate<DocPack>(
         queryClient,
         docPackKeys.detail(packId),
-        (prev) =>
-          prev
-            ? {
-                ...prev,
-                name: input.name ?? prev.name,
-                description:
-                  input.description !== undefined ? (input.description ?? null) : prev.description,
-                domainId: input.domain_id !== undefined ? input.domain_id : prev.domainId,
-              }
-            : prev,
+        (prev) => (prev ? { ...prev, ...docPackPatch(prev, input) } : prev),
       );
       const listSnap = await optimisticUpdate<DocPackListItem[]>(
         queryClient,
         docPackKeys.all,
-        (prev) =>
-          prev?.map((p) =>
-            p.id === packId
-              ? {
-                  ...p,
-                  name: input.name ?? p.name,
-                  description:
-                    input.description !== undefined ? (input.description ?? null) : p.description,
-                  domainId: input.domain_id !== undefined ? input.domain_id : p.domainId,
-                }
-              : p,
-          ),
+        (prev) => prev?.map((p) => (p.id === packId ? { ...p, ...docPackPatch(p, input) } : p)),
       );
       return { detailSnap, listSnap };
     },

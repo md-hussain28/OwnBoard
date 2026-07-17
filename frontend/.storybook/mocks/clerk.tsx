@@ -71,7 +71,7 @@ export function UserButton({ showName = true }: { showName?: boolean } & Record<
 
 /** The mock session is always signed in. */
 export function Show({ when, children }: { when: string; children: React.ReactNode }) {
-  return when === "signed-in" ? <>{children}</> : null;
+  return when === "signed-in" ? children : null;
 }
 
 export function SignInButton({ children }: { children?: React.ReactNode }) {

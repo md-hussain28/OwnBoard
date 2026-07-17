@@ -1,6 +1,6 @@
 "use client";
 
-import { AtSignIcon, CheckCircle2Icon, MailIcon } from "lucide-react";
+import { AtSignIcon, MailIcon } from "lucide-react";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { Field } from "@/components/team/field";
 import { RoleSelect } from "@/components/team/role-select";

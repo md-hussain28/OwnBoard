@@ -8,6 +8,7 @@ class EmployeeCreateRequest(BaseModel):
     role: str | None = None
     github_handle: str | None = None
     app_role: str = APP_ROLE_MEMBER
+    domain_id: str | None = None
 
 
 class EmployeeUpdateRequest(BaseModel):
@@ -15,6 +16,10 @@ class EmployeeUpdateRequest(BaseModel):
     role: str | None = None
     github_handle: str | None = None
     app_role: str | None = None
+    # Pass null to clear; omit to leave unchanged — use a sentinel via model if needed.
+    # For PATCH we treat explicit null as clear by accepting Optional and checking "domain_id" in payload
+    # at the router... Simpler: accept Optional and use a separate approach in service with UNSET.
+    domain_id: str | None = None
 
 
 class EmployeeInviteRequest(BaseModel):

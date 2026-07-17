@@ -13,6 +13,8 @@ class EmployeeResponse(BaseModel):
     role: str | None
     app_role: str
     github_handle: str | None
+    domain_id: str | None = None
+    domain_name: str | None = None
     created_at: datetime
     updated_at: datetime
 

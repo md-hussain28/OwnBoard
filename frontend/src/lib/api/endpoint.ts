@@ -10,6 +10,9 @@ export const API_ENDPOINTS = {
   employeeInvitations: "/employees/invitations",
   employeeAssignments: (employeeId: string) => `/employees/${employeeId}/assignments`,
 
+  domains: "/domains",
+  domain: (id: string) => `/domains/${id}`,
+
   // Doc Packs (Doc Pack PRD §6)
   docPacks: "/doc-packs",
   docPack: (id: string) => `/doc-packs/${id}`,

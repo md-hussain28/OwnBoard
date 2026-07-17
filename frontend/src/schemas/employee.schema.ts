@@ -13,6 +13,8 @@ export const employeeSchema = z
     role: z.string().nullable(),
     app_role: appRoleSchema,
     github_handle: z.string().nullable(),
+    domain_id: z.string().nullable().optional(),
+    domain_name: z.string().nullable().optional(),
   })
   .transform((e) => ({
     id: e.id,
@@ -22,6 +24,8 @@ export const employeeSchema = z
     role: e.role,
     appRole: e.app_role,
     githubHandle: e.github_handle,
+    domainId: e.domain_id ?? null,
+    domainName: e.domain_name ?? null,
   }));
 
 export const employeeListSchema = z.array(employeeSchema);
@@ -52,4 +56,5 @@ export type UpdateEmployeeInput = {
   role?: string | null;
   githubHandle?: string | null;
   appRole?: AppRole;
+  domainId?: string | null;
 };

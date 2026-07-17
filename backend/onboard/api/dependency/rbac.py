@@ -9,6 +9,7 @@ from onboard.api.dependency.auth import AuthContext, _verify_session
 from onboard.api.dependency.db import get_db
 from onboard.api.dependency.tenancy import CurrentOrgId
 from onboard.config.constants import APP_ROLE_ADMIN
+from onboard.core.common.exceptions import ForbiddenError
 from onboard.dao.models.employee import Employee
 from onboard.services.employee.employee_service import EmployeeService, require_employee_app_role
 
@@ -37,3 +38,21 @@ def require_app_role(*roles: str):
 RequireAdmin = Annotated[Employee, Depends(require_app_role(APP_ROLE_ADMIN))]
 
 AppRoleName = Literal["admin", "member"]
+
+
+def assert_self_or_admin(
+    *,
+    actor: Employee,
+    target_employee_id: str,
+    message: str = "You can only access your own records",
+) -> None:
+    """Allow admins for any target; members only when target_employee_id is themselves."""
+    if actor.app_role == APP_ROLE_ADMIN:
+        return
+    if actor.id == target_employee_id:
+        return
+    raise ForbiddenError(message)
+
+
+def is_admin(employee: Employee) -> bool:
+    return employee.app_role == APP_ROLE_ADMIN

@@ -14,6 +14,7 @@ from onboard.core.clerk.client import get_clerk_client
 from onboard.core.common.exceptions import ForbiddenError, NotFoundError, ValidationError
 from onboard.dao.employee_dao import EmployeeDAO
 from onboard.dao.models.employee import Employee
+from onboard.dao.org_domain_dao import OrgDomainDAO
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,7 @@ class EmployeeService:
 
     def __init__(self, session: AsyncSession):
         self.employee_dao = EmployeeDAO(session)
+        self.domain_dao = OrgDomainDAO(session)
 
     async def create_employee(
         self,
@@ -80,8 +82,10 @@ class EmployeeService:
         *,
         app_role: str = APP_ROLE_MEMBER,
         clerk_user_id: str | None = None,
+        domain_id: str | None = None,
     ) -> Employee:
         normalized = _normalize_app_role(app_role) or APP_ROLE_MEMBER
+        resolved_domain_id = await self._resolve_domain_id(org_id, domain_id)
         return await self.employee_dao.create(
             org_id=org_id,
             name=name,
@@ -89,6 +93,7 @@ class EmployeeService:
             github_handle=github_handle,
             app_role=normalized,
             clerk_user_id=clerk_user_id,
+            domain_id=resolved_domain_id,
         )
 
     async def get_employee(self, org_id: str, employee_id: str) -> Employee:
@@ -110,6 +115,8 @@ class EmployeeService:
         role: str | None = None,
         name: str | None = None,
         github_handle: str | None = None,
+        domain_id: str | None = None,
+        clear_domain: bool = False,
     ) -> Employee:
         employee = await self.get_employee(org_id, employee_id)
         fields: dict[str, Any] = {}
@@ -132,6 +139,10 @@ class EmployeeService:
             fields["name"] = name.strip()
         if github_handle is not None:
             fields["github_handle"] = github_handle or None
+        if clear_domain:
+            fields["domain_id"] = None
+        elif domain_id is not None:
+            fields["domain_id"] = await self._resolve_domain_id(org_id, domain_id)
 
         if not fields:
             return employee
@@ -139,7 +150,16 @@ class EmployeeService:
         updated = await self.employee_dao.update(employee.id, **fields)
         if updated is None:
             raise NotFoundError(f"Employee {employee_id} not found")
-        return updated
+        # Reload with domain relationship for response hydration.
+        return await self.get_employee(org_id, updated.id)
+
+    async def _resolve_domain_id(self, org_id: str, domain_id: str | None) -> str | None:
+        if domain_id is None:
+            return None
+        domain = await self.domain_dao.get_by_id_for_org(org_id, domain_id)
+        if domain is None:
+            raise NotFoundError(f"Domain {domain_id} not found")
+        return domain.id
 
     async def invite_member(
         self,

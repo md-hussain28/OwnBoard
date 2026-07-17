@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { QuizPackList } from "@/components/doc-pack/quiz-pack-list";
 import { QuizAssignmentPanel } from "@/components/doc-pack/quiz-assignment-panel";
 import {
@@ -12,13 +14,17 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/ui/sheet";
+import { Button } from "@/ui/button";
 import { Skeleton } from "@/ui/skeleton";
 
 export function QuizDesk() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { data: packs, isLoading: packsLoading } = useDocPacks();
+  const { isAdmin, isLoading: roleLoading } = useAppRole();
+  const { data: packs, isLoading: packsLoading } = useDocPacks({
+    enabled: !roleLoading && isAdmin,
+  });
 
   // Support both ?assign= (preferred) and legacy ?pack=
   const assignPackId = searchParams.get("assign") ?? searchParams.get("pack");
@@ -53,6 +59,30 @@ export function QuizDesk() {
       closeAssign();
     }
   }, [packs, assignPackId, closeAssign]);
+
+  if (roleLoading) {
+    return (
+      <div className="space-y-3 px-4 py-5">
+        <Skeleton className="h-7 w-28" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="mx-auto max-w-md space-y-4 px-4 py-12 text-center">
+        <p className="font-medium">Admins only</p>
+        <p className="text-sm text-muted-foreground text-pretty">
+          Quiz creation and assignment live here. Your assigned reading is under My quizzes.
+        </p>
+        <Button asChild>
+          <Link href="/onboarding/packs">Go to My quizzes</Link>
+        </Button>
+      </div>
+    );
+  }
 
   const sheetOpen = Boolean(assignPackId);
   const showSheetLoading = sheetOpen && packsLoading;

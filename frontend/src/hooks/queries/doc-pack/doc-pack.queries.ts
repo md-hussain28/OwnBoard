@@ -9,10 +9,11 @@ export const docPackKeys = {
   ingestStatus: (id: string) => ["doc-packs", id, "ingest-status"] as const,
 };
 
-export function useDocPacks() {
+export function useDocPacks(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: docPackKeys.all,
     queryFn: docPackService.list,
+    enabled: options?.enabled ?? true,
   });
 }
 

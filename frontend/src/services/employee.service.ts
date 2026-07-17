@@ -35,6 +35,7 @@ export const employeeService = {
     if (input.role !== undefined) body.role = input.role;
     if (input.githubHandle !== undefined) body.github_handle = input.githubHandle;
     if (input.appRole !== undefined) body.app_role = input.appRole;
+    if (input.domainId !== undefined) body.domain_id = input.domainId;
     const { data } = await getApiClient().patch(API_ENDPOINTS.employee(id), body);
     return employeeSchema.parse(data);
   },

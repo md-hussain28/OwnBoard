@@ -30,3 +30,15 @@ APP_ROLE_MEMBER = "member"
 APP_ROLES = frozenset({APP_ROLE_ADMIN, APP_ROLE_MEMBER})
 # Clerk role strings that may appear on legacy employee.role rows or bootstrap memberships.
 CLERK_ORG_ADMIN_ROLES = frozenset({"org:admin", "admin"})
+
+# Seeded once per org on first domain list — admins can add more custom domains.
+DEFAULT_ORG_DOMAINS = (
+    "Developer",
+    "Marketing",
+    "Design",
+    "Product",
+    "Sales",
+    "Operations",
+    "People",
+    "Finance",
+)

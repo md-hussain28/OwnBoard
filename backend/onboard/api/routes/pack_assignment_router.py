@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from onboard.api.dependency.auth import ClerkUserId
-from onboard.api.dependency.rbac import RequireAdmin
+from onboard.api.dependency.rbac import CurrentEmployee, RequireAdmin
 from onboard.api.dependency.service_container import ServiceContainer, get_service_container
 from onboard.api.dependency.tenancy import CurrentOrgId
 from onboard.api.schema.pack_assignment.request import CreateAssignmentsRequest
@@ -53,18 +53,31 @@ async def revoke_assignment(
 
 @router.get("/employees/{employee_id}/assignments", response_model=list[PackAssignmentResponse])
 async def list_employee_assignments(
-    employee_id: str, org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)
+    employee_id: str,
+    org_id: CurrentOrgId,
+    actor: CurrentEmployee,
+    services: ServiceContainer = Depends(get_service_container),
 ):
-    """Employee dashboard — assigned packs + status ("tests left") (Doc Pack PRD §7)."""
-    return await services.pack_assignment.list_for_employee(org_id, employee_id)
+    """Employee dashboard — assigned packs + status ("tests left") (Doc Pack PRD §7).
+
+    Members may only list their own assignments; admins may list any employee.
+    """
+    rows = await services.pack_assignment.list_for_employee(org_id, employee_id, actor=actor)
+    return [
+        PackAssignmentResponse.model_validate(assignment).model_copy(update={"doc_pack_name": pack_name})
+        for assignment, pack_name in rows
+    ]
 
 
 @router.get("/assignments/{assignment_id}", response_model=PackAssignmentDetailResponse)
 async def get_assignment_detail(
-    assignment_id: str, org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)
+    assignment_id: str,
+    org_id: CurrentOrgId,
+    actor: CurrentEmployee,
+    services: ServiceContainer = Depends(get_service_container),
 ):
     """Documents + ack state + unlocked flag for the read-gate (Doc Pack PRD §4/§6)."""
-    detail = await services.pack_assignment.get_assignment_detail(org_id, assignment_id)
+    detail = await services.pack_assignment.get_assignment_detail(org_id, assignment_id, actor=actor)
     return PackAssignmentDetailResponse(
         id=detail.assignment.id,
         doc_pack_id=detail.assignment.doc_pack_id,
@@ -96,10 +109,13 @@ async def get_assignment_document_content(
     assignment_id: str,
     document_id: str,
     org_id: CurrentOrgId,
+    actor: CurrentEmployee,
     services: ServiceContainer = Depends(get_service_container),
 ):
     """Open-book reading text for one assigned document (Doc Pack PRD §4)."""
-    content = await services.pack_assignment.get_document_content(org_id, assignment_id, document_id)
+    content = await services.pack_assignment.get_document_content(
+        org_id, assignment_id, document_id, actor=actor
+    )
     return AssignmentDocumentContentResponse(
         document_id=content.document_id,
         title=content.title,
@@ -113,18 +129,22 @@ async def ack_document(
     assignment_id: str,
     document_id: str,
     org_id: CurrentOrgId,
+    actor: CurrentEmployee,
     services: ServiceContainer = Depends(get_service_container),
 ):
     """Per-document "I've read this" gate — server-enforced, not just a UI lock (Doc Pack PRD §10.9)."""
-    return await services.pack_assignment.ack_document(org_id, assignment_id, document_id)
+    return await services.pack_assignment.ack_document(org_id, assignment_id, document_id, actor=actor)
 
 
 @router.post("/assignments/{assignment_id}/start-quiz", response_model=StartQuizResponse, status_code=201)
 async def start_quiz(
-    assignment_id: str, org_id: CurrentOrgId, services: ServiceContainer = Depends(get_service_container)
+    assignment_id: str,
+    org_id: CurrentOrgId,
+    actor: CurrentEmployee,
+    services: ServiceContainer = Depends(get_service_container),
 ):
     """403s server-side if not all documents are acked yet (Doc Pack PRD §4)."""
-    attempt, template = await services.pack_assignment.start_quiz(org_id, assignment_id)
+    attempt, template = await services.pack_assignment.start_quiz(org_id, assignment_id, actor=actor)
     return StartQuizResponse(
         attempt=QuizAttemptResponse.model_validate(attempt),
         template=QuizTemplateResponse.model_validate(template),

@@ -4,12 +4,14 @@ from datetime import UTC, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import set_committed_value
 
+from onboard.config.constants import APP_ROLE_ADMIN
 from onboard.core.common.exceptions import ForbiddenError, NotFoundError, ValidationError
 from onboard.core.rag.extract import extract_document
 from onboard.core.storage.supabase_client import SupabaseStorageClient, get_storage_client
 from onboard.dao.doc_pack_dao import DocPackDAO
 from onboard.dao.employee_dao import EmployeeDAO
 from onboard.dao.models.doc_pack import DocPackDocument, PackAssignment, PackAssignmentStatus
+from onboard.dao.models.employee import Employee
 from onboard.dao.models.quiz_attempt import QuizAttempt
 from onboard.dao.models.quiz_template import QuizTemplate, QuizType
 from onboard.dao.pack_assignment_dao import PackAssignmentAckDAO, PackAssignmentDAO
@@ -51,11 +53,23 @@ class PackAssignmentService:
             self._storage = await get_storage_client()
         return self._storage
 
-    async def get_document_content(self, org_id: str, assignment_id: str, document_id: str) -> DocumentContent:
+    @staticmethod
+    def assert_can_access_assignment(assignment: PackAssignment, actor: Employee) -> None:
+        """Admins may access any assignment; members only their own."""
+        if actor.app_role == APP_ROLE_ADMIN:
+            return
+        if assignment.employee_id == actor.id:
+            return
+        raise ForbiddenError("You can only access your own assignments")
+
+    async def get_document_content(
+        self, org_id: str, assignment_id: str, document_id: str, *, actor: Employee
+    ) -> DocumentContent:
         """Open-book reading text for one document in an assignment (Doc Pack PRD §4 read-gate)."""
         assignment = await self.assignment_dao.get_by_id_for_org(org_id, assignment_id)
         if assignment is None:
             raise NotFoundError(f"Assignment {assignment_id} not found")
+        self.assert_can_access_assignment(assignment, actor)
 
         pack = await self.doc_pack_dao.get_by_id_for_org(org_id, assignment.doc_pack_id)
         assert pack is not None
@@ -115,16 +129,28 @@ class PackAssignmentService:
             raise NotFoundError(f"Doc pack {pack_id} not found")
         return await self.assignment_dao.list_for_pack(org_id, pack_id)
 
-    async def list_for_employee(self, org_id: str, employee_id: str) -> list[PackAssignment]:
+    async def list_for_employee(
+        self, org_id: str, employee_id: str, *, actor: Employee
+    ) -> list[tuple[PackAssignment, str]]:
+        """Return (assignment, doc_pack_name) pairs the actor is allowed to see."""
+        if actor.app_role != APP_ROLE_ADMIN and actor.id != employee_id:
+            raise ForbiddenError("You can only list your own assignments")
         employee = await self.employee_dao.get_by_id_for_org(org_id, employee_id)
         if employee is None:
             raise NotFoundError(f"Employee {employee_id} not found")
-        return await self.assignment_dao.list_for_employee(org_id, employee_id)
+        assignments = await self.assignment_dao.list_for_employee(org_id, employee_id)
+        return [
+            (assignment, assignment.doc_pack.name if assignment.doc_pack else "Doc pack")
+            for assignment in assignments
+        ]
 
-    async def get_assignment_detail(self, org_id: str, assignment_id: str) -> AssignmentDetail:
+    async def get_assignment_detail(
+        self, org_id: str, assignment_id: str, *, actor: Employee
+    ) -> AssignmentDetail:
         assignment = await self.assignment_dao.get_by_id_for_org(org_id, assignment_id)
         if assignment is None:
             raise NotFoundError(f"Assignment {assignment_id} not found")
+        self.assert_can_access_assignment(assignment, actor)
 
         pack = await self.doc_pack_dao.get_by_id_for_org(org_id, assignment.doc_pack_id)
         assert pack is not None
@@ -145,10 +171,13 @@ class PackAssignmentService:
             raise ValidationError("Cannot revoke an assignment that has already passed (Doc Pack PRD §10.15)")
         await self.assignment_dao.delete(assignment.id)
 
-    async def ack_document(self, org_id: str, assignment_id: str, document_id: str) -> PackAssignment:
+    async def ack_document(
+        self, org_id: str, assignment_id: str, document_id: str, *, actor: Employee
+    ) -> PackAssignment:
         assignment = await self.assignment_dao.get_by_id_for_org(org_id, assignment_id)
         if assignment is None:
             raise NotFoundError(f"Assignment {assignment_id} not found")
+        self.assert_can_access_assignment(assignment, actor)
 
         pack = await self.doc_pack_dao.get_by_id_for_org(org_id, assignment.doc_pack_id)
         assert pack is not None
@@ -175,10 +204,13 @@ class PackAssignmentService:
         assert refreshed is not None
         return refreshed
 
-    async def start_quiz(self, org_id: str, assignment_id: str) -> tuple[QuizAttempt, QuizTemplate]:
+    async def start_quiz(
+        self, org_id: str, assignment_id: str, *, actor: Employee
+    ) -> tuple[QuizAttempt, QuizTemplate]:
         assignment = await self.assignment_dao.get_by_id_for_org(org_id, assignment_id)
         if assignment is None:
             raise NotFoundError(f"Assignment {assignment_id} not found")
+        self.assert_can_access_assignment(assignment, actor)
 
         if assignment.status == PackAssignmentStatus.passed:
             raise ValidationError("This assignment has already been passed")

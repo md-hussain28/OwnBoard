@@ -21,8 +21,13 @@ class Employee(AuditBase):
         String(32), nullable=False, default=APP_ROLE_MEMBER, server_default=APP_ROLE_MEMBER
     )
     github_handle: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Org work domain (Developer, Marketing, …) — optional.
+    domain_id: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("org_domain.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     organization: Mapped["Organization"] = relationship(back_populates="employees")
+    domain: Mapped["OrgDomain | None"] = relationship(back_populates="employees")
     quiz_attempts: Mapped[list["QuizAttempt"]] = relationship(back_populates="employee", cascade="all, delete-orphan")
     pack_assignments: Mapped[list["PackAssignment"]] = relationship(
         back_populates="employee", cascade="all, delete-orphan"

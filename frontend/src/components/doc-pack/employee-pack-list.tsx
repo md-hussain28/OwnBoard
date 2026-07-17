@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useEmployees } from "@/hooks/queries/employee/employee.queries";
-import { useMe } from "@/hooks/queries/me/me.queries";
+import { useMe, useAppRole } from "@/hooks/queries/me/me.queries";
 import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import {
@@ -21,10 +21,11 @@ import { Skeleton } from "@/ui/skeleton";
  */
 export function EmployeePackList() {
   const meQuery = useMe();
-  const employeesQuery = useEmployees();
+  const { isAdmin } = useAppRole();
+  const employeesQuery = useEmployees({ enabled: isAdmin });
   const [employeeId, setEmployeeId] = useState("");
   const assignmentsQuery = useEmployeeAssignments(employeeId);
-  const packsQuery = useDocPacks();
+  const packsQuery = useDocPacks({ enabled: isAdmin });
 
   useEffect(() => {
     if (employeeId) return;
@@ -37,7 +38,6 @@ export function EmployeePackList() {
   const assignments = assignmentsQuery.data ?? [];
   const packById = new Map((packsQuery.data ?? []).map((p) => [p.id, p]));
   const testsLeft = assignments.filter((a) => a.status !== "passed").length;
-  const isAdmin = meQuery.data?.appRole === "admin";
 
   return (
     <Card>
@@ -52,8 +52,8 @@ export function EmployeePackList() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {employeesQuery.isLoading && <Skeleton className="h-9 w-full" />}
-        {employeesQuery.isError && (
+        {isAdmin && employeesQuery.isLoading && <Skeleton className="h-9 w-full" />}
+        {isAdmin && employeesQuery.isError && (
           <p className="text-sm text-muted-foreground">
             Could not load employees. Start the FastAPI service and refresh.
           </p>
@@ -106,7 +106,9 @@ export function EmployeePackList() {
                     >
                       <div>
                         <p className="font-medium">
-                          {packById.get(assignment.docPackId)?.name ?? "Doc pack"}
+                          {assignment.docPackName ??
+                            packById.get(assignment.docPackId)?.name ??
+                            "Doc pack"}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Assigned {new Date(assignment.assignedAt).toLocaleDateString()}

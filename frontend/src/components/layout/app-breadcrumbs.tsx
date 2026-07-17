@@ -23,7 +23,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   "doc-packs": "Quizzes",
   new: "Create",
   onboarding: "Readiness",
-  packs: "Assigned reading",
+  packs: "My quizzes",
   "policy-quiz": "Policy quiz",
   "codebase-quiz": "Codebase quiz",
   unlocked: "Unlocked",

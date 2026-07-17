@@ -44,6 +44,8 @@ export const mockEmployees = [
     role: "Backend Engineer",
     app_role: "admin",
     github_handle: "priyash",
+    domain_id: "dom_developer",
+    domain_name: "Developer",
   },
   {
     id: "emp_b2c3d4e5f6g7h8i9j0",
@@ -52,6 +54,8 @@ export const mockEmployees = [
     role: "Frontend Engineer",
     app_role: "member",
     github_handle: "dalvarez",
+    domain_id: "dom_developer",
+    domain_name: "Developer",
   },
   {
     id: "emp_c3d4e5f6g7h8i9j0k1",
@@ -60,8 +64,22 @@ export const mockEmployees = [
     role: null,
     app_role: "member",
     github_handle: null,
+    domain_id: "dom_marketing",
+    domain_name: "Marketing",
   },
 ];
+
+export const mockOrgDomains = [
+  { id: "dom_developer", org_id: "org_demo", name: "Developer", is_default: true },
+  { id: "dom_marketing", org_id: "org_demo", name: "Marketing", is_default: true },
+  { id: "dom_design", org_id: "org_demo", name: "Design", is_default: true },
+  { id: "dom_product", org_id: "org_demo", name: "Product", is_default: true },
+  { id: "dom_sales", org_id: "org_demo", name: "Sales", is_default: true },
+  { id: "dom_operations", org_id: "org_demo", name: "Operations", is_default: true },
+  { id: "dom_people", org_id: "org_demo", name: "People", is_default: true },
+  { id: "dom_finance", org_id: "org_demo", name: "Finance", is_default: true },
+];
+
 
 export const mockMe = {
   user_id: "user_storybook",
@@ -153,6 +171,7 @@ export const mockAssignments = [
   {
     id: "asg_a1b2c3d4e5f6g7h8i9",
     doc_pack_id: "pack_a1b2c3d4e5f6g7h8i9",
+    doc_pack_name: "Security & Compliance",
     employee_id: "emp_a1b2c3d4e5f6g7h8i9",
     assigned_by: "emp_b2c3d4e5f6g7h8i9j0",
     assigned_at: "2026-07-05T09:00:00Z",
@@ -164,6 +183,7 @@ export const mockAssignments = [
   {
     id: "asg_b2c3d4e5f6g7h8i9j0",
     doc_pack_id: "pack_a1b2c3d4e5f6g7h8i9",
+    doc_pack_name: "Security & Compliance",
     employee_id: "emp_b2c3d4e5f6g7h8i9j0",
     assigned_by: null,
     assigned_at: "2026-07-04T09:00:00Z",

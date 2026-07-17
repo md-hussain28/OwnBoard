@@ -20,6 +20,7 @@ ID_PREFIXES = frozenset(
         "ctrb",  # contributor
         "dchk",  # doc_chunk
         "doc",  # doc_pack_document
+        "dom",  # org_domain (Developer, Marketing, …)
         "emp",  # employee
         "exav",  # expertise_availability
         "fexp",  # file_expertise

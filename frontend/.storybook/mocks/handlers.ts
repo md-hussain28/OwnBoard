@@ -12,6 +12,7 @@ import {
   mockEmployees,
   mockExperts,
   mockMe,
+  mockOrgDomains,
   mockQuizAnalytics,
   mockQuizAttempt,
   mockQuizTemplate,
@@ -60,15 +61,46 @@ export const employeeHandlers = [
     );
   }),
   http.patch("/api/employees/:id", async ({ params, request }) => {
-    const body = (await request.json()) as { app_role?: string; role?: string | null };
+    const body = (await request.json()) as {
+      app_role?: string;
+      role?: string | null;
+      domain_id?: string | null;
+    };
     const existing = mockEmployees.find((e) => e.id === params.id) ?? mockEmployees[0];
+    const domain =
+      body.domain_id === undefined
+        ? null
+        : body.domain_id === null
+          ? null
+          : mockOrgDomains.find((d) => d.id === body.domain_id) ?? null;
     return HttpResponse.json({
       ...existing,
       app_role: body.app_role ?? existing.app_role,
       role: body.role !== undefined ? body.role : existing.role,
+      domain_id: body.domain_id !== undefined ? body.domain_id : existing.domain_id,
+      domain_name:
+        body.domain_id !== undefined ? (domain?.name ?? null) : existing.domain_name,
     });
   }),
 ];
+
+export const domainHandlers = [
+  http.get("/api/domains", () => HttpResponse.json(mockOrgDomains)),
+  http.post("/api/domains", async ({ request }) => {
+    const body = (await request.json()) as { name: string };
+    return HttpResponse.json(
+      {
+        id: `dom_${body.name.toLowerCase().replace(/\s+/g, "_")}`,
+        org_id: "org_demo",
+        name: body.name,
+        is_default: false,
+      },
+      { status: 201 },
+    );
+  }),
+  http.delete("/api/domains/:id", () => new HttpResponse(null, { status: 204 })),
+];
+
 
 export const docPackHandlers = [
   http.get("/api/doc-packs", () => HttpResponse.json(mockDocPacks)),
@@ -126,6 +158,7 @@ export const handlers = [
   ...repoHandlers,
   ...dashboardHandlers,
   ...employeeHandlers,
+  ...domainHandlers,
   ...docPackHandlers,
   ...assignmentHandlers,
   ...quizHandlers,

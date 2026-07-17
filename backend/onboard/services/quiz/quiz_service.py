@@ -3,12 +3,13 @@ from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from onboard.config.constants import QUIZ_LLM_CONCURRENCY
-from onboard.core.common.exceptions import NotFoundError, ValidationError
+from onboard.config.constants import APP_ROLE_ADMIN, QUIZ_LLM_CONCURRENCY
+from onboard.core.common.exceptions import ForbiddenError, NotFoundError, ValidationError
 from onboard.core.llm.llm_client import LLMClient, get_llm_client
 from onboard.dao.doc_chunk_dao import DocChunkContent, DocChunkDAO
 from onboard.dao.doc_pack_dao import DocPackDAO
 from onboard.dao.models.doc_pack import DocPackStatus, DocumentStatus, PackAssignmentStatus
+from onboard.dao.models.employee import Employee
 from onboard.dao.models.quiz_attempt import QuizAttempt
 from onboard.dao.models.quiz_question import QuestionFormat, QuizQuestion
 from onboard.dao.models.quiz_template import QuizTemplate, QuizType
@@ -262,10 +263,19 @@ class QuizService:
 
     # -- Grading (reused across policy/codebase/doc_pack quiz types — PRD §6.7) ---------------------------
 
-    async def grade_attempt(self, org_id: str, quiz_attempt_id: str, answers: dict[str, str]) -> QuizAttempt:
+    async def grade_attempt(
+        self,
+        org_id: str,
+        quiz_attempt_id: str,
+        answers: dict[str, str],
+        *,
+        actor: Employee | None = None,
+    ) -> QuizAttempt:
         attempt = await self.attempt_dao.get_by_id_for_org(org_id, quiz_attempt_id)
         if attempt is None:
             raise NotFoundError(f"Quiz attempt {quiz_attempt_id} not found")
+        if actor is not None and actor.app_role != APP_ROLE_ADMIN and attempt.employee_id != actor.id:
+            raise ForbiddenError("You can only grade your own quiz attempts")
         if attempt.completed_at is not None:
             raise ValidationError("This attempt has already been graded")
 

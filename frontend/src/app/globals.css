@@ -160,49 +160,64 @@
   --sidebar-ring: var(--brand-honey);
 }
 
+/*
+  Dark mode — eye-comfort rules (not an inverted light theme):
+  1. Charcoal base (~#121212), never pure black
+  2. Softened text (~87% / 60% / 38% white emphasis), never pure white
+  3. Desaturated, lighter accents so they don’t vibrate
+  4. Elevation via surface luminance; shadows stay subtle
+*/
 .dark {
-  --brand-honey: oklch(0.78 0.14 72);
-  --brand-amber: oklch(0.72 0.13 55);
-  --brand-teal: oklch(0.72 0.1 195);
-  --brand-coral: oklch(0.72 0.15 28);
-  --brand-moss: oklch(0.72 0.11 155);
-  --brand-info: oklch(0.7 0.11 250);
-  --brand-plum: oklch(0.7 0.11 320);
-  --brand-ink: oklch(0.94 0.015 75);
-  --brand-mist: oklch(0.26 0.025 75);
+  /* Accents: +lightness, −chroma (~15–20%) vs light mode */
+  --brand-honey: oklch(0.82 0.11 72);
+  --brand-amber: oklch(0.8 0.1 55);
+  --brand-teal: oklch(0.8 0.075 195);
+  --brand-coral: oklch(0.78 0.12 28);
+  --brand-moss: oklch(0.8 0.085 155);
+  --brand-info: oklch(0.8 0.085 250);
+  --brand-plum: oklch(0.78 0.085 320);
+  /* Primary text ≈ white @ 87% — softer than pure white */
+  --brand-ink: oklch(0.87 0.008 75);
+  /* Mist doubles as the 1dp elevated fill */
+  --brand-mist: oklch(0.235 0.012 75);
 
-  --brand-honey-soft: oklch(0.32 0.05 72);
-  --brand-teal-soft: oklch(0.3 0.04 195);
-  --brand-coral-soft: oklch(0.32 0.05 28);
-  --brand-moss-soft: oklch(0.3 0.04 155);
-  --brand-info-soft: oklch(0.3 0.04 250);
-  --brand-plum-soft: oklch(0.3 0.04 320);
+  --brand-honey-soft: oklch(0.28 0.035 72);
+  --brand-teal-soft: oklch(0.27 0.03 195);
+  --brand-coral-soft: oklch(0.28 0.035 28);
+  --brand-moss-soft: oklch(0.27 0.03 155);
+  --brand-info-soft: oklch(0.27 0.03 250);
+  --brand-plum-soft: oklch(0.27 0.03 320);
 
-  --background: oklch(0.16 0.015 75);
-  --foreground: oklch(0.94 0.015 75);
-  --card: oklch(0.22 0.02 75);
-  --card-foreground: oklch(0.94 0.015 75);
-  --popover: oklch(0.22 0.02 75);
-  --popover-foreground: oklch(0.94 0.015 75);
+  /* 0dp base — Material-style charcoal, warm-tinted */
+  --background: oklch(0.18 0.01 75);
+  --foreground: oklch(0.87 0.008 75);
+  /* 1dp cards / containers */
+  --card: oklch(0.235 0.012 75);
+  --card-foreground: oklch(0.87 0.008 75);
+  /* 3–4dp popovers, menus, dialogs — lighter than cards */
+  --popover: oklch(0.28 0.012 75);
+  --popover-foreground: oklch(0.87 0.008 75);
   --primary: var(--brand-honey);
-  --primary-foreground: oklch(0.2 0.03 75);
-  --secondary: var(--brand-mist);
+  --primary-foreground: oklch(0.22 0.025 75);
+  /* 2dp secondary wells */
+  --secondary: oklch(0.26 0.012 75);
   --secondary-foreground: var(--brand-amber);
-  --muted: var(--brand-mist);
-  --muted-foreground: oklch(0.7 0.02 75);
+  --muted: oklch(0.235 0.012 75);
+  /* Secondary text ≈ white @ 60% */
+  --muted-foreground: oklch(0.68 0.01 75);
   --accent: var(--brand-teal-soft);
   --accent-foreground: var(--brand-teal);
   --destructive: var(--brand-coral);
   --success: var(--brand-moss);
-  --success-foreground: oklch(0.18 0.02 155);
+  --success-foreground: oklch(0.2 0.02 155);
   --warning: var(--brand-amber);
-  --warning-foreground: oklch(0.2 0.03 55);
+  --warning-foreground: oklch(0.22 0.025 55);
   --danger: var(--brand-coral);
-  --danger-foreground: oklch(0.18 0.02 28);
+  --danger-foreground: oklch(0.2 0.02 28);
   --info: var(--brand-info);
-  --info-foreground: oklch(0.18 0.02 250);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 14%);
+  --info-foreground: oklch(0.2 0.02 250);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 10%);
   --ring: var(--brand-honey);
   --chart-1: var(--brand-honey);
   --chart-2: var(--brand-teal);
@@ -210,21 +225,22 @@
   --chart-4: var(--brand-coral);
   --chart-5: var(--brand-plum);
 
-  --shadow-soft: 0 4px 20px -2px
-    color-mix(in oklch, var(--brand-honey) 22%, transparent);
+  /* Depth from surfaces; keep shadows hairline / low-glow */
+  --shadow-soft: 0 0 0 1px oklch(1 0 0 / 5%);
   --shadow-card-hover:
-    0 10px 28px -6px color-mix(in oklch, var(--brand-honey) 28%, transparent),
-    0 6px 12px -6px oklch(0 0 0 / 25%);
-  --shadow-button: 0 4px 14px 0
-    color-mix(in oklch, var(--brand-honey) 38%, transparent);
+    0 0 0 1px oklch(1 0 0 / 8%),
+    0 8px 24px -10px oklch(0 0 0 / 40%);
+  --shadow-button: 0 2px 10px -2px
+    color-mix(in oklch, var(--brand-honey) 24%, transparent);
 
-  --sidebar: oklch(0.12 0.02 75);
-  --sidebar-foreground: oklch(0.92 0.015 75);
+  /* Sidebar slightly below base — still charcoal, not #000 */
+  --sidebar: oklch(0.15 0.01 75);
+  --sidebar-foreground: oklch(0.87 0.008 75);
   --sidebar-primary: var(--brand-honey);
-  --sidebar-primary-foreground: oklch(0.18 0.03 75);
-  --sidebar-accent: oklch(0.2 0.025 75);
-  --sidebar-accent-foreground: oklch(0.92 0.015 75);
-  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-primary-foreground: oklch(0.2 0.025 75);
+  --sidebar-accent: oklch(0.235 0.012 75);
+  --sidebar-accent-foreground: oklch(0.87 0.008 75);
+  --sidebar-border: oklch(1 0 0 / 7%);
   --sidebar-ring: var(--brand-honey);
 }
 

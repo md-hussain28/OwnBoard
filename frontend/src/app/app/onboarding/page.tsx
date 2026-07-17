@@ -50,8 +50,7 @@ export default function OnboardingPage() {
         </CardHeader>
         <CardContent className="flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            Doc packs assigned by your admin — read every document, then pass the open-book quiz at
-            100%.
+            Doc packs assigned by your admin — read every document, then pass the quiz at 100%.
           </p>
           <Button asChild size="sm" variant="outline">
             <Link href="/app/onboarding/packs">Open</Link>

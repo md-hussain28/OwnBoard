@@ -165,8 +165,8 @@ export function useGenerateQuiz(packId: string) {
 export function useSaveQuiz(packId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (questions: QuizQuestionCurationItem[]) =>
-      docPackService.saveQuiz(packId, questions),
+    mutationFn: (input: { questions: QuizQuestionCurationItem[]; openBook: boolean }) =>
+      docPackService.saveQuiz(packId, input.questions, input.openBook),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: docPackKeys.quiz(packId) });
       void queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });

@@ -175,14 +175,24 @@ def plan_coverage(documents: list[DocumentForPlanning], target_count: int, forma
 
 
 _DRAFT_SYSTEM_PROMPT = (
-    "You write onboarding quiz questions for new hires. You will be given a single passage from an "
+    "You write rigorous onboarding quiz questions that verify a new hire actually understood the "
+    "policy/procedure — not that they can skim for a keyword. You will be given a single passage from an "
     "internal document. Write exactly one single-select question that is answerable strictly from that "
-    "passage alone — never from outside/general knowledge. "
-    'For a true/false question, `options` must be exactly ["True", "False"] and `correct_answer` must be '
-    'exactly "True" or "False". For a 4-option multiple-choice question, `options` must contain exactly 4 '
-    "distinct, plausible strings and `correct_answer` must be an exact copy of one of them. Prefer a scenario "
-    'framing ("A teammate does X — what should they do?") when the passage supports it, over a bare recall '
-    "question."
+    "passage alone — never from outside/general knowledge.\n\n"
+    "Quality bar (must follow):\n"
+    "- Test a concrete rule, threshold, obligation, exception, ownership, or decision — not a definition "
+    "of an obvious term, a document title, or a section heading.\n"
+    "- Prefer scenario / judgment framing: given a realistic workplace situation, what must the hire do "
+    "(or not do)? When the passage only states a hard fact (deadline, limit, owner), ask for that fact "
+    "precisely rather than inventing a weak scenario.\n"
+    "- Wrong options must be plausible near-misses (common misreads, off-by-one thresholds, related but "
+    "incorrect owners/steps) — never joke answers, absurd options, or 'all/none of the above'.\n"
+    "- Never ask trivial True/False restatements of a single sentence (\"X is required. True/False\"). "
+    "If using true/false, the stem must be a nuanced claim that could reasonably be mistaken.\n"
+    "- Do not quote the passage verbatim as the question stem; paraphrase and force comprehension.\n\n"
+    'Format: for true/false, `options` must be exactly ["True", "False"] and `correct_answer` must be '
+    'exactly "True" or "False". For mcq_4, `options` must contain exactly 4 distinct, plausible strings '
+    "and `correct_answer` must be an exact copy of one of them."
 )
 
 
@@ -190,6 +200,7 @@ def _build_draft_prompt(slot: SlotPlan, custom_instructions: str | None, avoid: 
     parts = [
         f"Question format required: {slot.format.value}",
         f"Passage (from '{slot.document_title}'):\n{slot.chunk_content}",
+        "Write one non-trivial question that a hire who only skimmed would likely miss.",
     ]
     if custom_instructions:
         parts.append(f"Additional instructions from the quiz author: {custom_instructions}")
@@ -199,7 +210,7 @@ def _build_draft_prompt(slot: SlotPlan, custom_instructions: str | None, avoid: 
     if slot.last_failure_reason:
         parts.append(
             f"Your previous attempt for this passage was rejected ({slot.last_failure_reason}). "
-            "Write a different, strictly-grounded question this time."
+            "Write a different, strictly-grounded, higher-quality question this time."
         )
     return "\n\n".join(parts)
 

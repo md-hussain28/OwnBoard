@@ -21,7 +21,7 @@ export default function AssignmentPage({ params }: { params: Promise<{ assignmen
         </Link>
         <h1 className="text-2xl font-semibold">{detail?.docPackName ?? "Doc pack"}</h1>
         <p className="text-muted-foreground">
-          Read and acknowledge each document, then take the open-book quiz. 100% to pass.
+          Read and acknowledge each document, then take the quiz. 100% to pass.
         </p>
       </div>
       <AssignmentWorkspace assignmentId={assignmentId} />

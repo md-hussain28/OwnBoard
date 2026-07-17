@@ -277,4 +277,4 @@ async def save_doc_pack_quiz(
 ):
     """Doc Pack PRD §5.5/§5.6 — publish the admin's curated set; pack becomes assignable."""
     curation = [item.model_dump() for item in payload.questions]
-    return await services.quiz.save_curated_quiz(org_id, pack_id, curation)
+    return await services.quiz.save_curated_quiz(org_id, pack_id, curation, open_book=payload.open_book)

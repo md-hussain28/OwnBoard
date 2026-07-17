@@ -86,10 +86,14 @@ export function DocPackQuizBuilder({
   const [formats, setFormats] = useState<QuestionFormat[]>(["mcq_4"]);
   const [customInstructions, setCustomInstructions] = useState("");
   const [questions, setQuestions] = useState<EditableQuestion[]>([]);
+  const [openBook, setOpenBook] = useState(false);
 
   const template = quizQuery.data;
   useEffect(() => {
-    if (template) setQuestions(toEditable(template));
+    if (template) {
+      setQuestions(toEditable(template));
+      setOpenBook(template.openBook);
+    }
   }, [template]);
 
   const rejectedSlots = generate.data?.rejectedSlots ?? [];
@@ -138,17 +142,22 @@ export function DocPackQuizBuilder({
 
   function handleSave() {
     if (keptQuestions.length === 0) return;
-    save.mutate(toSavePayload(keptQuestions), {
-      onSuccess: () => {
-        notify.success("Quiz saved", {
-          description: "The pack is ready to assign.",
-          id: `quiz-save:${packId}`,
-        });
+    save.mutate(
+      { questions: toSavePayload(keptQuestions), openBook },
+      {
+        onSuccess: () => {
+          notify.success("Quiz saved", {
+            description: openBook
+              ? "Published as open-book — reading stays available during the quiz."
+              : "Published as closed-book — reading is hidden once the quiz starts.",
+            id: `quiz-save:${packId}`,
+          });
+        },
+        onError: (err) => {
+          notify.apiError(err, "Save failed", { id: `quiz-save-error:${packId}` });
+        },
       },
-      onError: (err) => {
-        notify.apiError(err, "Save failed", { id: `quiz-save-error:${packId}` });
-      },
-    });
+    );
   }
 
   function handleRegenerateDropped() {
@@ -205,6 +214,8 @@ export function DocPackQuizBuilder({
             keptCount={keptQuestions.length}
             droppedIds={droppedIds}
             isPublished={template.isPublished}
+            openBook={openBook}
+            onOpenBookChange={setOpenBook}
             busy={busy}
             regeneratePending={regenerate.isPending}
             savePending={save.isPending}

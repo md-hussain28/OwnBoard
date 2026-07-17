@@ -9,6 +9,12 @@ function isPdf(fileType: string) {
   return fileType.toLowerCase() === "pdf";
 }
 
+/** Hide Chrome/Edge PDF chrome (download / print) where the browser honors hash params. */
+function viewOnlyPdfSrc(fileUrl: string) {
+  const base = fileUrl.split("#")[0] ?? fileUrl;
+  return `${base}#toolbar=0&navpanes=0`;
+}
+
 export function AssignmentDocumentReader({
   assignmentId,
   documentId,
@@ -45,20 +51,13 @@ export function AssignmentDocumentReader({
         <div className="flex flex-col">
           <div className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-muted-foreground">
             <FileTextIcon className="size-3.5" />
-            <span className="truncate">Original PDF — scroll through before marking as read</span>
-            <a
-              href={data.fileUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="ml-auto shrink-0 font-medium text-foreground underline-offset-2 hover:underline"
-            >
-              Open in new tab
-            </a>
+            <span className="truncate">View only — scroll through before marking as read</span>
           </div>
           <iframe
             title={title}
-            src={data.fileUrl}
+            src={viewOnlyPdfSrc(data.fileUrl)}
             className="h-[min(70vh,36rem)] w-full bg-background"
+            onContextMenu={(event) => event.preventDefault()}
           />
         </div>
       )}

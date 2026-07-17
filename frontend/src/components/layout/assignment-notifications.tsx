@@ -51,7 +51,7 @@ function statusHint(status: PackAssignmentStatus): string {
     case "reading":
       return "Keep reading to unlock the quiz";
     case "ready_for_quiz":
-      return "Ready — take the open-book quiz";
+      return "Ready — take the quiz";
     case "quiz_in_progress":
       return "Quiz in progress — finish when ready";
     case "failed":

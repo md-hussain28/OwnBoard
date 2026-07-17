@@ -96,7 +96,11 @@ class QuizService:
             await self.template_dao.delete(previous_draft.id)
 
         template = await self.template_dao.create(
-            type=QuizType.doc_pack, source_ref=pack_id, custom_instructions=custom_instructions, is_published=False
+            type=QuizType.doc_pack,
+            source_ref=pack_id,
+            custom_instructions=custom_instructions,
+            is_published=False,
+            open_book=False,
         )
         await self.question_dao.bulk_create(
             [
@@ -221,7 +225,9 @@ class QuizService:
             raise NotFoundError("No quiz has been generated for this pack yet")
         return template
 
-    async def save_curated_quiz(self, org_id: str, pack_id: str, curation: list[dict]) -> QuizTemplate:
+    async def save_curated_quiz(
+        self, org_id: str, pack_id: str, curation: list[dict], *, open_book: bool = False
+    ) -> QuizTemplate:
         """Publish the admin's curated question set (Doc Pack PRD §5.5/§5.6, E1 §10.12)."""
         pack = await self.doc_pack_dao.get_by_id_for_org(org_id, pack_id)
         if pack is None:
@@ -253,7 +259,7 @@ class QuizService:
                 fields["format"] = QuestionFormat(item["format"])
             await self.question_dao.update(question.id, **fields)
 
-        await self.template_dao.update(draft.id, is_published=True)
+        await self.template_dao.update(draft.id, is_published=True, open_book=open_book)
         await self.pack_assignment_dao.repoint_pending_assignments(pack_id, draft.id)
         await self.doc_pack_dao.update(pack.id, status=DocPackStatus.active, review_note=None)
 

@@ -100,8 +100,15 @@ export const docPackService = {
     }
   },
 
-  async saveQuiz(id: string, questions: QuizQuestionCurationItem[]): Promise<AdminQuizTemplate> {
-    const { data } = await getApiClient().put(API_ENDPOINTS.docPackQuiz(id), { questions });
+  async saveQuiz(
+    id: string,
+    questions: QuizQuestionCurationItem[],
+    openBook = false,
+  ): Promise<AdminQuizTemplate> {
+    const { data } = await getApiClient().put(API_ENDPOINTS.docPackQuiz(id), {
+      questions,
+      open_book: openBook,
+    });
     return adminQuizTemplateSchema.parse(data);
   },
 

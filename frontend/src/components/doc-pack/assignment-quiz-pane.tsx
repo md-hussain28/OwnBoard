@@ -28,8 +28,8 @@ function QuizStartPrompt({
     <>
       <p className="text-sm text-muted-foreground">
         {allAcked
-          ? "All documents acknowledged — the quiz is unlocked. It’s open-book: the reading pane stays available. You need 100% to pass, with unlimited retakes."
-          : "Mark every document as read to unlock the quiz. It stays open-book once you start."}
+          ? "All documents acknowledged — the quiz is unlocked. You need 100% to pass, with unlimited retakes. Whether reading stays available depends on how your admin published this quiz."
+          : "Mark every document as read to unlock the quiz."}
       </p>
       <Button type="button" disabled={!allAcked || startPending} onClick={onStart}>
         {startPending ? (
@@ -47,16 +47,23 @@ function QuizStartPrompt({
 function QuizQuestionsForm({
   questions,
   answers,
+  openBook,
   gradePending,
   onAnswer,
   onSubmit,
 }: Pick<AssignmentQuizPaneProps, "answers" | "gradePending" | "onAnswer" | "onSubmit"> & {
   questions: QuizTemplate["questions"];
+  openBook: boolean;
 }) {
   const allAnswered = questions.length > 0 && questions.every((q) => answers[q.id]);
 
   return (
     <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">
+        {openBook
+          ? "Open-book — you can still consult the reading pane."
+          : "Closed-book — reading materials are hidden until you submit."}
+      </p>
       {questions.map((question, index) => (
         <div key={question.id} className="space-y-1">
           <p className="text-xs font-semibold text-muted-foreground">
@@ -108,6 +115,7 @@ function QuizPaneBody(props: AssignmentQuizPaneProps) {
     <QuizQuestionsForm
       questions={activeQuiz.template.questions}
       answers={props.answers}
+      openBook={activeQuiz.template.openBook}
       gradePending={props.gradePending}
       onAnswer={props.onAnswer}
       onSubmit={props.onSubmit}

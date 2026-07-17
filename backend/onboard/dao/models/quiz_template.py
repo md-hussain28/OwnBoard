@@ -25,6 +25,8 @@ class QuizTemplate(AuditBase):
     # (`quiz_in_progress`) and completed (`passed`/`failed`) attempts keep grading against the exact version
     # they started on.
     is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # When False (default), reading materials are hidden once the quiz starts. Admin opts into open-book.
+    open_book: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     questions: Mapped[list["QuizQuestion"]] = relationship(back_populates="quiz_template", cascade="all, delete-orphan")
     attempts: Mapped[list["QuizAttempt"]] = relationship(back_populates="quiz_template", cascade="all, delete-orphan")

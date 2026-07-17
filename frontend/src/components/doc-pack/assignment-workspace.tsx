@@ -49,7 +49,7 @@ function QuizResultBanner({
         <p className="text-sm text-muted-foreground">
           {result.passed
             ? "This pack is complete."
-            : "Every question must be correct to pass. The documents stay open — review and retake."}
+            : "Every question must be correct to pass. Review the documents and retake."}
         </p>
       </div>
       {!result.passed && (
@@ -228,6 +228,9 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
   // Read-first: hide the quiz pane until every document is acknowledged (unless already in a quiz / passed).
   const showQuizPane =
     allAcked || Boolean(activeQuiz) || detail.status === "passed" || detail.status === "failed";
+  const openBook = activeQuiz?.template.openBook ?? false;
+  // Closed-book (default): hide reading materials while the quiz is in progress.
+  const showReading = !(activeQuiz && !openBook);
 
   function handleStartQuiz() {
     setResult(null);
@@ -236,7 +239,9 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
       onSuccess: (data) => {
         setActiveQuiz(data);
         notify.info("Quiz started", {
-          description: "Open-book — the reading pane stays available.",
+          description: data.template.openBook
+            ? "Open-book — the reading pane stays available."
+            : "Closed-book — reading materials are hidden until you finish.",
           id: `quiz-start:${assignmentId}`,
         });
       },
@@ -285,24 +290,41 @@ export function AssignmentWorkspace({ assignmentId }: { assignmentId: string }) 
         />
       )}
 
-      <div className={cn("grid gap-6", showQuizPane && activeQuiz && "lg:grid-cols-2")}>
-        <ReadingCard
-          detail={detail}
-          allAcked={allAcked}
-          ackPending={ack.isPending}
-          viewedIds={viewedIds}
-          onOpened={markViewed}
-          onAck={(documentId) =>
-            ack.mutate(documentId, {
-              onSuccess: () => {
-                notify.success("Marked as read", { id: `ack:${documentId}` });
-              },
-              onError: (err) => {
-                notify.apiError(err, "Could not mark as read", { id: `ack-error:${documentId}` });
-              },
-            })
-          }
-        />
+      <div
+        className={cn("grid gap-6", showQuizPane && activeQuiz && showReading && "lg:grid-cols-2")}
+      >
+        {showReading ? (
+          <ReadingCard
+            detail={detail}
+            allAcked={allAcked}
+            ackPending={ack.isPending}
+            viewedIds={viewedIds}
+            onOpened={markViewed}
+            onAck={(documentId) =>
+              ack.mutate(documentId, {
+                onSuccess: () => {
+                  notify.success("Marked as read", { id: `ack:${documentId}` });
+                },
+                onError: (err) => {
+                  notify.apiError(err, "Could not mark as read", { id: `ack-error:${documentId}` });
+                },
+              })
+            }
+          />
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpenIcon className="size-4" /> Reading locked
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                This is a closed-book quiz. Documents stay hidden until you submit your answers.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {showQuizPane ? (
           <AssignmentQuizPane

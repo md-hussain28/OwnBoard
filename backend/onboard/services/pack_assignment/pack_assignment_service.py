@@ -33,11 +33,12 @@ class DocumentContent:
     title: str
     file_type: str
     content: str
+    # Short-lived Supabase signed URL for PDFs (browser loads storage directly).
     file_url: str | None = None
 
 
 class PackAssignmentService:
-    """Doc Pack assignment read-gate → open-book quiz state machine (Doc Pack PRD §4/§6)."""
+    """Doc Pack assignment read-gate → quiz state machine (Doc Pack PRD §4/§6)."""
 
     def __init__(self, session: AsyncSession, storage: SupabaseStorageClient | None = None):
         self.session = session
@@ -63,10 +64,9 @@ class PackAssignmentService:
             return
         raise ForbiddenError("You can only access your own assignments")
 
-    async def get_document_content(
+    async def _resolve_document(
         self, org_id: str, assignment_id: str, document_id: str, *, actor: Employee
-    ) -> DocumentContent:
-        """Open-book reading text for one document in an assignment (Doc Pack PRD §4 read-gate)."""
+    ) -> tuple[PackAssignment, DocPackDocument]:
         assignment = await self.assignment_dao.get_by_id_for_org(org_id, assignment_id)
         if assignment is None:
             raise NotFoundError(f"Assignment {assignment_id} not found")
@@ -77,18 +77,38 @@ class PackAssignmentService:
         document = next((doc for doc in pack.documents if doc.id == document_id), None)
         if document is None:
             raise NotFoundError(f"Document {document_id} not in this assignment's pack")
+        return assignment, document
 
+    async def get_document_content(
+        self, org_id: str, assignment_id: str, document_id: str, *, actor: Employee
+    ) -> DocumentContent:
+        """Reading payload for one document in an assignment (Doc Pack PRD §4 read-gate).
+
+        PDFs return a short-lived signed URL only — no download/extract on this path, so the
+        viewer can open immediately against storage. Text-like files still extract plain text.
+        """
+        _, document = await self._resolve_document(org_id, assignment_id, document_id, actor=actor)
         storage = await self._storage_client()
+        file_type = document.file_type.lower()
+
+        if file_type == "pdf":
+            file_url = await storage.signed_url(document.storage_path, expires_in_seconds=3600)
+            return DocumentContent(
+                document_id=document.id,
+                title=document.title,
+                file_type=document.file_type,
+                content="",
+                file_url=file_url,
+            )
+
         raw = await storage.download(document.storage_path)
         extracted = extract_document(raw, document.file_type)
-        # Signed URL lets the employee viewer embed the original PDF (not just extracted text).
-        file_url = await storage.signed_url(document.storage_path, expires_in_seconds=3600)
         return DocumentContent(
             document_id=document.id,
             title=document.title,
             file_type=document.file_type,
             content=extracted.full_text,
-            file_url=file_url,
+            file_url=None,
         )
 
     async def create_assignments(

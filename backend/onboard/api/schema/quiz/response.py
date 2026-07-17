@@ -32,6 +32,7 @@ class QuizTemplateResponse(BaseModel):
     source_ref: str
     custom_instructions: str | None
     is_published: bool
+    open_book: bool = False
     questions: list[QuizQuestionResponse] = []
 
 
@@ -43,6 +44,7 @@ class QuizTemplateAdminResponse(BaseModel):
     source_ref: str
     custom_instructions: str | None
     is_published: bool
+    open_book: bool = False
     questions: list[QuizQuestionAdminResponse] = []
 
 

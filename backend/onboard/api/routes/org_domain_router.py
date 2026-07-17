@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from onboard.api.dependency.rbac import RequireAdmin
 from onboard.api.dependency.service_container import ServiceContainer, get_service_container
 from onboard.api.dependency.tenancy import CurrentOrgId
-from onboard.api.schema.org_domain.request import OrgDomainCreateRequest
+from onboard.api.schema.org_domain.request import OrgDomainCreateRequest, OrgDomainUpdateRequest
 from onboard.api.schema.org_domain.response import OrgDomainResponse
 
 router = APIRouter(prefix="/domains", tags=["domains"])
@@ -28,6 +28,18 @@ async def create_domain(
 ):
     """Add a custom domain beyond the built-in defaults."""
     return await services.org_domain.create_domain(org_id, payload.name)
+
+
+@router.patch("/{domain_id}", response_model=OrgDomainResponse)
+async def update_domain(
+    domain_id: str,
+    payload: OrgDomainUpdateRequest,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Rename a domain (built-in or custom)."""
+    return await services.org_domain.update_domain(org_id, domain_id, payload.name)
 
 
 @router.delete("/{domain_id}", status_code=204)

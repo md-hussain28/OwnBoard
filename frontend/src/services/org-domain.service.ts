@@ -5,6 +5,7 @@ import {
   orgDomainSchema,
   type CreateOrgDomainInput,
   type OrgDomain,
+  type UpdateOrgDomainInput,
 } from "@/schemas/org-domain.schema";
 
 export const orgDomainService = {
@@ -15,6 +16,11 @@ export const orgDomainService = {
 
   async create(input: CreateOrgDomainInput): Promise<OrgDomain> {
     const { data } = await getApiClient().post(API_ENDPOINTS.domains, { name: input.name });
+    return orgDomainSchema.parse(data);
+  },
+
+  async update(id: string, input: UpdateOrgDomainInput): Promise<OrgDomain> {
+    const { data } = await getApiClient().patch(API_ENDPOINTS.domain(id), { name: input.name });
     return orgDomainSchema.parse(data);
   },
 

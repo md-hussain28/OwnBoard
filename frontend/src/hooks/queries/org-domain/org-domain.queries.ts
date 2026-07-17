@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orgDomainService } from "@/services/org-domain.service";
-import type { CreateOrgDomainInput } from "@/schemas/org-domain.schema";
+import type { CreateOrgDomainInput, UpdateOrgDomainInput } from "@/schemas/org-domain.schema";
 
 export const orgDomainKeys = {
   all: ["org-domains"] as const,
@@ -20,6 +20,18 @@ export function useCreateOrgDomain() {
     mutationFn: (input: CreateOrgDomainInput) => orgDomainService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: orgDomainKeys.all });
+    },
+  });
+}
+
+export function useUpdateOrgDomain() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateOrgDomainInput }) =>
+      orgDomainService.update(id, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: orgDomainKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
     },
   });
 }

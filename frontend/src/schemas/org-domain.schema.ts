@@ -21,3 +21,7 @@ export type OrgDomain = z.infer<typeof orgDomainSchema>;
 export type CreateOrgDomainInput = {
   name: string;
 };
+
+export type UpdateOrgDomainInput = {
+  name: string;
+};

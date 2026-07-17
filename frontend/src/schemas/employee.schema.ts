@@ -49,6 +49,9 @@ export type EmployeeInvitation = z.infer<typeof employeeInviteSchema>;
 export type InviteEmployeeInput = {
   email: string;
   appRole?: AppRole;
+  role?: string | null;
+  githubHandle?: string | null;
+  domainId?: string | null;
 };
 
 export type UpdateEmployeeInput = {

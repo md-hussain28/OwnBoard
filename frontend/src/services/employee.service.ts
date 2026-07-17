@@ -22,10 +22,14 @@ export const employeeService = {
   },
 
   async invite(input: InviteEmployeeInput): Promise<EmployeeInvitation> {
-    const { data } = await getApiClient().post(API_ENDPOINTS.employeeInvitations, {
+    const body: Record<string, unknown> = {
       email: input.email,
       app_role: input.appRole ?? "member",
-    });
+    };
+    if (input.role !== undefined) body.role = input.role;
+    if (input.githubHandle !== undefined) body.github_handle = input.githubHandle;
+    if (input.domainId !== undefined) body.domain_id = input.domainId;
+    const { data } = await getApiClient().post(API_ENDPOINTS.employeeInvitations, body);
     return employeeInviteSchema.parse(data);
   },
 

@@ -67,6 +67,9 @@ async def invite_employee(
         org_id,
         email=payload.email,
         app_role=payload.app_role,
+        role=payload.role,
+        github_handle=payload.github_handle,
+        domain_id=payload.domain_id,
     )
 
 

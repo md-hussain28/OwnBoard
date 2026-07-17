@@ -25,3 +25,7 @@ class EmployeeUpdateRequest(BaseModel):
 class EmployeeInviteRequest(BaseModel):
     email: str = Field(min_length=3, max_length=320)
     app_role: str = APP_ROLE_MEMBER
+    # Optional profile applied when the invitee joins (via Clerk invitation metadata).
+    role: str | None = None  # job title
+    github_handle: str | None = None
+    domain_id: str | None = None

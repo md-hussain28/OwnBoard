@@ -45,20 +45,56 @@ def _normalize_app_role(value: str | None) -> str | None:
     return None
 
 
+def _meta_dict(public_metadata: Any) -> dict[str, Any]:
+    if isinstance(public_metadata, dict):
+        return public_metadata
+    return {}
+
+
 def _app_role_from_membership(*, public_metadata: Any, clerk_role: str | None) -> str:
     """Resolve OwnBoard app_role on first create only.
 
     Preference: invitation/membership public_metadata.app_role → Clerk org:admin bootstrap → member.
     """
-    meta: dict[str, Any] = {}
-    if isinstance(public_metadata, dict):
-        meta = public_metadata
-    from_meta = _normalize_app_role(meta.get("app_role") if meta else None)
+    meta = _meta_dict(public_metadata)
+    from_meta = _normalize_app_role(meta.get("app_role"))
     if from_meta:
         return from_meta
     if clerk_role and clerk_role in CLERK_ORG_ADMIN_ROLES:
         return APP_ROLE_ADMIN
     return APP_ROLE_MEMBER
+
+
+def _normalize_github_handle(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip().lstrip("@")
+    return cleaned or None
+
+
+def _normalize_job_title(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = " ".join(value.split()).strip()
+    return cleaned or None
+
+
+def _invite_profile_from_meta(public_metadata: Any) -> dict[str, Any]:
+    """Pull job title / GitHub / domain_id stored on the Clerk invitation → membership."""
+    meta = _meta_dict(public_metadata)
+    profile: dict[str, Any] = {}
+    job_title = _normalize_job_title(meta.get("job_title") if isinstance(meta.get("job_title"), str) else None)
+    if job_title is not None:
+        profile["role"] = job_title
+    github = _normalize_github_handle(
+        meta.get("github_handle") if isinstance(meta.get("github_handle"), str) else None
+    )
+    if github is not None:
+        profile["github_handle"] = github
+    domain_id = meta.get("domain_id")
+    if isinstance(domain_id, str) and domain_id.strip():
+        profile["domain_id"] = domain_id.strip()
+    return profile
 
 
 class EmployeeService:
@@ -161,12 +197,22 @@ class EmployeeService:
             raise NotFoundError(f"Domain {domain_id} not found")
         return domain.id
 
+    async def _soft_resolve_domain_id(self, org_id: str, domain_id: str | None) -> str | None:
+        """Like `_resolve_domain_id`, but drops unknown ids (e.g. deleted between invite and join)."""
+        if domain_id is None:
+            return None
+        domain = await self.domain_dao.get_by_id_for_org(org_id, domain_id)
+        return domain.id if domain is not None else None
+
     async def invite_member(
         self,
         org_id: str,
         *,
         email: str,
         app_role: str = APP_ROLE_MEMBER,
+        role: str | None = None,
+        github_handle: str | None = None,
+        domain_id: str | None = None,
         inviter_user_id: str | None = None,
     ) -> dict[str, Any]:
         normalized = _normalize_app_role(app_role)
@@ -177,6 +223,10 @@ class EmployeeService:
         if not email_clean or "@" not in email_clean:
             raise ValidationError("A valid email address is required")
 
+        job_title = _normalize_job_title(role)
+        github = _normalize_github_handle(github_handle)
+        resolved_domain_id = await self._resolve_domain_id(org_id, domain_id)
+
         try:
             clerk = get_clerk_client()
         except RuntimeError as exc:
@@ -185,12 +235,20 @@ class EmployeeService:
         settings = get_settings()
         redirect_url = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/sign-in"
 
+        public_metadata: dict[str, Any] = {"app_role": normalized}
+        if job_title is not None:
+            public_metadata["job_title"] = job_title
+        if github is not None:
+            public_metadata["github_handle"] = github
+        if resolved_domain_id is not None:
+            public_metadata["domain_id"] = resolved_domain_id
+
         try:
             kwargs: dict[str, Any] = {
                 "organization_id": org_id,
                 "email_address": email_clean,
                 "role": "org:member",
-                "public_metadata": {"app_role": normalized},
+                "public_metadata": public_metadata,
                 "redirect_url": redirect_url,
             }
             # Backend secret can invite without a Clerk org:admin inviter; pass when available.
@@ -217,6 +275,7 @@ class EmployeeService:
         name = clerk_user_id
         app_role = APP_ROLE_MEMBER
         clerk_role: str | None = None
+        membership_meta: Any = None
 
         try:
             clerk = get_clerk_client()
@@ -246,8 +305,9 @@ class EmployeeService:
             if memberships:
                 membership = memberships[0]
                 clerk_role = membership.role
+                membership_meta = membership.public_metadata
                 app_role = _app_role_from_membership(
-                    public_metadata=membership.public_metadata,
+                    public_metadata=membership_meta,
                     clerk_role=clerk_role,
                 )
         except Exception:
@@ -262,13 +322,17 @@ class EmployeeService:
         if existing is not None:
             return await self._maybe_bootstrap_admin(org_id, existing)
 
+        profile = _invite_profile_from_meta(membership_meta)
+        resolved_domain_id = await self._soft_resolve_domain_id(org_id, profile.get("domain_id"))
+
         created = await self.employee_dao.create(
             org_id=org_id,
             clerk_user_id=clerk_user_id,
             name=name,
-            role=None,
+            role=profile.get("role"),
             app_role=app_role,
-            github_handle=None,
+            github_handle=profile.get("github_handle"),
+            domain_id=resolved_domain_id,
         )
         return await self._maybe_bootstrap_admin(org_id, created)
 
@@ -344,6 +408,10 @@ class EmployeeService:
                         public_metadata=membership.public_metadata,
                         clerk_role=membership.role,
                     )
+                    profile = _invite_profile_from_meta(membership.public_metadata)
+                    resolved_domain_id = await self._soft_resolve_domain_id(
+                        org_id, profile.get("domain_id")
+                    )
 
                     existing = await self.employee_dao.get_by_clerk_user_id(org_id, clerk_user_id)
                     if existing is None:
@@ -351,9 +419,10 @@ class EmployeeService:
                             org_id=org_id,
                             clerk_user_id=clerk_user_id,
                             name=name,
-                            role=None,
+                            role=profile.get("role"),
                             app_role=app_role,
-                            github_handle=None,
+                            github_handle=profile.get("github_handle"),
+                            domain_id=resolved_domain_id,
                         )
                         upserted += 1
                     elif existing.name != name:

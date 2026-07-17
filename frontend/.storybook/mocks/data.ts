@@ -69,6 +69,31 @@ export const mockEmployees = [
   },
 ];
 
+export const mockPendingInvitations = [
+  {
+    id: "inv_a1b2c3d4e5f6g7h8i9",
+    email_address: "jordan.lee@example.com",
+    app_role: "member",
+    status: "pending",
+    role: "Product Designer",
+    github_handle: "jlee",
+    domain_id: "dom_design",
+    domain_name: "Design",
+    created_at: "2026-07-16T10:00:00Z",
+  },
+  {
+    id: "inv_b2c3d4e5f6g7h8i9j0",
+    email_address: "sam.okafor@example.com",
+    app_role: "admin",
+    status: "pending",
+    role: null,
+    github_handle: null,
+    domain_id: null,
+    domain_name: null,
+    created_at: "2026-07-17T08:30:00Z",
+  },
+];
+
 export const mockOrgDomains = [
   { id: "dom_developer", org_id: "org_demo", name: "Developer", is_default: true },
   { id: "dom_marketing", org_id: "org_demo", name: "Marketing", is_default: true },

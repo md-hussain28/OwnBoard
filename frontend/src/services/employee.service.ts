@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from "@/lib/api/endpoint";
 import {
   type Employee,
   type EmployeeInvitation,
+  employeeInviteListSchema,
   employeeInviteSchema,
   employeeListSchema,
   employeeSchema,
@@ -21,6 +22,11 @@ export const employeeService = {
     return employeeSchema.parse(data);
   },
 
+  async listInvitations(): Promise<EmployeeInvitation[]> {
+    const { data } = await getApiClient().get(API_ENDPOINTS.employeeInvitations);
+    return employeeInviteListSchema.parse(data);
+  },
+
   async invite(input: InviteEmployeeInput): Promise<EmployeeInvitation> {
     const body: Record<string, unknown> = {
       email: input.email,
@@ -30,6 +36,11 @@ export const employeeService = {
     if (input.githubHandle !== undefined) body.github_handle = input.githubHandle;
     if (input.domainId !== undefined) body.domain_id = input.domainId;
     const { data } = await getApiClient().post(API_ENDPOINTS.employeeInvitations, body);
+    return employeeInviteSchema.parse(data);
+  },
+
+  async revokeInvitation(id: string): Promise<EmployeeInvitation> {
+    const { data } = await getApiClient().delete(API_ENDPOINTS.employeeInvitation(id));
     return employeeInviteSchema.parse(data);
   },
 

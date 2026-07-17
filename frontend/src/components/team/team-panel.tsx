@@ -7,6 +7,7 @@ import { FilterSelect } from "@/components/shared/filter-select";
 import { InviteMemberDialog } from "@/components/team/invite-member-dialog";
 import { ManageDomainsDialog } from "@/components/team/manage-domains-dialog";
 import { MemberRow } from "@/components/team/member-row";
+import { PendingInvitationRow } from "@/components/team/pending-invitation-row";
 import {
   type DomainFilter,
   matchesEmployee,
@@ -15,11 +16,14 @@ import {
   ROLE_FILTERS,
   type RoleFilter,
 } from "@/components/team/team-constants";
-import { useEmployees } from "@/hooks/queries/employee/employee.queries";
+import {
+  useEmployees,
+  usePendingInvitations,
+} from "@/hooks/queries/employee/employee.queries";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { useOrgDomains } from "@/hooks/queries/org-domain/org-domain.queries";
 import { getApiErrorMessage } from "@/lib/api/errors";
-import type { Employee } from "@/schemas/employee.schema";
+import type { Employee, EmployeeInvitation } from "@/schemas/employee.schema";
 import type { OrgDomain } from "@/schemas/org-domain.schema";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
@@ -261,6 +265,64 @@ function PeopleListBody({
   );
 }
 
+function PendingInvitationsSection({
+  invitations,
+  isLoading,
+  isError,
+  error,
+}: {
+  invitations: EmployeeInvitation[];
+  isLoading: boolean;
+  isError: boolean;
+  error: unknown;
+}) {
+  if (isLoading) {
+    return (
+      <section className="space-y-3" aria-labelledby="pending-invites-heading">
+        <h2 id="pending-invites-heading" className="text-sm font-semibold">
+          Pending invites
+        </h2>
+        <div className="space-y-2 rounded-xl border border-border p-2">
+          <Skeleton className="h-14 w-full rounded-lg" />
+        </div>
+      </section>
+    );
+  }
+
+  if (isError) {
+    return (
+      <section className="space-y-3" aria-labelledby="pending-invites-heading">
+        <h2 id="pending-invites-heading" className="text-sm font-semibold">
+          Pending invites
+        </h2>
+        <p className="rounded-xl border border-border px-4 py-6 text-sm text-muted-foreground">
+          Could not load invitations ({getApiErrorMessage(error)}).
+        </p>
+      </section>
+    );
+  }
+
+  if (invitations.length === 0) return null;
+
+  return (
+    <section className="space-y-3" aria-labelledby="pending-invites-heading">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="pending-invites-heading" className="text-sm font-semibold">
+          Pending invites
+        </h2>
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {invitations.length} {invitations.length === 1 ? "invite" : "invites"}
+        </span>
+      </div>
+      <ul className="rounded-xl border border-border bg-card p-1.5 shadow-soft">
+        {invitations.map((invitation) => (
+          <PendingInvitationRow key={invitation.id} invitation={invitation} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /** Search/filter state for the people list plus everything derived from it. */
 function usePeopleFilters(employees: Employee[], domains: OrgDomain[]) {
   const [query, setQuery] = useState("");
@@ -319,11 +381,13 @@ function usePeopleFilters(employees: Employee[], domains: OrgDomain[]) {
 export function TeamPanel() {
   const { isAdmin, isLoading: roleLoading, employeeId } = useAppRole();
   const employeesQuery = useEmployees();
+  const invitationsQuery = usePendingInvitations({ enabled: isAdmin });
   const domainsQuery = useOrgDomains();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [domainsOpen, setDomainsOpen] = useState(false);
 
   const employees = employeesQuery.data ?? [];
+  const invitations = invitationsQuery.data ?? [];
   const domains = domainsQuery.data ?? [];
   const filters = usePeopleFilters(employees, domains);
   const { filteredEmployees, hasActiveFilters, clearFilters } = filters;
@@ -350,6 +414,13 @@ export function TeamPanel() {
       <InviteMemberDialog open={inviteOpen} onOpenChange={setInviteOpen} domains={domains} />
 
       <ManageDomainsDialog open={domainsOpen} onOpenChange={setDomainsOpen} domains={domains} />
+
+      <PendingInvitationsSection
+        invitations={invitations}
+        isLoading={invitationsQuery.isLoading}
+        isError={invitationsQuery.isError}
+        error={invitationsQuery.error}
+      />
 
       <section className="space-y-3" aria-labelledby="members-heading">
         <div className="flex items-baseline justify-between gap-3">

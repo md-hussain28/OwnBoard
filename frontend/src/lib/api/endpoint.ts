@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
   employees: "/employees",
   employee: (id: string) => `/employees/${id}`,
   employeeInvitations: "/employees/invitations",
+  employeeInvitation: (id: string) => `/employees/invitations/${id}`,
   employeeAssignments: (employeeId: string) => `/employees/${employeeId}/assignments`,
 
   domains: "/domains",

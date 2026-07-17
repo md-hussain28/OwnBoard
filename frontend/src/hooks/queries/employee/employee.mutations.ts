@@ -1,7 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { employeeKeys } from "@/hooks/queries/employee/employee.queries";
 import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries/optimistic";
-import type { Employee, InviteEmployeeInput, UpdateEmployeeInput } from "@/schemas/employee.schema";
+import type {
+  Employee,
+  EmployeeInvitation,
+  InviteEmployeeInput,
+  UpdateEmployeeInput,
+} from "@/schemas/employee.schema";
 import { employeeService } from "@/services/employee.service";
 
 export function useInviteEmployee() {
@@ -11,6 +16,29 @@ export function useInviteEmployee() {
     mutationFn: (input: InviteEmployeeInput) => employeeService.invite(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: employeeKeys.all });
+      void queryClient.invalidateQueries({ queryKey: employeeKeys.invitations });
+    },
+  });
+}
+
+export function useRevokeInvitation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (invitationId: string) => employeeService.revokeInvitation(invitationId),
+    onMutate: async (invitationId) => {
+      const snap = await optimisticUpdate<EmployeeInvitation[]>(
+        queryClient,
+        employeeKeys.invitations,
+        (prev) => prev?.filter((invite) => invite.id !== invitationId),
+      );
+      return { snap };
+    },
+    onError: (_err, _id, context) => {
+      rollbackOptimistic(queryClient, employeeKeys.invitations, context?.snap);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: employeeKeys.invitations });
     },
   });
 }

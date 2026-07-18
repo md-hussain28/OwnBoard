@@ -1,12 +1,11 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
 import {
   type CreateOrgDomainInput,
   type OrgDomain,
   orgDomainListSchema,
   orgDomainSchema,
   type UpdateOrgDomainInput,
-} from "@/schemas/org-domain.schema";
+} from "@/schemas";
 
 export const orgDomainService = {
   async list(): Promise<OrgDomain[]> {

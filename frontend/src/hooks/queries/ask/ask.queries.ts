@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { projectDocContentService } from "@/services/project-doc-content.service";
+import { projectDocContentService } from "@/services";
 
 export const askKeys = {
   docContent: (projectId: string, documentId: string) =>

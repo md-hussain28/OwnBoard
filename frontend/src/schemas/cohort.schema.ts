@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { packAssignmentStatusSchema } from "@/schemas/packAssignment.schema";
+import { packAssignmentStatusSchema } from "./packAssignment.schema";
 
 const cohortTrackSchema = z
   .object({

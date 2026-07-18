@@ -3,18 +3,28 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo } from "react";
-import { QuizAssignmentPanel } from "@/components/doc-pack/quiz-assignment-panel";
-import { QuizPackList } from "@/components/doc-pack/quiz-pack-list";
-import { ViewPackPanel } from "@/components/doc-pack/view-pack-panel";
-import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { usePackAssignmentProgress } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import type { DocPackListItem } from "@/schemas/docPack.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/ui/dialog";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/ui/sheet";
-import { Skeleton } from "@/ui/skeleton";
+import { useDocPacks } from "@/hooks/queries/doc-pack";
+import { useAppRole } from "@/hooks/queries/me";
+import { usePackAssignmentProgress } from "@/hooks/queries/pack-assignment";
+import type { DocPackListItem } from "@/schemas";
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  Skeleton,
+} from "@/ui";
+import { QuizAssignmentPanel } from "./quiz-assignment-panel";
+import { QuizPackList } from "./quiz-pack-list";
+import { ViewPackPanel } from "./view-pack-panel";
 
 const PACK_STATUS_LABEL: Record<DocPackListItem["status"], string> = {
   draft: "Draft",

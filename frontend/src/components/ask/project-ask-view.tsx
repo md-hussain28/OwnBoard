@@ -20,27 +20,24 @@ import {
   UsersRoundIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { AskDocProvider } from "@/components/ask/ask-doc-viewer";
-import { AskMessage } from "@/components/ask/ask-message";
-import { AskThreadHistory } from "@/components/ask/ask-thread-history";
-import { useAskThreads } from "@/components/ask/use-ask-threads";
-import { ProjectSectionHeader } from "@/components/project/project-section-header";
+import { Button, Skeleton } from "@/ui";
 import {
   Conversation,
   ConversationContent,
   ConversationEmptyState,
   ConversationScrollButton,
-} from "@/ui/ai-elements/conversation";
-import { Loader } from "@/ui/ai-elements/loader";
-import {
   PromptInput,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputToolbar,
-} from "@/ui/ai-elements/prompt-input";
-import { Suggestion, Suggestions } from "@/ui/ai-elements/suggestion";
-import { Button } from "@/ui/button";
-import { Skeleton } from "@/ui/skeleton";
+  Suggestion,
+  Suggestions,
+} from "@/ui/ai-elements";
+import { AskDocProvider } from "./ask-doc-viewer";
+import { AskMessage } from "./ask-message";
+import { AskThinking } from "./ask-thinking";
+import { AskThreadHistory } from "./ask-thread-history";
+import { useAskThreads } from "./use-ask-threads";
 
 const SAMPLE_PROMPTS = [
   {
@@ -103,6 +100,9 @@ const SAMPLE_PROMPTS = [
   },
 ];
 
+/** A handful of starter prompts shown on the empty state — kept short so the grid stays calm. */
+const EMPTY_STATE_PROMPTS = SAMPLE_PROMPTS.slice(0, 4);
+
 /** Flatten a UIMessage's text parts to a plain string (for building the backend request). */
 function textOf(message: UIMessage): string {
   return message.parts
@@ -113,21 +113,21 @@ function textOf(message: UIMessage): string {
 
 function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
   return (
-    <ConversationEmptyState className="gap-5 text-center">
-      <span className="flex size-12 items-center justify-center rounded-2xl bg-brand-honey-soft text-brand-honey">
-        <SparklesIcon className="size-6" />
+    <ConversationEmptyState className="gap-6 text-center">
+      <span className="flex size-14 items-center justify-center rounded-2xl bg-brand-honey-soft text-brand-honey shadow-soft">
+        <SparklesIcon className="size-7" />
       </span>
-      <div className="space-y-1">
-        <p className="font-heading text-base font-semibold text-foreground">
+      <div className="space-y-1.5">
+        <p className="font-heading text-lg font-semibold text-foreground">
           Ask this project anything
         </p>
-        <p className="mx-auto max-w-md text-sm text-muted-foreground">
-          Grounded in this project's docs, code, and commit history. Answers come back with charts,
-          checklists, and clickable citations — and escalate to a human when the context runs thin.
+        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+          Grounded in this project's docs, code, and commit history — answers come back with charts,
+          checklists, and clickable citations, and escalate to a human when the context runs thin.
         </p>
       </div>
       <Suggestions className="max-w-xl justify-center">
-        {SAMPLE_PROMPTS.map((s) => (
+        {EMPTY_STATE_PROMPTS.map((s) => (
           <Suggestion key={s.label} suggestion={s.prompt} onClick={onPick}>
             <s.icon className="size-4 shrink-0 text-brand-teal" />
             {s.label}
@@ -187,57 +187,75 @@ function AskChat({
   }
 
   const last = messages[messages.length - 1];
-  const waitingForAnswer =
-    busy &&
-    (last?.role !== "assistant" ||
-      !last.parts.some((p) => (p.type === "text" && p.text) || p.type.startsWith("tool-")));
+  const lastAssistantEmpty =
+    last?.role === "assistant" &&
+    !last.parts.some((p) => (p.type === "text" && p.text) || p.type.startsWith("tool-"));
+  const waitingForAnswer = busy && (last?.role !== "assistant" || lastAssistantEmpty);
+
+  // While waiting on a fresh assistant turn, hide the empty placeholder message so the
+  // thinking indicator (which carries its own avatar) doesn't render twice.
+  const visibleMessages =
+    waitingForAnswer && last?.role === "assistant" ? messages.slice(0, -1) : messages;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="overflow-hidden rounded-xl border border-border bg-background">
-        <Conversation className="max-h-[62vh] min-h-[44vh]">
-          <ConversationContent>
-            {messages.length === 0 ? (
-              <EmptyState onPick={submit} />
-            ) : (
-              messages.map((m) => <AskMessage key={m.id} message={m} />)
-            )}
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <Conversation className="min-h-0 flex-1">
+        <ConversationContent
+          className={
+            messages.length === 0
+              ? "mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center"
+              : "mx-auto w-full max-w-3xl"
+          }
+        >
+          {messages.length === 0 ? (
+            <EmptyState onPick={submit} />
+          ) : (
+            visibleMessages.map((m) => <AskMessage key={m.id} message={m} />)
+          )}
 
-            {waitingForAnswer && <Loader label="Reading the project's docs and code…" />}
+          {waitingForAnswer && <AskThinking className="w-full py-1" />}
 
-            {error && (
-              <div className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive">
-                <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />
-                <span>{error.message || "The assistant hit an error. Please try again."}</span>
-              </div>
-            )}
-          </ConversationContent>
-          <ConversationScrollButton />
-        </Conversation>
+          {error && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive">
+              <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />
+              <span>{error.message || "The assistant hit an error. Please try again."}</span>
+            </div>
+          )}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
+
+      <div className="mx-auto w-full max-w-3xl">
+        <PromptInput
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit(input);
+          }}
+        >
+          <PromptInputTextarea
+            name="message"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask anything about this project — docs, decisions, code, who to ask…"
+          />
+          <PromptInputToolbar>
+            <span className="hidden text-xs text-muted-foreground sm:inline">
+              <kbd className="rounded border border-border bg-muted px-1 font-sans">Enter</kbd> to
+              send ·{" "}
+              <kbd className="rounded border border-border bg-muted px-1 font-sans">
+                Shift+Enter
+              </kbd>{" "}
+              for a new line
+            </span>
+            <PromptInputSubmit
+              status={status}
+              onStop={stop}
+              disabled={!input.trim()}
+              className="ml-auto"
+            />
+          </PromptInputToolbar>
+        </PromptInput>
       </div>
-
-      <PromptInput
-        onSubmit={(e) => {
-          e.preventDefault();
-          submit(input);
-        }}
-      >
-        <PromptInputTextarea
-          name="message"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask anything about this project — docs, decisions, code, who to ask…"
-        />
-        <PromptInputToolbar>
-          <span className="text-xs text-muted-foreground">
-            <kbd className="rounded border border-border bg-muted px-1 font-sans">Enter</kbd> to
-            send ·{" "}
-            <kbd className="rounded border border-border bg-muted px-1 font-sans">Shift+Enter</kbd>{" "}
-            for a new line
-          </span>
-          <PromptInputSubmit status={status} onStop={stop} disabled={!input.trim()} />
-        </PromptInputToolbar>
-      </PromptInput>
     </div>
   );
 }
@@ -257,24 +275,34 @@ export function ProjectAskView({ id }: { id: string }) {
 
   return (
     <AskDocProvider projectId={id}>
-      <div className="mx-auto flex max-w-3xl flex-col gap-4">
-        <ProjectSectionHeader
-          icon={SparklesIcon}
-          title="Ask project"
-          description="An AI teammate that answers from this project's docs and code — with charts, checklists, and citations you can open."
-          action={
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
-                <HistoryIcon />
-                History
-              </Button>
-              <Button variant="outline" size="sm" onClick={newThread}>
-                <MessageSquarePlusIcon />
-                New
-              </Button>
+      {/* Fill the visible console area (viewport − topbar − main padding) so the composer pins
+          to the bottom like a real chat surface instead of floating mid-page. */}
+      <div className="flex h-[calc(100svh-7rem)] flex-col" data-tour="project-panel-ask">
+        <div className="mb-3 flex shrink-0 items-center justify-between gap-3 border-b border-border/60 pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-brand-honey-soft text-brand-honey">
+              <SparklesIcon className="size-4.5" />
+            </span>
+            <div className="min-w-0">
+              <h1 className="font-heading text-sm font-semibold leading-tight text-foreground">
+                Ask project
+              </h1>
+              <p className="truncate text-xs text-muted-foreground">
+                Grounded in this project's docs, code &amp; commit history
+              </p>
             </div>
-          }
-        />
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
+              <HistoryIcon />
+              History
+            </Button>
+            <Button variant="outline" size="sm" onClick={newThread}>
+              <MessageSquarePlusIcon />
+              New
+            </Button>
+          </div>
+        </div>
 
         {hydrated ? (
           <AskChat
@@ -284,7 +312,7 @@ export function ProjectAskView({ id }: { id: string }) {
             onMessages={upsertActive}
           />
         ) : (
-          <Skeleton className="min-h-[44vh] w-full rounded-xl" />
+          <Skeleton className="min-h-0 w-full flex-1 rounded-2xl" />
         )}
       </div>
 

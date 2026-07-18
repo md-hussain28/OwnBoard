@@ -1,6 +1,27 @@
 "use client";
 
 import {
+  BarChart3Icon,
+  BookMarkedIcon,
+  CheckSquareIcon,
+  ClockIcon,
+  CodeIcon,
+  ColumnsIcon,
+  FolderTreeIcon,
+  GaugeIcon,
+  GraduationCapIcon,
+  HelpCircleIcon,
+  LayersIcon,
+  LinkIcon,
+  ListIcon,
+  type LucideIcon,
+  MessageCircleQuestionIcon,
+  QuoteIcon,
+  TerminalIcon,
+  UsersRoundIcon,
+} from "lucide-react";
+import { ASK_TOOL_SCHEMAS, type AskToolName } from "@/schemas";
+import {
   AskCodeSnippetBlock,
   AskCommandsBlock,
   AskFaqBlock,
@@ -11,9 +32,9 @@ import {
   AskQuizBlock,
   AskResourcesBlock,
   AskTabsBlock,
-} from "@/components/ask/ask-blocks";
-import { AskChart } from "@/components/ask/ask-chart";
-import { AskCitationsBlock } from "@/components/ask/ask-citations";
+} from "./ask-blocks";
+import { AskChart } from "./ask-chart";
+import { AskCitationsBlock } from "./ask-citations";
 import {
   AskCalloutBlock,
   AskChecklistBlock,
@@ -21,9 +42,7 @@ import {
   AskExpertBlock,
   AskMetricsBlock,
   AskTimelineBlock,
-} from "@/components/ask/ask-visuals";
-import { ASK_TOOL_SCHEMAS, type AskToolName } from "@/schemas/ask.schema";
-import { Spinner } from "@/ui/spinner";
+} from "./ask-visuals";
 
 const LABEL: Record<AskToolName, string> = {
   showMetrics: "Summarizing the numbers…",
@@ -46,11 +65,47 @@ const LABEL: Record<AskToolName, string> = {
   showResources: "Collecting resources…",
 };
 
+/** Per-tool icon so the "building…" placeholder previews the shape of the component landing next. */
+const ICON: Record<AskToolName, LucideIcon> = {
+  showMetrics: GaugeIcon,
+  showChart: BarChart3Icon,
+  showCitations: QuoteIcon,
+  showChecklist: CheckSquareIcon,
+  showTimeline: ClockIcon,
+  showComparison: ColumnsIcon,
+  showExpert: UsersRoundIcon,
+  showCallout: MessageCircleQuestionIcon,
+  showCodeSnippet: CodeIcon,
+  showFileTree: FolderTreeIcon,
+  showCommands: TerminalIcon,
+  showPeople: UsersRoundIcon,
+  showFaq: HelpCircleIcon,
+  showKeyValue: ListIcon,
+  showQuiz: GraduationCapIcon,
+  showTabs: LayersIcon,
+  showFlashcards: BookMarkedIcon,
+  showResources: LinkIcon,
+};
+
+/**
+ * Placeholder shown while a generative tool's arguments stream in. A light sweeps across the card
+ * (`ask-shimmer`) over a pulsing tool icon and two building rails, so it reads as a component being
+ * assembled — not a stalled spinner. Swapped for the real component the instant the input parses.
+ */
 function ToolSkeleton({ name }: { name: AskToolName }) {
+  const Icon = ICON[name];
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-muted/20 px-3 py-3 text-sm text-muted-foreground">
-      <Spinner className="text-brand-teal" />
-      {LABEL[name]}
+    <div className="ask-shimmer flex items-center gap-3 rounded-xl border border-dashed border-brand-teal/30 bg-brand-teal-soft/25 px-3 py-3">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-teal-soft text-brand-teal">
+        <Icon className="size-4 motion-safe:animate-pulse" />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <span className="text-sm font-medium text-brand-teal">{LABEL[name]}</span>
+        <span className="flex gap-1.5" aria-hidden>
+          <span className="h-1.5 w-24 rounded-full bg-brand-teal/25" />
+          <span className="h-1.5 w-12 rounded-full bg-brand-teal/15" />
+        </span>
+      </div>
     </div>
   );
 }

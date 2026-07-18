@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { chatService } from "@/services/chat.service";
+import { chatService } from "@/services";
 
 export function useSendChatMessage() {
   return useMutation({

@@ -11,10 +11,10 @@ import {
   XIcon,
 } from "lucide-react";
 import { useEffect } from "react";
-import { docPackKeys, useDocPackIngestStatus } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { cn } from "@/lib/utils";
-import { type UploadJob, useUploadStore } from "@/stores/upload-store";
-import { Progress } from "@/ui/progress";
+import { docPackKeys, useDocPackIngestStatus } from "@/hooks/queries/doc-pack";
+import { cn } from "@/lib";
+import { type UploadJob, useUploadStore } from "@/stores";
+import { Progress } from "@/ui";
 
 const AUTO_DISMISS_MS = 8_000;
 

@@ -1,6 +1,5 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
-import { type CreateRepoInput, type Repo, repoListSchema, repoSchema } from "@/schemas/repo.schema";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
+import { type CreateRepoInput, type Repo, repoListSchema, repoSchema } from "@/schemas";
 
 export const repoService = {
   async list(): Promise<Repo[]> {

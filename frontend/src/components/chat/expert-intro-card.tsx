@@ -1,6 +1,5 @@
-import type { ExpertRouting } from "@/schemas/chat.schema";
-import { Badge } from "@/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import type { ExpertRouting } from "@/schemas";
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/ui";
 
 export function ExpertIntroCard({ routing }: { routing: ExpertRouting }) {
   return (

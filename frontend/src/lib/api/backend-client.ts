@@ -1,6 +1,6 @@
 import "server-only";
 import axios, { type AxiosInstance } from "axios";
-import { serverConfig } from "@/lib/api/config";
+import { serverConfig } from "./config";
 
 let instance: AxiosInstance | null = null;
 

@@ -2,10 +2,10 @@
 
 import { ChevronRightIcon, UsersRoundIcon } from "lucide-react";
 import Link from "next/link";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { cn } from "@/lib/utils";
+import { useAppRole } from "@/hooks/queries/me";
+import { cn } from "@/lib";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui";
 import { useSidebar } from "@/ui/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
 
 /**
  * Org-admin control — opens OwnBoard Team page (invite + app roles).

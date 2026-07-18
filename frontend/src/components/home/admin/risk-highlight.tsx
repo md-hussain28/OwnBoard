@@ -1,10 +1,9 @@
 import { ArrowRightIcon, NetworkIcon } from "lucide-react";
 import Link from "next/link";
-import { SectionHeader } from "@/components/home/home-primitives";
-import { appPath } from "@/lib/routes";
-import type { SubsystemRisk } from "@/lib/skill-graph";
-import { Button } from "@/ui/button";
-import { Card, CardContent } from "@/ui/card";
+import { SectionHeader } from "@/components/home";
+import type { SubsystemRisk } from "@/lib";
+import { appPath } from "@/lib";
+import { Button, Card, CardContent } from "@/ui";
 
 export function RiskHighlight({ topRisk }: { topRisk: SubsystemRisk }) {
   const share = Math.round(topRisk.topShare * 100);

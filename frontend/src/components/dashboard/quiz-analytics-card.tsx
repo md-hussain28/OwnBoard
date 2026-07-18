@@ -1,11 +1,9 @@
 "use client";
 
-import { IncomingFeature } from "@/components/layout/incoming-feature";
-import { useQuizAnalytics } from "@/hooks/queries/dashboard/dashboard.queries";
-import { isNotImplementedError } from "@/lib/api/errors";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Progress } from "@/ui/progress";
-import { Skeleton } from "@/ui/skeleton";
+import { IncomingFeature } from "@/components/layout";
+import { useQuizAnalytics } from "@/hooks/queries/dashboard";
+import { isNotImplementedError } from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle, Progress, Skeleton } from "@/ui";
 
 export function QuizAnalyticsCard({ repoId }: { repoId: string }) {
   const { data, isLoading, isError, error } = useQuizAnalytics(repoId);

@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { appPath } from "@/lib/routes";
-import { Button } from "@/ui/button";
-import { Skeleton } from "@/ui/skeleton";
+import { useAppRole } from "@/hooks/queries/me";
+import { appPath } from "@/lib";
+import { Button, Skeleton } from "@/ui";
 
 /** Onboarding quizzes are for new employees — admins manage them from Projects / Tracks. */
 export function MemberOnlyGate({ children }: { children: ReactNode }) {

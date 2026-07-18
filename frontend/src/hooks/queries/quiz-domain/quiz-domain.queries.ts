@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { docPackKeys } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries/optimistic";
-import type { CreateQuizDomainInput, QuizDomain } from "@/schemas/quiz-domain.schema";
-import { quizDomainService } from "@/services/quiz-domain.service";
+import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries";
+import { docPackKeys } from "@/hooks/queries/doc-pack";
+import type { CreateQuizDomainInput, QuizDomain } from "@/schemas";
+import { quizDomainService } from "@/services";
 
 export const quizDomainKeys = {
   all: ["quiz-domains"] as const,

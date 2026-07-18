@@ -1,11 +1,10 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
 import {
   type AnswerResponse,
   answerResponseSchema,
   type ChatResponse,
   chatResponseSchema,
-} from "@/schemas/chat.schema";
+} from "@/schemas";
 
 export const chatService = {
   async sendMessage(input: { repoId: string; message: string }): Promise<ChatResponse> {

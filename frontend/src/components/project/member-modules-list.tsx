@@ -1,14 +1,18 @@
 "use client";
 
-import { CheckCircle2Icon, ChevronDownIcon, ClockIcon, ExternalLinkIcon } from "lucide-react";
+import {
+  BookOpenIcon,
+  CheckCircle2Icon,
+  ChevronDownIcon,
+  ClockIcon,
+  ExternalLinkIcon,
+} from "lucide-react";
 import { useState } from "react";
-import { useSetModuleProgress } from "@/hooks/queries/project/project.mutations";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { ProjectModule } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Spinner } from "@/ui/spinner";
+import { EmptyState } from "@/components/shared";
+import { useSetModuleProgress } from "@/hooks/queries/project";
+import { cn, notify } from "@/lib";
+import type { ProjectModule } from "@/schemas";
+import { Badge, Button, Spinner } from "@/ui";
 
 function ModuleCard({ projectId, module }: { projectId: string; module: ProjectModule }) {
   const [open, setOpen] = useState(false);
@@ -114,7 +118,12 @@ export function MemberModulesList({
 }) {
   if (modules.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">No docs assigned to you on this project yet.</p>
+      <EmptyState
+        icon={BookOpenIcon}
+        tone="mist"
+        title="No docs assigned yet"
+        description="Docs assigned to you on this project will show up here."
+      />
     );
   }
   return (

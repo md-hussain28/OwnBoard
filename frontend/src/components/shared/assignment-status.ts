@@ -1,4 +1,4 @@
-import type { PackAssignmentStatus } from "@/schemas/packAssignment.schema";
+import type { PackAssignmentStatus } from "@/schemas";
 
 export const ASSIGNMENT_STATUS_LABEL: Record<PackAssignmentStatus, string> = {
   assigned: "Assigned",

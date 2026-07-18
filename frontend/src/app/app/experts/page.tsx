@@ -1,15 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ExpertReferralCard } from "@/components/expert/expert-referral-card";
-import { ConnectRepoPrompt } from "@/components/repo/connect-repo-prompt";
-import { useExpertForFile } from "@/hooks/queries/expert/expert.queries";
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Skeleton } from "@/ui/skeleton";
-import { Spinner } from "@/ui/spinner";
+import { ExpertReferralCard } from "@/components/expert";
+import { ConnectRepoPrompt } from "@/components/repo";
+import { useExpertForFile } from "@/hooks/queries/expert";
+import { useRepos } from "@/hooks/queries/repo";
+import { getApiErrorMessage } from "@/lib/api";
+import { Button, Input, Skeleton, Spinner } from "@/ui";
 
 export default function ExpertsPage() {
   const { data: repos, isLoading: reposLoading } = useRepos();
@@ -25,7 +22,7 @@ export default function ExpertsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Who to ask</h1>
         <p className="text-muted-foreground">

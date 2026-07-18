@@ -2,20 +2,12 @@
 
 import { CheckCircle2Icon, KeyRoundIcon } from "lucide-react";
 import { useState } from "react";
-import { CodeSnippet } from "@/components/shared/code-snippet";
-import {
-  useCreateIngestKey,
-  useRevokeIngestKey,
-} from "@/hooks/queries/ingest-key/ingest-key.mutations";
-import { useIngestKeys } from "@/hooks/queries/ingest-key/ingest-key.queries";
-import { useExpertiseScores } from "@/hooks/queries/skill-graph/skill-graph.queries";
-import { notify } from "@/lib/toast";
-import type { Repo } from "@/schemas/repo.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Separator } from "@/ui/separator";
-import { Spinner } from "@/ui/spinner";
+import { CodeSnippet } from "@/components/shared";
+import { useCreateIngestKey, useIngestKeys, useRevokeIngestKey } from "@/hooks/queries/ingest-key";
+import { useExpertiseScores } from "@/hooks/queries/skill-graph";
+import { notify } from "@/lib";
+import type { Repo } from "@/schemas";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Separator, Spinner } from "@/ui";
 
 // The customer's GitHub Action posts directly to the backend (not through the Next proxy), so this
 // must be the public API URL. Set NEXT_PUBLIC_OWNBOARD_INGEST_URL in the frontend env for deploys.
@@ -40,6 +32,7 @@ function workflowYaml(): string {
     "          fetch-depth: 0",
     `      - uses: ${ACTION_REF}`,
     "        with:",
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: GitHub Actions expression syntax in a YAML snippet, not a JS template literal
     "          api_key: ${{ secrets.OWNBOARD_KEY }}",
     `          endpoint: ${INGEST_URL}`,
   ].join("\n");

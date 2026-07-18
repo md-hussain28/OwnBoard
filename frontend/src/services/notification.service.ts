@@ -1,11 +1,10 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
 import {
   type Notification,
   notificationListSchema,
   type UnreadCount,
   unreadCountSchema,
-} from "@/schemas/notification.schema";
+} from "@/schemas";
 
 export const notificationService = {
   async list(): Promise<Notification[]> {

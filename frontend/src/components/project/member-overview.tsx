@@ -1,10 +1,10 @@
 "use client";
 
 import { GitBranchIcon, UsersIcon } from "lucide-react";
-import { QueryState } from "@/components/shared/query-state";
-import { useProjectMembers, useProjectSkills } from "@/hooks/queries/project/project.queries";
-import type { ProjectDetail, ProjectMemberSkills } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
+import { EmptyState, QueryState } from "@/components/shared";
+import { useProjectMembers, useProjectSkills } from "@/hooks/queries/project";
+import type { ProjectDetail, ProjectMemberSkills } from "@/schemas";
+import { Badge } from "@/ui";
 
 function initials(name: string): string {
   return name
@@ -40,9 +40,12 @@ export function MemberOverview({ project }: { project: ProjectDetail }) {
           error={error}
           isEmpty={!!members && members.length === 0}
           empty={
-            <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-              No one else is on this project yet.
-            </p>
+            <EmptyState
+              icon={UsersIcon}
+              tone="mist"
+              title="No one else is on this project yet"
+              description="Teammates will show up here as they're added to the project."
+            />
           }
         >
           <div className="grid gap-3 sm:grid-cols-2">

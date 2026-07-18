@@ -1,6 +1,5 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
-import { type DocContent, docContentSchema } from "@/schemas/project-doc-content.schema";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
+import { type DocContent, docContentSchema } from "@/schemas";
 
 export const projectDocContentService = {
   /** Ordered extracted text for one project document — backs the citation → viewer sheet. */

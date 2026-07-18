@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { serverConfig } from "@/lib/api/config";
+import { serverConfig } from "@/lib/api";
 
 // Backend generation (OpenAI tool-calling) can run past the default serverless budget.
 export const maxDuration = 60;

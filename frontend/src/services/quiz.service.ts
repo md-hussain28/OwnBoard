@@ -1,6 +1,5 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
-import { type GradeAttemptResult, gradeAttemptResultSchema } from "@/schemas/quiz.schema";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
+import { type GradeAttemptResult, gradeAttemptResultSchema } from "@/schemas";
 
 export const quizService = {
   /**

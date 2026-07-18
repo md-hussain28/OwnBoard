@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { HttpResponse, http } from "msw";
-import { ConnectedReposList } from "@/components/repo/connected-repos-list";
 import { loadingForever, repoHandlers } from "../../../.storybook/mocks/handlers";
+import { ConnectedReposList } from "./connected-repos-list";
 
 const meta = {
   title: "Components/Repo/ConnectedReposList",

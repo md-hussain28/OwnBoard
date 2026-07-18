@@ -2,10 +2,16 @@
 
 import { PanelLeftIcon } from "lucide-react";
 import type * as React from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/ui/sheet";
+import { cn } from "@/lib";
+import {
+  Button,
+  Input,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/ui";
 import { SIDEBAR_WIDTH_MOBILE, useSidebar } from "./context";
 
 function Sidebar({

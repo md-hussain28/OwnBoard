@@ -1,12 +1,12 @@
 "use client";
 
-import { IncomingFeature } from "@/components/layout/incoming-feature";
-import { useBusFactor } from "@/hooks/queries/dashboard/dashboard.queries";
-import { isNotImplementedError } from "@/lib/api/errors";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
+import { GitBranchIcon } from "lucide-react";
+import { IncomingFeature } from "@/components/layout";
+import { EmptyState } from "@/components/shared";
+import { useBusFactor } from "@/hooks/queries/dashboard";
+import { cn } from "@/lib";
+import { isNotImplementedError } from "@/lib/api";
+import { Badge, Card, CardContent, CardHeader, CardTitle, Skeleton } from "@/ui";
 
 const RISK_STYLES: Record<string, string> = {
   low: "bg-success/10 text-success",
@@ -33,7 +33,13 @@ export function BusFactorHeatmap({ repoId }: { repoId: string }) {
           </p>
         )}
         {!isLoading && !isError && data?.length === 0 && (
-          <p className="text-sm text-muted-foreground">No subsystem data yet.</p>
+          <EmptyState
+            icon={GitBranchIcon}
+            tone="mist"
+            compact
+            bordered={false}
+            title="No subsystem data yet"
+          />
         )}
         {!isLoading &&
           !isError &&

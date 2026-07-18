@@ -2,32 +2,29 @@
 
 import { AtSignIcon, BriefcaseIcon, FolderIcon, PencilIcon, ShieldIcon } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useId, useState } from "react";
-import { Field } from "@/components/team/field";
-import { RoleSelect } from "@/components/team/role-select";
+import { useUpdateEmployee } from "@/hooks/queries/employee";
+import { cn, notify } from "@/lib";
+import type { AppRole, Employee, OrgDomain } from "@/schemas";
 import {
-  displayJobTitle,
-  initials,
-  NONE_DOMAIN,
-  ROLE_META,
-} from "@/components/team/team-constants";
-import { useUpdateEmployee } from "@/hooks/queries/employee/employee.mutations";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { AppRole, Employee } from "@/schemas/employee.schema";
-import type { OrgDomain } from "@/schemas/org-domain.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import {
+  Badge,
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
-import { Spinner } from "@/ui/spinner";
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+} from "@/ui";
+import { Field } from "./field";
+import { RoleSelect } from "./role-select";
+import { displayJobTitle, initials, NONE_DOMAIN, ROLE_META } from "./team-constants";
 
 export type MemberDialogMode = "view" | "edit";
 

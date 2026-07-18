@@ -1,11 +1,9 @@
 "use client";
 
 import { Loader2Icon, LockIcon } from "lucide-react";
-import { QuizQuestionCard } from "@/components/onboarding/quiz-question-card";
-import type { QuizAttempt, QuizTemplate } from "@/schemas/quiz.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { QuizQuestionCard } from "@/components/onboarding";
+import type { QuizAttempt, QuizTemplate } from "@/schemas";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/ui";
 
 type AssignmentQuizPaneProps = {
   status: string;

@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
-import { Badge } from "@/ui/badge";
+import { cn } from "@/lib";
+import { Badge } from "@/ui";
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "success" | "warning" | "outline";
 

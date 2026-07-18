@@ -1,7 +1,7 @@
 import "server-only";
 
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { serverConfig } from "@/lib/api/config";
+import { serverConfig } from "@/lib/api";
 
 /** Comma-separated emails from `PLATFORM_ADMIN_EMAILS`, lowercased and trimmed. */
 export function platformAdminEmails(): Set<string> {

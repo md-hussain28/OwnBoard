@@ -1,8 +1,8 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
-import { isNotFoundError } from "@/lib/api/errors";
+import { API_ENDPOINTS, getApiClient, isNotFoundError } from "@/lib/api";
 import {
+  type AdminQuizTemplate,
   type AudiencePreview,
+  adminQuizTemplateSchema,
   audiencePreviewSchema,
   type DocPack,
   type DocPackDocument,
@@ -12,14 +12,10 @@ import {
   docPackIngestStatusSchema,
   docPackListSchema,
   docPackSchema,
-} from "@/schemas/docPack.schema";
-import {
-  type AdminQuizTemplate,
-  adminQuizTemplateSchema,
   type GenerateDocPackQuizResponse,
   generateDocPackQuizResponseSchema,
   type QuizQuestionCurationItem,
-} from "@/schemas/quiz.schema";
+} from "@/schemas";
 
 export const docPackService = {
   async list(): Promise<DocPackListItem[]> {

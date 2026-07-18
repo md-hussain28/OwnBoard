@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { projectService } from "@/services/project.service";
+import { projectService } from "@/services";
 
 export const projectKeys = {
   all: ["projects"] as const,
@@ -14,13 +14,13 @@ export const projectKeys = {
 };
 
 /** Admin: every project in the org. */
-export function useProjects() {
-  return useQuery({ queryKey: projectKeys.all, queryFn: projectService.list });
+export function useProjects(enabled = true) {
+  return useQuery({ queryKey: projectKeys.all, queryFn: projectService.list, enabled });
 }
 
 /** Member: the projects I'm on, with lock/progress state. */
-export function useMyProjects() {
-  return useQuery({ queryKey: projectKeys.mine, queryFn: projectService.listMine });
+export function useMyProjects(enabled = true) {
+  return useQuery({ queryKey: projectKeys.mine, queryFn: projectService.listMine, enabled });
 }
 
 export function useProject(id: string) {

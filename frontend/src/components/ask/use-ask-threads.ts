@@ -2,7 +2,7 @@
 
 import type { UIMessage } from "ai";
 import { useCallback, useEffect, useState } from "react";
-import { ID_PREFIXES, typedId } from "@/lib/ids";
+import { ID_PREFIXES, typedId } from "@/lib";
 
 /**
  * Client-side conversation history for "Ask project", persisted per-project in localStorage.

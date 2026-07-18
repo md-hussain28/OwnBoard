@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { QuizCreateFlow } from "@/components/doc-pack/quiz-create-flow";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { Button } from "@/ui/button";
-import { Skeleton } from "@/ui/skeleton";
+import { QuizCreateFlow } from "@/components/doc-pack";
+import { useAppRole } from "@/hooks/queries/me";
+import { Button, Skeleton } from "@/ui";
 
 export default function NewQuizPage() {
   const { isAdmin, isLoading } = useAppRole();

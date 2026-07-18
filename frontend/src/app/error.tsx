@@ -3,9 +3,9 @@
 import { HomeIcon, RotateCwIcon, TriangleAlertIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
-import { AtmosphereBlobs } from "@/components/layout/atmosphere-blobs";
-import { StatusScreen } from "@/components/shared/status-screen";
-import { Button } from "@/ui/button";
+import { AtmosphereBlobs } from "@/components/layout";
+import { StatusScreen } from "@/components/shared";
+import { Button } from "@/ui";
 
 /**
  * Root error boundary — catches render/runtime errors anywhere below the root layout that

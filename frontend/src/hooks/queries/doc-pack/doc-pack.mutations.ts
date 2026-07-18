@@ -1,11 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { docPackKeys } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries/optimistic";
-import type { DocPack, DocPackListItem } from "@/schemas/docPack.schema";
-import type { QuizQuestionCurationItem } from "@/schemas/quiz.schema";
-import { docPackService } from "@/services/doc-pack.service";
-import { useUploadStore } from "@/stores/upload-store";
+import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries";
+import { ID_PREFIXES, typedId } from "@/lib";
+import type { DocPack, DocPackListItem, QuizQuestionCurationItem } from "@/schemas";
+import { docPackService } from "@/services";
+import { useUploadStore } from "@/stores";
+import { docPackKeys } from "./doc-pack.queries";
+
+/** True for a client-minted draft id (`new_…`) — the temp row we swap out once the server answers. */
+const isDraftId = (id: string) => id.startsWith(`${ID_PREFIXES.draft}_`);
 
 /** Project a full pack into the leaner list-item shape held in the `all` cache. */
 function toListItem(pack: DocPack): DocPackListItem {
@@ -39,15 +42,49 @@ type CreateDocPackInput = {
   due_offset_days?: number | null;
 };
 
+/** A placeholder list row shown instantly on create; replaced by the server pack on success. */
+function optimisticDocPack(input: CreateDocPackInput): DocPackListItem {
+  return {
+    id: typedId(ID_PREFIXES.draft),
+    name: input.name,
+    description: input.description ?? null,
+    status: "draft",
+    createdBy: null,
+    createdAt: new Date().toISOString(),
+    domainId: input.domain_id ?? null,
+    domainName: null,
+    assignToAll: input.assign_to_all ?? false,
+    audienceDomainIds: input.audience_domain_ids ?? [],
+    audienceDomainNames: [],
+    sequenceOrder: input.sequence_order ?? 0,
+    estimatedMinutes: input.estimated_minutes ?? null,
+    dueOffsetDays: input.due_offset_days ?? null,
+    passPct: 100,
+  };
+}
+
 export function useCreateDocPack() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateDocPackInput) => docPackService.create(input),
+    onMutate: async (input) => {
+      const snap = await optimisticUpdate<DocPackListItem[]>(
+        queryClient,
+        docPackKeys.all,
+        (prev) => (prev ? [optimisticDocPack(input), ...prev] : prev),
+      );
+      return { snap };
+    },
+    onError: (_err, _input, context) => {
+      rollbackOptimistic(queryClient, docPackKeys.all, context?.snap);
+    },
     onSuccess: (pack) => {
       queryClient.setQueryData(docPackKeys.detail(pack.id), pack);
       queryClient.setQueryData<DocPackListItem[]>(docPackKeys.all, (prev) => {
         const item = toListItem(pack);
-        return prev ? [item, ...prev.filter((p) => p.id !== pack.id)] : [item];
+        // Drop the temp draft row(s) and any stale copy, then prepend the real pack.
+        const rest = prev?.filter((p) => p.id !== pack.id && !isDraftId(p.id)) ?? [];
+        return [item, ...rest];
       });
     },
     onSettled: () => {

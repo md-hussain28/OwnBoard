@@ -1,9 +1,9 @@
 import { CompassIcon, HomeIcon, LayoutDashboardIcon } from "lucide-react";
 import Link from "next/link";
-import { AtmosphereBlobs } from "@/components/layout/atmosphere-blobs";
-import { StatusScreen } from "@/components/shared/status-screen";
-import { APP_HOME } from "@/lib/routes";
-import { Button } from "@/ui/button";
+import { AtmosphereBlobs } from "@/components/layout";
+import { StatusScreen } from "@/components/shared";
+import { APP_HOME } from "@/lib";
+import { Button } from "@/ui";
 
 /**
  * Global 404 — App Router renders this for any unmatched URL. It sits inside the root layout

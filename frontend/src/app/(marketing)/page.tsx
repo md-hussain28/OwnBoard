@@ -1,4 +1,4 @@
-import { LandingPage } from "@/components/marketing/landing-page";
+import { LandingPage } from "@/components/marketing";
 
 /** Public marketing home — no auth required. Console lives under `/app`. */
 export default function MarketingHomePage() {

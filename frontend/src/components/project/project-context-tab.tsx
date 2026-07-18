@@ -2,14 +2,10 @@
 
 import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useState } from "react";
-import { useUpdateProject } from "@/hooks/queries/project/project.mutations";
-import { notify } from "@/lib/toast";
-import type { GlossaryTerm, ProjectDetail, ResourceLink } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Input } from "@/ui/input";
-import { Textarea } from "@/ui/textarea";
+import { useUpdateProject } from "@/hooks/queries/project";
+import { notify } from "@/lib";
+import type { GlossaryTerm, ProjectDetail, ResourceLink } from "@/schemas";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from "@/ui";
 
 /** Manager-only editor for the project's reference context (tech stack, links, glossary). */
 export function ProjectContextTab({ project }: { project: ProjectDetail }) {

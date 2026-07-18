@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { packAssignmentKeys } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { quizService } from "@/services/quiz.service";
+import { packAssignmentKeys } from "@/hooks/queries/pack-assignment";
+import { quizService } from "@/services";
 
 export function useGradeAttempt() {
   const queryClient = useQueryClient();

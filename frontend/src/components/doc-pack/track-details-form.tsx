@@ -1,15 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { AudienceField } from "@/components/doc-pack/audience-field";
-import { QuizDomainsField } from "@/components/doc-pack/quiz-domains-field";
-import { useUpdateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
-import { notify } from "@/lib/toast";
-import type { DocPack } from "@/schemas/docPack.schema";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Spinner } from "@/ui/spinner";
-import { Textarea } from "@/ui/textarea";
+import { useUpdateDocPack } from "@/hooks/queries/doc-pack";
+import { notify } from "@/lib";
+import type { DocPack } from "@/schemas";
+import { Button, Input, Spinner, Textarea } from "@/ui";
+import { AudienceField } from "./audience-field";
+import { QuizDomainsField } from "./quiz-domains-field";
 
 /** Parse a required non-negative count field, defaulting blanks/garbage to 0. */
 function parseCount(raw: string): number {
@@ -76,6 +73,10 @@ export function TrackDetailsForm({
       },
     );
   }
+
+  let saveLabel = "Save changes";
+  if (update.isPending) saveLabel = "Saving…";
+  else if (onSaved) saveLabel = "Save & continue";
 
   return (
     <form
@@ -176,7 +177,7 @@ export function TrackDetailsForm({
       <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
         <Button type="submit" disabled={update.isPending || !name.trim()}>
           {update.isPending && <Spinner />}
-          {update.isPending ? "Saving…" : onSaved ? "Save & continue" : "Save changes"}
+          {saveLabel}
         </Button>
       </div>
     </form>

@@ -10,14 +10,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { FilterSelect } from "@/components/shared/filter-select";
-import { QueryState } from "@/components/shared/query-state";
-import { useProjects } from "@/hooks/queries/project/project.queries";
-import { appPath } from "@/lib/routes";
-import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
-import { Card, CardContent } from "@/ui/card";
-import { Input } from "@/ui/input";
+import { EmptyState, FilteredEmpty, FilterSelect, QueryState } from "@/components/shared";
+import { useProjects } from "@/hooks/queries/project";
+import { appPath, cn } from "@/lib";
+import { Button, Card, CardContent, Input } from "@/ui";
 import { CreateProjectDialog } from "./create-project-dialog";
 import { PROJECT_STATUSES, ProjectStatusBadge } from "./project-status";
 
@@ -94,42 +90,27 @@ export function AdminProjectsPanel() {
         error={error}
         isEmpty={!!projects && projects.length === 0}
         empty={
-          <Card>
-            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <div className="rounded-full bg-brand-honey-soft p-3 text-brand-honey">
-                <FolderKanbanIcon className="size-6" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-medium">No projects yet</p>
-                <p className="text-sm text-muted-foreground">
-                  Create your first project, then add members, modules and docs.
-                </p>
-              </div>
-              <CreateProjectDialog />
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={FolderKanbanIcon}
+            tone="honey"
+            title="No projects yet"
+            description="Create your first project, then add members, modules and docs."
+            action={<CreateProjectDialog />}
+          />
         }
       >
         {visible.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
-              <p className="text-sm text-muted-foreground">
-                {hasFilters ? "No projects match your search or filters." : "No projects to show."}
-              </p>
-              {hasFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
+          <FilteredEmpty
+            noun="projects"
+            onClear={
+              hasFilters
+                ? () => {
                     setQuery("");
                     setStatusFilter("all");
-                  }}
-                >
-                  Clear filters
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+                  }
+                : undefined
+            }
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {visible.map((project) => (

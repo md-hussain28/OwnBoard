@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { HttpResponse, http } from "msw";
-import { ProjectMemberPanel } from "@/components/project/project-member-panel";
 import { handlers, loadingForever } from "../../../.storybook/mocks/handlers";
+import { ProjectMemberPanel } from "./project-member-panel";
 
 const meta = {
   title: "Components/Project/ProjectMemberPanel",

@@ -1,23 +1,27 @@
 "use client";
 
-import { GaugeIcon, PencilIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
+import {
+  GaugeIcon,
+  GraduationCapIcon,
+  PencilIcon,
+  PlusIcon,
+  SearchIcon,
+  UserPlusIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { FilterSelect } from "@/components/shared/filter-select";
-import { useDocPacks } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
+import { EmptyState, FilteredEmpty, FilterSelect } from "@/components/shared";
+import { useDocPacks } from "@/hooks/queries/doc-pack";
+import { useAppRole } from "@/hooks/queries/me";
 import {
   type PackAssignmentProgress,
   usePackAssignmentProgress,
-} from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { useQuizDomains } from "@/hooks/queries/quiz-domain/quiz-domain.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { cn } from "@/lib/utils";
-import type { DocPackListItem } from "@/schemas/docPack.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Skeleton } from "@/ui/skeleton";
+} from "@/hooks/queries/pack-assignment";
+import { useQuizDomains } from "@/hooks/queries/quiz-domain";
+import { cn } from "@/lib";
+import { getApiErrorMessage } from "@/lib/api";
+import type { DocPackListItem } from "@/schemas";
+import { Badge, Button, Input, Skeleton } from "@/ui";
 
 type PackStatus = DocPackListItem["status"];
 type StatusFilter = "all" | PackStatus;
@@ -163,37 +167,23 @@ function PackFilterBar({
 
 function EmptyPacksState({ isAdmin }: { isAdmin: boolean }) {
   return (
-    <div className="space-y-3 rounded-2xl border border-dashed border-border px-6 py-10 text-center">
-      <p className="text-sm text-muted-foreground text-pretty">
-        {isAdmin
-          ? "No modules yet. Create one to upload documents and generate a cited quiz, then assign it to hires from this list."
-          : "No modules yet. An admin will create and assign them."}
-      </p>
-      {isAdmin && (
-        <Button asChild>
-          <Link href="/app/tracks/new">Create your first module</Link>
-        </Button>
-      )}
-    </div>
-  );
-}
-
-function NoMatchesState({ query, onClear }: { query: string; onClear: () => void }) {
-  return (
-    <div className="space-y-3 rounded-2xl border border-dashed border-border px-6 py-8 text-center">
-      <p className="text-sm text-muted-foreground">
-        {query.trim()
-          ? `No modules match “${query.trim()}” with the current filters.`
-          : "No modules match the current filters."}
-      </p>
-      <button
-        type="button"
-        onClick={onClear}
-        className="text-sm font-medium text-foreground underline-offset-2 hover:underline"
-      >
-        Clear filters
-      </button>
-    </div>
+    <EmptyState
+      icon={GraduationCapIcon}
+      tone={isAdmin ? "honey" : "mist"}
+      title="No modules yet"
+      description={
+        isAdmin
+          ? "Create one to upload documents and generate a cited quiz, then assign it to hires from this list."
+          : "An admin will create and assign them."
+      }
+      action={
+        isAdmin ? (
+          <Button asChild>
+            <Link href="/app/tracks/new">Create your first module</Link>
+          </Button>
+        ) : undefined
+      }
+    />
   );
 }
 
@@ -420,7 +410,7 @@ export function QuizPackList({
       {!isLoading && !isError && packs?.length === 0 && <EmptyPacksState isAdmin={isAdmin} />}
 
       {!isLoading && !isError && packs && packs.length > 0 && filteredPacks.length === 0 && (
-        <NoMatchesState query={query} onClear={clearFilters} />
+        <FilteredEmpty noun="modules" onClear={hasActiveFilters ? clearFilters : undefined} />
       )}
 
       {!isLoading && !isError && filteredPacks.length > 0 && (

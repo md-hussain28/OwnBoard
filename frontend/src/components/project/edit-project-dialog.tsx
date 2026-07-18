@@ -2,12 +2,11 @@
 
 import { PencilIcon } from "lucide-react";
 import { useState } from "react";
-import { useUpdateProject } from "@/hooks/queries/project/project.mutations";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { ProjectDetail, UpdateProjectInput } from "@/schemas/project.schema";
-import { Button } from "@/ui/button";
+import { useUpdateProject } from "@/hooks/queries/project";
+import { cn, notify } from "@/lib";
+import type { ProjectDetail, UpdateProjectInput } from "@/schemas";
 import {
+  Button,
   Dialog,
   DialogClose,
   DialogContent,
@@ -16,11 +15,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
-import { Spinner } from "@/ui/spinner";
-import { Textarea } from "@/ui/textarea";
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+  Textarea,
+} from "@/ui";
 import { PROJECT_STATUSES, projectStatusMeta } from "./project-status";
 
 /** Build a patch of only the fields that changed. */

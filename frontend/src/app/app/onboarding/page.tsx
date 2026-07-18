@@ -1,13 +1,11 @@
 "use client";
 
-import { AccessGateSection } from "@/components/onboarding/access-gate-section";
-import { MemberOnlyGate } from "@/components/onboarding/member-only-gate";
-import { ReadingTracksSection } from "@/components/onboarding/reading-tracks-section";
+import { AccessGateSection, MemberOnlyGate, ReadingTracksSection } from "@/components/onboarding";
 
 export default function OnboardingPage() {
   return (
     <MemberOnlyGate>
-      <div className="mx-auto max-w-2xl space-y-8">
+      <div className="space-y-8">
         <header className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight text-balance">Your onboarding</h1>
           <p className="max-w-prose text-pretty text-muted-foreground">

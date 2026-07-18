@@ -3,15 +3,13 @@
 import { ArrowRightIcon, CheckIcon, GlobeIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { DocPackDocuments } from "@/components/doc-pack/doc-pack-documents";
-import { DocPackQuizBuilder } from "@/components/doc-pack/doc-pack-quiz-builder";
-import { TrackDetailsForm } from "@/components/doc-pack/track-details-form";
-import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { cn } from "@/lib/utils";
-import type { DocPack } from "@/schemas/docPack.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Skeleton } from "@/ui/skeleton";
+import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack";
+import { cn } from "@/lib";
+import type { DocPack } from "@/schemas";
+import { Badge, Button, Skeleton } from "@/ui";
+import { DocPackDocuments } from "./doc-pack-documents";
+import { DocPackQuizBuilder } from "./doc-pack-quiz-builder";
+import { TrackDetailsForm } from "./track-details-form";
 
 const STEPS = [
   { id: 1, label: "Details", key: "details" },

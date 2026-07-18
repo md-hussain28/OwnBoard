@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { HttpResponse, http } from "msw";
-import { QuizAnalyticsCard } from "@/components/dashboard/quiz-analytics-card";
 import { loadingForever, notImplemented } from "../../../.storybook/mocks/handlers";
+import { QuizAnalyticsCard } from "./quiz-analytics-card";
 
 const meta = {
   title: "Components/Dashboard/QuizAnalyticsCard",

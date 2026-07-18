@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ingestKeyKeys } from "@/hooks/queries/ingest-key/ingest-key.queries";
-import { cacheEdit, optimisticEdits, rollbackEdits } from "@/hooks/queries/optimistic";
-import type { IngestKey } from "@/schemas/ingest-key.schema";
-import { ingestKeyService } from "@/services/ingest-key.service";
+import { cacheEdit, optimisticEdits, rollbackEdits } from "@/hooks/queries";
+import type { IngestKey } from "@/schemas";
+import { ingestKeyService } from "@/services";
+import { ingestKeyKeys } from "./ingest-key.queries";
 
 export function useCreateIngestKey(repoId: string) {
   const queryClient = useQueryClient();

@@ -1,16 +1,14 @@
 "use client";
 
+import { FileLockIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
-import { AssignmentRoster } from "@/components/shared/assignment-roster";
-import { ASSIGNMENT_STATUS_LABEL } from "@/components/shared/assignment-status";
-import { useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { usePackAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { cn } from "@/lib/utils";
-import type { DocPackListItem } from "@/schemas/docPack.schema";
-import type { PackAssignmentStatus } from "@/schemas/packAssignment.schema";
-import { Button } from "@/ui/button";
-import { Skeleton } from "@/ui/skeleton";
+import { ASSIGNMENT_STATUS_LABEL, AssignmentRoster, EmptyState } from "@/components/shared";
+import { useDocPackQuiz } from "@/hooks/queries/doc-pack";
+import { usePackAssignments } from "@/hooks/queries/pack-assignment";
+import { cn } from "@/lib";
+import type { DocPackListItem, PackAssignmentStatus } from "@/schemas";
+import { Button, Skeleton } from "@/ui";
 
 const PROGRESS_STRIP: { status: PackAssignmentStatus; tone: string }[] = [
   { status: "assigned", tone: "bg-muted text-muted-foreground" },
@@ -84,15 +82,17 @@ function QuizAssignmentPanelLoaded({ pack }: { pack: DocPackListItem }) {
       )}
 
       {!isLoading && !isError && !quizPublished && (
-        <div className="rounded-xl border border-border bg-brand-mist/60 px-4 py-4">
-          <p className="text-sm font-medium">Quiz not published yet</p>
-          <p className="mt-1 text-sm text-muted-foreground text-pretty">
-            Finish and publish the quiz before assigning it to hires.
-          </p>
-          <Button className="mt-3" size="sm" asChild>
-            <Link href={`/app/tracks/${pack.id}`}>Open quiz builder</Link>
-          </Button>
-        </div>
+        <EmptyState
+          icon={FileLockIcon}
+          tone="honey"
+          title="Quiz not published yet"
+          description="Finish and publish the quiz before assigning it to hires."
+          action={
+            <Button size="sm" asChild>
+              <Link href={`/app/tracks/${pack.id}`}>Open quiz builder</Link>
+            </Button>
+          }
+        />
       )}
 
       {!isLoading && !isError && quizPublished && (

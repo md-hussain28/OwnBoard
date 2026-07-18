@@ -9,23 +9,24 @@ import {
   PencilIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { ASSIGNMENT_STATUS_LABEL, assignmentStatusVariant, EmptyState } from "@/components/shared";
+import { useUpdateEmployee } from "@/hooks/queries/employee";
+import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment";
+import { cn, notify } from "@/lib";
+import type { AppRole, Employee, PackAssignment } from "@/schemas";
 import {
-  ASSIGNMENT_STATUS_LABEL,
-  assignmentStatusVariant,
-} from "@/components/shared/assignment-status";
-import { RoleSelect } from "@/components/team/role-select";
-import { displayJobTitle, initials, ROLE_META } from "@/components/team/team-constants";
-import { useUpdateEmployee } from "@/hooks/queries/employee/employee.mutations";
-import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { AppRole, Employee } from "@/schemas/employee.schema";
-import type { PackAssignment } from "@/schemas/packAssignment.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Separator } from "@/ui/separator";
-import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/ui/sheet";
-import { Skeleton } from "@/ui/skeleton";
+  Badge,
+  Button,
+  Separator,
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  Skeleton,
+} from "@/ui";
+import { RoleSelect } from "./role-select";
+import { displayJobTitle, initials, ROLE_META } from "./team-constants";
 
 function DetailRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
@@ -87,10 +88,13 @@ function TracksBody({
 
   if (assignments.length === 0) {
     return (
-      <div className="flex items-start gap-2 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
-        <LayersIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-        <span>Not assigned to any tracks yet.</span>
-      </div>
+      <EmptyState
+        icon={LayersIcon}
+        tone="mist"
+        compact
+        bordered={false}
+        title="Not assigned to any tracks yet"
+      />
     );
   }
 

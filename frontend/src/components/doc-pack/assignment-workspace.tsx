@@ -10,21 +10,13 @@ import {
   XCircleIcon,
 } from "lucide-react";
 import { type ReactNode, useCallback, useState } from "react";
-import { AssignmentQuizPane } from "@/components/doc-pack/assignment-quiz-pane";
-import { AssignmentReadingCard } from "@/components/doc-pack/assignment-reading-card";
-import {
-  useAckDocument,
-  useStartQuiz,
-} from "@/hooks/queries/pack-assignment/pack-assignment.mutations";
-import { useAssignmentDetail } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { useGradeAttempt } from "@/hooks/queries/quiz/quiz.mutations";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { AssignmentDetail } from "@/schemas/packAssignment.schema";
-import type { GradeAttemptResult, QuizAttempt, QuizTemplate } from "@/schemas/quiz.schema";
-import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
+import { useAckDocument, useAssignmentDetail, useStartQuiz } from "@/hooks/queries/pack-assignment";
+import { useGradeAttempt } from "@/hooks/queries/quiz";
+import { cn, notify } from "@/lib";
+import type { AssignmentDetail, GradeAttemptResult, QuizAttempt, QuizTemplate } from "@/schemas";
+import { Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from "@/ui";
+import { AssignmentQuizPane } from "./assignment-quiz-pane";
+import { AssignmentReadingCard } from "./assignment-reading-card";
 
 function isAnswered(answer: string | string[] | undefined): boolean {
   return Array.isArray(answer) ? answer.length > 0 : Boolean(answer);

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { meService } from "@/services/me.service";
+import { meService } from "@/services";
 
 export const meKeys = {
   all: ["me"] as const,

@@ -2,25 +2,28 @@
 
 import { AtSignIcon, MailIcon } from "lucide-react";
 import { type FormEvent, useEffect, useId, useState } from "react";
-import { Field } from "@/components/team/field";
-import { RoleSelect } from "@/components/team/role-select";
-import { NONE_DOMAIN } from "@/components/team/team-constants";
-import { useInviteEmployee } from "@/hooks/queries/employee/employee.mutations";
-import { notify } from "@/lib/toast";
-import type { AppRole } from "@/schemas/employee.schema";
-import type { OrgDomain } from "@/schemas/org-domain.schema";
-import { Button } from "@/ui/button";
+import { useInviteEmployee } from "@/hooks/queries/employee";
+import { notify } from "@/lib";
+import type { AppRole, OrgDomain } from "@/schemas";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
-import { Spinner } from "@/ui/spinner";
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+} from "@/ui";
+import { Field } from "./field";
+import { RoleSelect } from "./role-select";
+import { NONE_DOMAIN } from "./team-constants";
 
 export function InviteMemberDialog({
   open,

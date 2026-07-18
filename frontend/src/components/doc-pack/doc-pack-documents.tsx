@@ -3,16 +3,16 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { FileTextIcon, Loader2Icon, Trash2Icon, UploadIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { EmptyState } from "@/components/shared";
 import {
+  docPackKeys,
   useBackgroundUpload,
   useDeleteDocument,
-} from "@/hooks/queries/doc-pack/doc-pack.mutations";
-import { docPackKeys, useDocPackIngestStatus } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { notify } from "@/lib/toast";
-import type { DocPackDocument } from "@/schemas/docPack.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+  useDocPackIngestStatus,
+} from "@/hooks/queries/doc-pack";
+import { notify } from "@/lib";
+import type { DocPackDocument } from "@/schemas";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/ui";
 
 const STATUS_LABEL: Record<DocPackDocument["status"], string> = {
   uploaded: "Queued",
@@ -126,9 +126,14 @@ export function DocPackDocuments({
         </p>
 
         {rows.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            No documents yet. Upload at least one file to generate a quiz.
-          </p>
+          <EmptyState
+            icon={FileTextIcon}
+            tone="mist"
+            compact
+            bordered={false}
+            title="No documents yet"
+            description="Upload at least one file to generate a quiz."
+          />
         )}
 
         {rows.length > 0 && (

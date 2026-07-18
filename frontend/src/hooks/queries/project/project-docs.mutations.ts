@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { cacheEdit, optimisticEdits, rollbackEdits } from "@/hooks/queries/optimistic";
-import { projectKeys } from "@/hooks/queries/project/project.queries";
-import type { ProjectDocs } from "@/schemas/project.schema";
-import { projectService } from "@/services/project.service";
+import { cacheEdit, optimisticEdits, rollbackEdits } from "@/hooks/queries";
+import { ID_PREFIXES, typedId } from "@/lib";
+import type { ProjectDocs } from "@/schemas";
+import { projectService } from "@/services";
+import { projectKeys } from "./project.queries";
 
 // ---- docs (knowledge base) ------------------------------------------------
 
@@ -65,10 +66,26 @@ export function useSetDocTypes(id: string) {
 }
 
 export function useCreateDocType(id: string) {
+  const queryClient = useQueryClient();
   const invalidate = useInvalidateDocs(id);
   return useMutation({
     mutationFn: (name: string) => projectService.createDocType(id, name),
-    onSuccess: invalidate,
+    onMutate: (name) =>
+      optimisticEdits(queryClient, [
+        cacheEdit<ProjectDocs>(projectKeys.docs(id), (prev) =>
+          prev
+            ? {
+                ...prev,
+                types: [
+                  ...prev.types,
+                  { id: typedId(ID_PREFIXES.draft), name, sortOrder: prev.types.length },
+                ],
+              }
+            : prev,
+        ),
+      ]),
+    onError: (_err, _name, context) => rollbackEdits(queryClient, context),
+    onSettled: invalidate,
   });
 }
 

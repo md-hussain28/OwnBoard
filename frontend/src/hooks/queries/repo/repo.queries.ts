@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { repoService } from "@/services/repo.service";
+import { repoService } from "@/services";
 
 export const repoKeys = {
   all: ["repos"] as const,

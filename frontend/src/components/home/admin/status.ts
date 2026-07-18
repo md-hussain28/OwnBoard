@@ -1,4 +1,4 @@
-import type { CohortDashboard } from "@/schemas/cohort.schema";
+import type { CohortDashboard } from "@/schemas";
 
 /** People whose onboarding isn't finished yet (passed fewer modules than assigned). */
 export function peopleStillOnboarding(cohort: CohortDashboard): number {

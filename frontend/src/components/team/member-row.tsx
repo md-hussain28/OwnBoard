@@ -2,16 +2,14 @@
 
 import { AtSignIcon, PencilIcon } from "lucide-react";
 import { useState } from "react";
-import { EditMemberDialog, type MemberDialogMode } from "@/components/team/edit-member-dialog";
-import { RoleSelect } from "@/components/team/role-select";
-import { initials, memberSubtitle } from "@/components/team/team-constants";
-import { TeamMemberSheet } from "@/components/team/team-member-sheet";
-import { useUpdateEmployee } from "@/hooks/queries/employee/employee.mutations";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { AppRole, Employee } from "@/schemas/employee.schema";
-import type { OrgDomain } from "@/schemas/org-domain.schema";
-import { Button } from "@/ui/button";
+import { useUpdateEmployee } from "@/hooks/queries/employee";
+import { cn, notify } from "@/lib";
+import type { AppRole, Employee, OrgDomain } from "@/schemas";
+import { Button } from "@/ui";
+import { EditMemberDialog, type MemberDialogMode } from "./edit-member-dialog";
+import { RoleSelect } from "./role-select";
+import { initials, memberSubtitle } from "./team-constants";
+import { TeamMemberSheet } from "./team-member-sheet";
 
 export function MemberRow({
   employee,

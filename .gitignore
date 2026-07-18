@@ -39,5 +39,6 @@ yarn-error.log*
 *.pem
 .vercel
 
-# Local docs (not versioned)
-docs/
+# Local docs (not versioned) — anchored to repo root so it doesn't swallow
+# nested route dirs like frontend/src/app/**/docs/.
+/docs/

@@ -1,11 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { IncomingFeature } from "@/components/layout/incoming-feature";
-import { MemberOnlyGate } from "@/components/onboarding/member-only-gate";
-import { QuizQuestionCard } from "@/components/onboarding/quiz-question-card";
-import { useOnboardingStore } from "@/stores/onboarding-store";
-import { Button } from "@/ui/button";
+import { IncomingFeature } from "@/components/layout";
+import { MemberOnlyGate, QuizQuestionCard } from "@/components/onboarding";
+import { useOnboardingStore } from "@/stores";
+import { Button } from "@/ui";
 
 const MOCK_QUESTION = {
   questionText:
@@ -31,7 +30,7 @@ export default function PolicyQuizPage() {
 
   return (
     <MemberOnlyGate>
-      <div className="max-w-2xl space-y-6">
+      <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold">Policy quiz</h1>
           <p className="text-muted-foreground">

@@ -2,24 +2,16 @@
 
 import { CheckIcon, Loader2Icon, SearchIcon, SparklesIcon, UserPlusIcon } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
-import {
-  ASSIGNMENT_STATUS_LABEL,
-  assignmentStatusVariant,
-} from "@/components/shared/assignment-status";
-import { useEmployees } from "@/hooks/queries/employee/employee.queries";
+import { useEmployees } from "@/hooks/queries/employee";
 import {
   useCreateAssignments,
+  usePackAssignments,
   useRevokeAssignment,
-} from "@/hooks/queries/pack-assignment/pack-assignment.mutations";
-import { usePackAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { Employee } from "@/schemas/employee.schema";
-import type { PackAssignment } from "@/schemas/packAssignment.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Skeleton } from "@/ui/skeleton";
+} from "@/hooks/queries/pack-assignment";
+import { cn, notify } from "@/lib";
+import type { Employee, PackAssignment } from "@/schemas";
+import { Badge, Button, Input, Skeleton } from "@/ui";
+import { ASSIGNMENT_STATUS_LABEL, assignmentStatusVariant } from "./assignment-status";
 
 type AssignmentRosterProps = {
   packId: string;

@@ -1,16 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useCreateTenant, useDeleteTenant } from "@/hooks/queries/admin/admin.mutations";
-import { useTenants } from "@/hooks/queries/admin/admin.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { notify } from "@/lib/toast";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
-import { Input } from "@/ui/input";
-import { Skeleton } from "@/ui/skeleton";
-import { Spinner } from "@/ui/spinner";
+import { useCreateTenant, useDeleteTenant, useTenants } from "@/hooks/queries/admin";
+import { notify } from "@/lib";
+import { getApiErrorMessage } from "@/lib/api";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Skeleton,
+  Spinner,
+} from "@/ui";
 
 export function TenantAdminPanel() {
   const { data: tenants, isLoading, isError, error } = useTenants();

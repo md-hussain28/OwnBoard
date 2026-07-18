@@ -1,8 +1,8 @@
 "use client";
 
 import { Suspense } from "react";
-import { QuizDesk } from "@/components/doc-pack/quiz-desk";
-import { Skeleton } from "@/ui/skeleton";
+import { QuizDesk } from "@/components/doc-pack";
+import { Skeleton } from "@/ui";
 
 function QuizDeskFallback() {
   return (

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Button } from "@/ui/button";
+import { Button } from "./button";
 import {
   Sheet,
   SheetContent,
@@ -8,7 +8,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/ui/sheet";
+} from "./sheet";
 
 const meta = {
   title: "UI/Sheet",

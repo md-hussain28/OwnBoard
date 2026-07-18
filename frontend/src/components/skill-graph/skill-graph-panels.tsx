@@ -1,12 +1,11 @@
 "use client";
 
+import { FileWarningIcon, GitBranchIcon, UsersIcon } from "lucide-react";
 import { useMemo } from "react";
-import { QueryState } from "@/components/shared/query-state";
-import { useExpertiseScores } from "@/hooks/queries/skill-graph/skill-graph.queries";
-import { contributorRanks, type RiskLevel, riskiestFiles, subsystemRisks } from "@/lib/skill-graph";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { EmptyState, QueryState } from "@/components/shared";
+import { useExpertiseScores } from "@/hooks/queries/skill-graph";
+import { cn, contributorRanks, type RiskLevel, riskiestFiles, subsystemRisks } from "@/lib";
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/ui";
 
 const RISK_STYLES: Record<RiskLevel, string> = {
   low: "bg-success/10 text-success",
@@ -42,7 +41,15 @@ export function SubsystemBusFactor({ repoId }: { repoId: string }) {
           isError={isError}
           error={error}
           isEmpty={rows.length === 0}
-          empty={<p className="text-sm text-muted-foreground">No git history ingested yet.</p>}
+          empty={
+            <EmptyState
+              icon={GitBranchIcon}
+              tone="mist"
+              compact
+              bordered={false}
+              title="No git history ingested yet"
+            />
+          }
         >
           <div className="space-y-2">
             {rows.map((row) => (
@@ -85,7 +92,15 @@ export function TopContributors({ repoId }: { repoId: string }) {
           isError={isError}
           error={error}
           isEmpty={ranks.length === 0}
-          empty={<p className="text-sm text-muted-foreground">No contributors yet.</p>}
+          empty={
+            <EmptyState
+              icon={UsersIcon}
+              tone="mist"
+              compact
+              bordered={false}
+              title="No contributors yet"
+            />
+          }
         >
           <div className="space-y-3">
             {ranks.map((c, i) => (
@@ -126,7 +141,15 @@ export function RiskiestFiles({ repoId }: { repoId: string }) {
           isError={isError}
           error={error}
           isEmpty={files.length === 0}
-          empty={<p className="text-sm text-muted-foreground">No files ingested yet.</p>}
+          empty={
+            <EmptyState
+              icon={FileWarningIcon}
+              tone="mist"
+              compact
+              bordered={false}
+              title="No files ingested yet"
+            />
+          }
         >
           <div className="space-y-1.5">
             {files.map((f) => (

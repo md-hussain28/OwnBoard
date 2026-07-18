@@ -10,15 +10,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { IncomingBadge } from "@/components/layout/incoming-feature";
-import { cn } from "@/lib/utils";
-import {
-  type OnboardingStep,
-  type StepResult,
-  useOnboardingStore,
-} from "@/stores/onboarding-store";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
+import { IncomingBadge } from "@/components/layout";
+import { cn } from "@/lib";
+import { type OnboardingStep, type StepResult, useOnboardingStore } from "@/stores";
+import { Badge, Button } from "@/ui";
 
 type QuizAssignment = {
   key: Exclude<OnboardingStep, "unlocked">;

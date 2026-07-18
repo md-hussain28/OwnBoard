@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
-import { AssignmentNotifications } from "@/components/layout/assignment-notifications";
-import { TooltipProvider } from "@/ui/tooltip";
+import { TooltipProvider } from "@/ui";
+import { AssignmentNotifications } from "./assignment-notifications";
 
 const meta = {
   title: "Components/Layout/AssignmentNotifications",

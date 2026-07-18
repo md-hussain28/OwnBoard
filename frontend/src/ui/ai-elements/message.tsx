@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentProps } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib";
 
 /**
  * Vercel AI Elements `Message` — a single chat turn row. `from` drives alignment: user turns align

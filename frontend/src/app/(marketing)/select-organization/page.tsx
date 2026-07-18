@@ -1,5 +1,5 @@
 import { OrganizationList } from "@clerk/nextjs";
-import { APP_HOME } from "@/lib/routes";
+import { APP_HOME } from "@/lib";
 
 /** Hide Clerk's built-in create-org button — tenants come from platform /app/admin. */
 const hideCreateOrganizationAppearance = {

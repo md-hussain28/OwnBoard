@@ -1,4 +1,4 @@
-import { Badge } from "@/ui/badge";
+import { Badge } from "@/ui";
 
 /** Inline "Incoming" tag for a feature/section whose backend is still a stub. */
 export function IncomingBadge({ className }: { className?: string }) {

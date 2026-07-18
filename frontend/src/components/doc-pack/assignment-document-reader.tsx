@@ -2,10 +2,9 @@
 
 import { DownloadIcon, FileTextIcon, Loader2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAssignmentDocumentContent } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
-import { Skeleton } from "@/ui/skeleton";
+import { useAssignmentDocumentContent } from "@/hooks/queries/pack-assignment";
+import { cn } from "@/lib";
+import { Button, Skeleton } from "@/ui";
 
 function isPdf(fileType: string) {
   return fileType.toLowerCase() === "pdf";

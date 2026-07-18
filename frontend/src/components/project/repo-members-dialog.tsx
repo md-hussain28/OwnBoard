@@ -2,13 +2,11 @@
 
 import { CheckIcon, UsersIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSetRepoMembers } from "@/hooks/queries/project/project.mutations";
-import { useProjectMembers } from "@/hooks/queries/project/project.queries";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { ProjectRepo } from "@/schemas/project.schema";
-import { Button } from "@/ui/button";
+import { useProjectMembers, useSetRepoMembers } from "@/hooks/queries/project";
+import { cn, notify } from "@/lib";
+import type { ProjectRepo } from "@/schemas";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -16,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
+} from "@/ui";
 
 /** Manager control to set which project members work on a given repo. */
 export function RepoMembersDialog({ projectId, repo }: { projectId: string; repo: ProjectRepo }) {

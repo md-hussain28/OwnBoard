@@ -1,16 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ExpertReferralCard } from "@/components/expert/expert-referral-card";
-import { ProjectNeedsRepo } from "@/components/project/project-needs-repo";
-import { primaryProjectRepoId } from "@/components/project/project-repo";
-import { useExpertForFile } from "@/hooks/queries/expert/expert.queries";
-import { useProject } from "@/hooks/queries/project/project.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Skeleton } from "@/ui/skeleton";
-import { Spinner } from "@/ui/spinner";
+import { ExpertReferralCard } from "@/components/expert";
+import { ProjectNeedsRepo, primaryProjectRepoId } from "@/components/project";
+import { useExpertForFile } from "@/hooks/queries/expert";
+import { useProject } from "@/hooks/queries/project";
+import { getApiErrorMessage } from "@/lib/api";
+import { Button, Input, Skeleton, Spinner } from "@/ui";
 
 export function ProjectExpertsView({ id }: { id: string }) {
   const { data: project } = useProject(id);
@@ -29,7 +25,7 @@ export function ProjectExpertsView({ id }: { id: string }) {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
         Enter a file or folder and we&apos;ll route you to the person with the most relevant history
         — with the evidence and a drafted intro.

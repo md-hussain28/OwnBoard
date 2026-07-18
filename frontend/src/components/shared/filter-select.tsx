@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
+import { cn } from "@/lib";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui";
 
 export function FilterSelect<T extends string>({
   value,

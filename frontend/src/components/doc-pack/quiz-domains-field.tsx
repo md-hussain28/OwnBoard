@@ -6,14 +6,10 @@ import {
   useCreateQuizDomain,
   useDeleteQuizDomain,
   useQuizDomains,
-} from "@/hooks/queries/quiz-domain/quiz-domain.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Skeleton } from "@/ui/skeleton";
+} from "@/hooks/queries/quiz-domain";
+import { cn, notify } from "@/lib";
+import { getApiErrorMessage } from "@/lib/api";
+import { Badge, Button, Input, Skeleton } from "@/ui";
 
 type QuizDomainsFieldProps = {
   /** Selected domain id, or `null` for no domain. */

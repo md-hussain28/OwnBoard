@@ -1,5 +1,5 @@
 import { SignUp } from "@clerk/nextjs";
-import { APP_HOME } from "@/lib/routes";
+import { APP_HOME } from "@/lib";
 
 export default function SignUpPage() {
   return (

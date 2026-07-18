@@ -11,8 +11,7 @@ import {
   UserRoundIcon,
 } from "lucide-react";
 import { useState } from "react";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { cn, notify } from "@/lib";
 import type {
   AskCallout,
   AskChecklist,
@@ -20,9 +19,8 @@ import type {
   AskExpert,
   AskMetrics,
   AskTimeline,
-} from "@/schemas/ask.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
+} from "@/schemas";
+import { Badge, Button } from "@/ui";
 
 const numStyle = { fontVariantNumeric: "tabular-nums" } as const;
 

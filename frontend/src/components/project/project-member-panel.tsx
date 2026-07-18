@@ -1,16 +1,11 @@
 "use client";
 
-import { ChevronRightIcon, CrownIcon, SearchIcon, StarIcon } from "lucide-react";
+import { ChevronRightIcon, CrownIcon, SearchIcon, StarIcon, UsersRoundIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { FilterSelect } from "@/components/shared/filter-select";
-import { QueryState } from "@/components/shared/query-state";
-import {
-  useProjectFunctionTypes,
-  useProjectMembers,
-} from "@/hooks/queries/project/project.queries";
-import type { ProjectMember } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Input } from "@/ui/input";
+import { EmptyState, FilteredEmpty, FilterSelect, QueryState } from "@/components/shared";
+import { useProjectFunctionTypes, useProjectMembers } from "@/hooks/queries/project";
+import type { ProjectMember } from "@/schemas";
+import { Badge, Input } from "@/ui";
 import { MemberDetailSheet } from "./member-detail-sheet";
 import { ReadinessBadge, readinessLabel } from "./readiness";
 
@@ -31,6 +26,15 @@ const READINESS_OPTIONS = [
   { value: "locked", label: "Not started" },
   { value: "open", label: "No onboarding" },
 ];
+
+const EMPTY_MEMBERS = (
+  <EmptyState
+    icon={UsersRoundIcon}
+    tone="mist"
+    title="No members on this project yet"
+    description="Members you add to this project will appear here."
+  />
+);
 
 function matchesFilters(
   m: ProjectMember,
@@ -84,13 +88,19 @@ export function ProjectMemberPanel({
 
   const hasFilters = query.trim() !== "" || functionFilter !== "all" || readinessFilter !== "all";
 
+  function clearFilters() {
+    setQuery("");
+    setFunctionFilter("all");
+    setReadinessFilter("all");
+  }
+
   return (
     <QueryState
       isLoading={isLoading}
       isError={isError}
       error={error}
       isEmpty={!!members && members.length === 0}
-      empty={<p className="text-sm text-muted-foreground">No members on this project yet.</p>}
+      empty={EMPTY_MEMBERS}
     >
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -121,9 +131,7 @@ export function ProjectMemberPanel({
         </div>
 
         {filtered.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            {hasFilters ? "No members match your search or filters." : "No members yet."}
-          </p>
+          <FilteredEmpty noun="members" onClear={hasFilters ? clearFilters : undefined} />
         ) : (
           <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
             {filtered.map((m) => (

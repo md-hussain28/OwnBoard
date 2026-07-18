@@ -1,10 +1,10 @@
 "use client";
 
-import { AppSidebar } from "@/components/layout/app-sidebar";
-import { AppTopbar } from "@/components/layout/app-topbar";
-import { ProductTour } from "@/components/tour/product-tour";
+import { ProductTour, TourTrigger } from "@/components/tour";
+import { TooltipProvider } from "@/ui";
 import { SidebarInset, SidebarProvider } from "@/ui/sidebar";
-import { TooltipProvider } from "@/ui/tooltip";
+import { AppSidebar } from "./app-sidebar";
+import { AppTopbar } from "./app-topbar";
 
 /** Authenticated console shell for everything under `/app`. */
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -15,9 +15,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarInset className="bg-background">
           <AppTopbar />
           <div className="flex flex-1 flex-col">
-            <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+            <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">{children}</main>
           </div>
         </SidebarInset>
+        <TourTrigger />
         <ProductTour />
       </SidebarProvider>
     </TooltipProvider>

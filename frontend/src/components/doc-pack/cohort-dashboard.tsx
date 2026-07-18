@@ -6,19 +6,14 @@ import {
   GaugeIcon,
   HourglassIcon,
   TrophyIcon,
+  UsersIcon,
 } from "lucide-react";
 import { useMemo } from "react";
-import {
-  ASSIGNMENT_STATUS_LABEL,
-  assignmentStatusVariant,
-} from "@/components/shared/assignment-status";
-import { useCohortDashboard } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { cn } from "@/lib/utils";
-import type { CohortDashboard as CohortDashboardData } from "@/schemas/cohort.schema";
-import { Badge } from "@/ui/badge";
-import { Card, CardContent } from "@/ui/card";
-import { Progress } from "@/ui/progress";
-import { Skeleton } from "@/ui/skeleton";
+import { ASSIGNMENT_STATUS_LABEL, assignmentStatusVariant, EmptyState } from "@/components/shared";
+import { useCohortDashboard } from "@/hooks/queries/pack-assignment";
+import { cn } from "@/lib";
+import type { CohortDashboard as CohortDashboardData } from "@/schemas";
+import { Badge, Card, CardContent, Progress, Skeleton } from "@/ui";
 
 function StatTile({
   icon: Icon,
@@ -198,9 +193,12 @@ export function CohortDashboard() {
     <div className="space-y-6">
       <StatRow data={data} />
       {data.employees.length === 0 ? (
-        <p className="rounded-xl border border-border px-5 py-8 text-center text-sm text-muted-foreground">
-          No employees have been assigned a module yet.
-        </p>
+        <EmptyState
+          icon={UsersIcon}
+          tone="mist"
+          title="No one assigned yet"
+          description="Assign a module to your team and their onboarding progress will show up here."
+        />
       ) : (
         <CompletionMatrix data={data} />
       )}

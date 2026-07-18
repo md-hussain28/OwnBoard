@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils";
-import type { ChatMessage as ChatMessageType } from "@/schemas/chat.schema";
-import { Badge } from "@/ui/badge";
+import { cn } from "@/lib";
+import type { ChatMessage as ChatMessageType } from "@/schemas";
+import { Badge } from "@/ui";
 
 export function ChatMessage({ message }: { message: ChatMessageType }) {
   const isUser = message.role === "user";

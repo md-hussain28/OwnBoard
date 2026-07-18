@@ -3,13 +3,12 @@
 import { CalendarIcon, CrownIcon, Trash2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useDeleteProject } from "@/hooks/queries/project/project.mutations";
-import { appPath } from "@/lib/routes";
-import { notify } from "@/lib/toast";
-import type { ProjectDetail } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
+import { useDeleteProject } from "@/hooks/queries/project";
+import { appPath, notify } from "@/lib";
+import type { ProjectDetail } from "@/schemas";
 import {
+  Badge,
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -17,8 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
-import { Spinner } from "@/ui/spinner";
+  Spinner,
+} from "@/ui";
 import { EditProjectDialog } from "./edit-project-dialog";
 import { ProjectStatusBadge } from "./project-status";
 import { ReadinessBar } from "./readiness";

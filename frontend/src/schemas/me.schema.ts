@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { appRoleSchema } from "@/schemas/employee.schema";
+import { appRoleSchema } from "./employee.schema";
 
 /** Mirrors backend MeResponse — org fields null when no active organization. */
 export const meSchema = z

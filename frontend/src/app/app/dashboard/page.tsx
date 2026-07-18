@@ -1,15 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ConnectRepoPrompt } from "@/components/repo/connect-repo-prompt";
-import {
-  RiskiestFiles,
-  SubsystemBusFactor,
-  TopContributors,
-} from "@/components/skill-graph/skill-graph-panels";
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
-import { appPath } from "@/lib/routes";
-import { Skeleton } from "@/ui/skeleton";
+import { ConnectRepoPrompt } from "@/components/repo";
+import { RiskiestFiles, SubsystemBusFactor, TopContributors } from "@/components/skill-graph";
+import { useRepos } from "@/hooks/queries/repo";
+import { appPath } from "@/lib";
+import { Skeleton } from "@/ui";
 
 export default function DashboardPage() {
   const { data: repos, isLoading } = useRepos();

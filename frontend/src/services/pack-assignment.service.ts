@@ -1,6 +1,4 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
-import { type CohortDashboard, cohortDashboardSchema } from "@/schemas/cohort.schema";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
 import {
   type AssignmentDetail,
   type AssignmentDocumentContent,
@@ -8,12 +6,14 @@ import {
   assignmentDetailSchema,
   assignmentDocumentContentSchema,
   assignmentOutcomeListSchema,
+  type CohortDashboard,
+  cohortDashboardSchema,
   type PackAssignment,
   packAssignmentListSchema,
   packAssignmentSchema,
   type StartQuizResponse,
   startQuizResponseSchema,
-} from "@/schemas/packAssignment.schema";
+} from "@/schemas";
 
 export const packAssignmentService = {
   async createForPack(packId: string, employeeIds: string[]): Promise<PackAssignment[]> {

@@ -1,107 +1,290 @@
-import type { DriveStep } from "driver.js";
+import {
+  BellIcon,
+  BookOpenCheckIcon,
+  ClipboardCheckIcon,
+  FolderKanbanIcon,
+  GitBranchIcon,
+  HandIcon,
+  HomeIcon,
+  LayoutGridIcon,
+  ListChecksIcon,
+  type LucideIcon,
+  PartyPopperIcon,
+  ScrollTextIcon,
+  SparklesIcon,
+  UsersIcon,
+} from "lucide-react";
+import { APP_HOME, appPath } from "@/lib";
+import type { AppRole } from "@/schemas";
 
 /**
- * Guided product tour steps for the console.
+ * A single stop in the guided product tour.
  *
- * Every step is anchored to a persistent shell element (`[data-tour="…"]`) so the
- * tour runs from any `/app/**` route without navigating. Steps with no `element`
- * are centered modals (welcome / finish).
+ * The tour is an interactive spotlight walkthrough (see `product-tour.tsx`): each
+ * stop navigates to the real page, cuts a highlight around the actual UI element,
+ * and points a card at it. Cards are written like the person who built OwnBoard is
+ * walking a new user through it — plain language, what the feature is *for*, a few
+ * concrete highlights, and one "here's how you actually use it" nudge.
  *
- * This is a *superset*: admins and members see different sidebar items, so
- * ProductTour filters out any step whose target isn't currently in the DOM
- * (see `product-tour.tsx`). That also gracefully skips off-canvas items on mobile.
+ * Users don't have to walk it in order: the launcher (`tour-trigger.tsx`) lists
+ * every stop so they can jump straight to any feature and have it explained.
  */
-export const TOUR_STEPS: DriveStep[] = [
+export type TourFeature = {
+  /** Stable id (React keys / analytics / deep-linking from the launcher). */
+  id: string;
+  icon: LucideIcon;
+  /**
+   * Icon-well color classes (soft fill + saturated text). Kept as a full literal
+   * so Tailwind can see the class names statically — don't build these dynamically.
+   */
+  iconWell: string;
+  /** Feature name — the card headline and the launcher row title. */
+  title: string;
+  /** One-line hook under the title. */
+  tagline: string;
+  /** 1–2 sentences on what it is and why it matters. Friendly, not technical. */
+  body: string;
+  /**
+   * A few scannable "what you can do here" bullets. Optional. These are what make
+   * a stop feel detailed — each one is a concrete capability, not marketing fluff.
+   */
+  highlights?: string[];
+  /** One concrete "here's how you actually use it" nudge. Optional (intro/finish skip it). */
+  howTo?: string;
+  /**
+   * Console route to navigate to when this stop shows, so the user sees the real
+   * page while it's being explained. Omit to stay on the current page.
+   */
+  route?: string;
+  /**
+   * CSS selector for the real UI element to spotlight (matches a persistent
+   * `data-tour="…"` anchor in the shell). When present and on-screen, the tour
+   * cuts a highlight around it and points the card at it. Omit for intro/summary
+   * cards, which show centered.
+   */
+  anchor?: string;
+  /**
+   * A project sub-section key (`members`, `onboarding`, `docs`, `repositories`,
+   * `ask` — see `nav-config.ts`). When set, the tour resolves the route and anchor
+   * against a *live* project at runtime: it opens the viewer's first project at this
+   * section and spotlights the section's real on-page content (`[data-tour=
+   * "project-panel-<key>"]`, added to each section view). If the viewer has no
+   * project yet it gracefully falls back to `route` (the projects list), centered.
+   */
+  projectSection?: string;
+  /**
+   * OwnBoard `app_role` gate. Omit = shown to everyone. When set, only those roles
+   * see the stop (so admins and members get a tour tailored to what they can do).
+   */
+  roles?: AppRole[];
+};
+
+export const TOUR_FEATURES: TourFeature[] = [
   {
-    popover: {
-      title: "Welcome to OwnBoard 👋",
-      description:
-        "Onboarding you can actually verify — policy & codebase quizzes grounded in your real git history, a live skill graph with bus-factor alerts, and citation-backed answers. Take 30 seconds and we'll show you around.",
-    },
+    id: "welcome",
+    icon: HandIcon,
+    iconWell: "bg-brand-honey-soft text-brand-honey",
+    title: "Welcome to OwnBoard 👋",
+    tagline: "Onboarding you can actually trust",
+    body: "Instead of ticking “I read it” boxes, people here prove they've learned — with quizzes built from your own policies and your real git history. This quick walkthrough opens each page as it explains it, so you're seeing the real thing. Take the full tour, or jump straight to any feature from the launcher.",
+    route: APP_HOME,
   },
   {
-    element: '[data-tour="workspace"]',
-    popover: {
-      title: "Your workspace",
-      description:
-        "This is your active organization. Everything — policies, projects, quizzes, and people — is scoped to the workspace shown here.",
-      side: "right",
-      align: "start",
-    },
+    id: "workspace",
+    icon: LayoutGridIcon,
+    iconWell: "bg-brand-plum-soft text-brand-plum",
+    title: "Your workspace",
+    tagline: "Everything is scoped to your company",
+    body: "This is your organization. All of your policies, projects, and people live inside it, kept separate from every other company on OwnBoard. The name and logo up here confirm exactly which workspace you're looking at.",
+    highlights: [
+      "Belong to more than one company? Switch between them right here.",
+      "Everything you see — docs, quizzes, skill maps — is private to this workspace.",
+    ],
+    howTo:
+      "Click the workspace name in the top-left to switch organizations or manage its settings.",
+    route: APP_HOME,
+    anchor: '[data-tour="workspace"]',
   },
   {
-    element: '[data-tour="nav-home"]',
-    popover: {
-      title: "Home base",
-      description:
-        "Your personalized overview. Managers see what's at risk and who's behind; new hires see their single next step.",
-      side: "right",
-      align: "start",
-    },
+    id: "home",
+    icon: HomeIcon,
+    iconWell: "bg-brand-honey-soft text-brand-honey",
+    title: "Home",
+    tagline: "Your daily starting point",
+    body: "Home is the fastest read on where things stand. Managers see who's on track, who's fallen behind, and where knowledge is at risk. New hires see one clear thing: their next step.",
+    highlights: [
+      "A one-glance summary of what needs your attention today.",
+      "Managers: who's on track, who's behind, and where knowledge is thin.",
+      "New hires: your next action, front and centre.",
+    ],
+    howTo: "Open Home each morning — it's the one-glance summary of what needs your attention.",
+    route: APP_HOME,
+    anchor: '[data-tour="nav-home"]',
   },
   {
-    element: '[data-tour="nav-onboarding"]',
-    popover: {
-      title: "Onboarding tracks",
-      description:
-        "Build onboarding tracks with policy quizzes and codebase quizzes generated from real commit history — learning is verified, not a self-reported checkbox.",
-      side: "right",
-      align: "start",
-    },
+    id: "onboarding",
+    icon: BookOpenCheckIcon,
+    iconWell: "bg-brand-amber-soft text-brand-amber",
+    title: "Onboarding tracks",
+    tagline: "Build learning that's verified, not self-reported",
+    body: "This is where you create onboarding. Add your policy docs and OwnBoard turns them into quizzes — plus codebase quizzes generated from real commit history, so you know people genuinely learned it.",
+    highlights: [
+      "Drop in policy docs → OwnBoard drafts the quiz for you.",
+      "Codebase quizzes are built from actual git history, not guesswork.",
+      "Assign a track to one person or a whole team in a couple of clicks.",
+    ],
+    howTo: "Create a track, drop in the docs, then assign it to one person or a whole team.",
+    route: appPath("tracks"),
+    anchor: '[data-tour="nav-onboarding"]',
+    roles: ["admin"],
   },
   {
-    element: '[data-tour="nav-modules"]',
-    popover: {
-      title: "Your modules",
-      description:
-        "Your assigned onboarding lives here: read the docs, pass the quiz, unlock the next step. Progress is tracked automatically.",
-      side: "right",
-      align: "start",
-    },
+    id: "modules",
+    icon: ClipboardCheckIcon,
+    iconWell: "bg-brand-amber-soft text-brand-amber",
+    title: "My modules",
+    tagline: "Everything assigned to you, in one place",
+    body: "Your onboarding lives here. Read the material, pass the quiz, and the next step unlocks — your progress saves automatically, so you can always pick up where you left off.",
+    highlights: [
+      "Read the material, then prove it with a short quiz.",
+      "Passing a quiz unlocks the next step automatically.",
+      "Your progress is saved as you go — leave and come back anytime.",
+    ],
+    howTo: "Work through them top to bottom — passing the quiz is what marks a step complete.",
+    route: appPath("onboarding", "packs"),
+    anchor: '[data-tour="nav-modules"]',
+    roles: ["member"],
   },
   {
-    element: '[data-tour="nav-projects"]',
-    popover: {
-      title: "Projects",
-      description:
-        "Each project bundles its team, docs, and repos with a real skill graph (who actually knows what, plus bus-factor alerts) and an Ask panel for cited, grounded answers.",
-      side: "right",
-      align: "start",
-    },
+    id: "projects",
+    icon: FolderKanbanIcon,
+    iconWell: "bg-brand-teal-soft text-brand-teal",
+    title: "Projects",
+    tagline: "Where a team, its work, and its knowledge come together",
+    body: "A project is a real team's home base — its people, its docs, and its code in one place. From actual contributions it builds a live skill map and flags “bus-factor” risk when critical knowledge sits with just one person. Open one and it fans out into a set of tabs in the sidebar — we'll walk each of them next.",
+    highlights: [
+      "People, documents, and repositories for a team, all in one place.",
+      "A skill map built from real contributions — not self-rated stars.",
+      "Bus-factor alerts when only one person holds critical knowledge.",
+    ],
+    howTo:
+      "Open any project from this list — its Members, Modules, Docs, Repos, and Ask tabs appear right here in the sidebar.",
+    route: appPath("projects"),
+    anchor: '[data-tour="nav-projects"]',
   },
   {
-    element: '[data-tour="notifications"]',
-    popover: {
-      title: "Stay in the loop",
-      description:
-        "Assignments, quiz results, and overdue reminders land here in real time — no inbox digging.",
-      side: "bottom",
-      align: "end",
-    },
+    id: "project-members",
+    icon: UsersIcon,
+    iconWell: "bg-brand-teal-soft text-brand-teal",
+    title: "Members",
+    tagline: "Who's on the team — and what they actually know",
+    body: "The roster for this project. See everyone on it, where each person is in their onboarding, and the skill map built from their real contributions — so you can tell who owns what, and where you're one resignation away from trouble.",
+    highlights: [
+      "Every member, with their live onboarding progress.",
+      "A skill map drawn from real commits, not self-rated stars.",
+      "Bus-factor flags when critical knowledge sits with one person.",
+    ],
+    howTo: "Open Members to add people, track their progress, and read the skill map at a glance.",
+    projectSection: "members",
+    route: appPath("projects"),
+    roles: ["admin"],
   },
   {
-    element: '[data-tour="sidebar-toggle"]',
-    popover: {
-      title: "More room to work",
-      description: "Collapse the sidebar anytime to give the content full focus.",
-      side: "bottom",
-      align: "start",
-    },
+    id: "project-modules",
+    icon: ListChecksIcon,
+    iconWell: "bg-brand-amber-soft text-brand-amber",
+    title: "Modules",
+    tagline: "The onboarding path built for this project",
+    body: "The learning made specifically for this team — policy and codebase modules tied to this project's own docs and repos. Members work through them step by step, and every step is proven with a quiz, not a checkbox.",
+    highlights: [
+      "Modules scoped to this project's real docs and code.",
+      "Each step is verified with a quiz before it counts as done.",
+      "Assign the path to one new hire or the whole team.",
+    ],
+    howTo: "Open Modules to shape the path; members then complete it from their own “My modules”.",
+    projectSection: "onboarding",
+    route: appPath("projects"),
   },
   {
-    element: '[data-tour="tour-trigger"]',
-    popover: {
-      title: "Replay anytime",
-      description: "Lost? Re-open this guided tour whenever you like from right here.",
-      side: "bottom",
-      align: "end",
-    },
+    id: "project-docs",
+    icon: ScrollTextIcon,
+    iconWell: "bg-brand-plum-soft text-brand-plum",
+    title: "Docs",
+    tagline: "The source of truth this project is built on",
+    body: "Every document that matters to this project — architecture notes, runbooks, policies — kept in one place. These same docs are what OwnBoard turns into quizzes and what it cites when someone asks a question.",
+    highlights: [
+      "Upload and organise the docs that define this project.",
+      "The same docs feed onboarding quizzes automatically.",
+      "They ground Ask, so every answer points back to a real source.",
+    ],
+    howTo:
+      "Open Docs to upload files and tag them — onboarding and Ask both build on what lives here.",
+    projectSection: "docs",
+    route: appPath("projects"),
   },
   {
-    popover: {
-      title: "You're all set 🎉",
-      description:
-        "Every answer OwnBoard gives is grounded in citations, and low-confidence questions escalate to a human instead of guessing. Dive in — and remember you can replay this tour anytime.",
-    },
+    id: "project-repos",
+    icon: GitBranchIcon,
+    iconWell: "bg-brand-teal-soft text-brand-teal",
+    title: "Repos",
+    tagline: "The code behind the project — connected, not guessed at",
+    body: "Link the repositories this project ships, and OwnBoard reads their git history to build the skill map, write codebase quizzes grounded in real commits, and answer questions about how the code actually works.",
+    highlights: [
+      "Connect the repositories this team owns.",
+      "Real commit history powers skill maps and codebase quizzes.",
+      "Sync status shows exactly what's connected and up to date.",
+    ],
+    howTo:
+      "Open Repos to connect a repository — the git-history features light up once it's synced.",
+    projectSection: "repositories",
+    route: appPath("projects"),
+    roles: ["admin"],
+  },
+  {
+    id: "project-ask",
+    icon: SparklesIcon,
+    iconWell: "bg-brand-teal-soft text-brand-teal",
+    title: "Ask project",
+    tagline: "Answers you can trust, with receipts",
+    body: "Ask anything about this project in plain English. Every answer comes back cited to the exact doc or commit it came from — and when OwnBoard isn't confident, it routes you to the person who actually knows instead of making something up.",
+    highlights: [
+      "Ask in plain English — no need to know where the answer lives.",
+      "Every answer is cited to the exact doc or commit behind it.",
+      "Low-confidence questions route to the right expert, never a hallucination.",
+    ],
+    howTo: "Open Ask project and just type — try “How does auth work here?”",
+    projectSection: "ask",
+    route: appPath("projects"),
+  },
+  {
+    id: "notifications",
+    icon: BellIcon,
+    iconWell: "bg-brand-info-soft text-brand-info",
+    title: "Notifications",
+    tagline: "Nothing slips through the cracks",
+    body: "New assignments, quiz results, and overdue reminders show up here in real time, so you're never left guessing what changed.",
+    highlights: [
+      "New assignments and due-date reminders land here.",
+      "Quiz results and escalations, the moment they happen.",
+    ],
+    howTo: "Click the bell in the top bar whenever it lights up.",
+    anchor: '[data-tour="notifications"]',
+  },
+  {
+    id: "finish",
+    icon: PartyPopperIcon,
+    iconWell: "bg-brand-moss-soft text-brand-moss",
+    title: "You're all set 🎉",
+    tagline: "Go ahead and dive in",
+    body: "That's the whole tour. Everything OwnBoard tells you is backed by evidence — and you can replay this walkthrough, or jump to any single feature, anytime from the “Take a tour” launcher in the corner.",
   },
 ];
+
+/** The stops this viewer should see, in order (role-gated features filtered out). */
+export function tourFeaturesForRole(role: AppRole | null | undefined): TourFeature[] {
+  return TOUR_FEATURES.filter((f) => {
+    if (!f.roles || f.roles.length === 0) return true;
+    if (!role) return false;
+    return f.roles.includes(role);
+  });
+}

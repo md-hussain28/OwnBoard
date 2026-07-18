@@ -1,10 +1,10 @@
 "use client";
 
 import { MessageSquarePlusIcon, MessagesSquareIcon, Trash2Icon } from "lucide-react";
-import type { AskThread } from "@/components/ask/use-ask-threads";
-import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/ui/sheet";
+import { EmptyState } from "@/components/shared";
+import { cn } from "@/lib";
+import { Button, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/ui";
+import type { AskThread } from "./use-ask-threads";
 
 function relativeTime(ts: number): string {
   const diff = Date.now() - ts;
@@ -60,10 +60,14 @@ export function AskThreadHistory({
 
         <div className="flex-1 overflow-y-auto px-3 pb-4">
           {threads.length === 0 ? (
-            <div className="mt-8 flex flex-col items-center gap-2 text-center text-sm text-muted-foreground">
-              <MessagesSquareIcon className="size-6 text-muted-foreground/50" />
-              No conversations yet.
-            </div>
+            <EmptyState
+              icon={MessagesSquareIcon}
+              tone="mist"
+              compact
+              bordered={false}
+              title="No conversations yet"
+              description="Ask your first question about this project to start one."
+            />
           ) : (
             <ul className="space-y-1">
               {threads.map((t) => (

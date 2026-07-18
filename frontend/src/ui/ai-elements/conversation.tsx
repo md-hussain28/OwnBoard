@@ -3,8 +3,8 @@
 import { ArrowDownIcon } from "lucide-react";
 import type { ComponentProps } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
-import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
+import { cn } from "@/lib";
+import { Button } from "@/ui";
 
 /**
  * Vercel AI Elements `Conversation` — an auto-scrolling message container. It sticks to the newest

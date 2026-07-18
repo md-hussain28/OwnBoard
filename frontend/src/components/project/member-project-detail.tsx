@@ -10,11 +10,9 @@ import {
   UnlockIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { appPath } from "@/lib/routes";
-import { cn } from "@/lib/utils";
-import type { ProjectDetail, ProjectTrack } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { appPath, cn } from "@/lib";
+import type { ProjectDetail, ProjectTrack } from "@/schemas";
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/ui";
 import { MemberModulesList } from "./member-modules-list";
 import { ProjectContextView } from "./project-context-view";
 import { ProjectMemberPanel } from "./project-member-panel";

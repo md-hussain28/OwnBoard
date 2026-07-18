@@ -6,21 +6,21 @@ import {
   useCreateOrgDomain,
   useDeleteOrgDomain,
   useUpdateOrgDomain,
-} from "@/hooks/queries/org-domain/org-domain.queries";
-import { notify } from "@/lib/toast";
-import type { OrgDomain } from "@/schemas/org-domain.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
+} from "@/hooks/queries/org-domain";
+import { notify } from "@/lib";
+import type { OrgDomain } from "@/schemas";
 import {
+  Badge,
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
-import { Spinner } from "@/ui/spinner";
+  Input,
+  Spinner,
+} from "@/ui";
 
 /** Inline rename controls for a domain row: input + save/cancel buttons. */
 function DomainNameEditor({

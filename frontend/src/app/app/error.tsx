@@ -3,10 +3,10 @@
 import { LayoutDashboardIcon, RotateCwIcon, TriangleAlertIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
-import { StatusScreen } from "@/components/shared/status-screen";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { APP_HOME } from "@/lib/routes";
-import { Button } from "@/ui/button";
+import { StatusScreen } from "@/components/shared";
+import { APP_HOME } from "@/lib";
+import { getApiErrorMessage } from "@/lib/api";
+import { Button } from "@/ui";
 
 /**
  * Console error boundary — catches errors within `/app` while keeping the shell (sidebar/topbar)

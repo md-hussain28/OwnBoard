@@ -1,18 +1,13 @@
 "use client";
 
-import { AlarmClockIcon, ClockIcon, LockIcon } from "lucide-react";
+import { AlarmClockIcon, ClockIcon, GraduationCapIcon, LockIcon } from "lucide-react";
 import Link from "next/link";
-import {
-  ASSIGNMENT_STATUS_LABEL,
-  assignmentStatusVariant,
-} from "@/components/shared/assignment-status";
-import { useMe } from "@/hooks/queries/me/me.queries";
-import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { cn } from "@/lib/utils";
-import type { PackAssignment } from "@/schemas/packAssignment.schema";
-import { Badge } from "@/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
+import { ASSIGNMENT_STATUS_LABEL, assignmentStatusVariant, EmptyState } from "@/components/shared";
+import { useMe } from "@/hooks/queries/me";
+import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment";
+import { cn } from "@/lib";
+import type { PackAssignment } from "@/schemas";
+import { Badge, Card, CardContent, CardHeader, CardTitle, Skeleton } from "@/ui";
 
 function formatDue(dueAt: string | null): string {
   const date = new Date(dueAt ?? "");
@@ -55,7 +50,16 @@ function ctaLabel(status: PackAssignment["status"]): string {
 
 function AssignmentList({ assignments }: { assignments: PackAssignment[] }) {
   if (assignments.length === 0) {
-    return <p className="text-sm text-muted-foreground">No modules assigned yet.</p>;
+    return (
+      <EmptyState
+        icon={GraduationCapIcon}
+        tone="mist"
+        compact
+        bordered={false}
+        title="No modules assigned yet"
+        description="When your team assigns onboarding, it'll show up here."
+      />
+    );
   }
 
   const sorted = [...assignments].sort((a, b) => {

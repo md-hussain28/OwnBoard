@@ -5,22 +5,11 @@ import { FolderKanbanIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BrandMark } from "@/components/brand/brand-mark";
-import {
-  isNavItemActive,
-  isProjectSectionActive,
-  type NavItem,
-  navItemsForRole,
-  projectIdFromPathname,
-  projectSectionPath,
-  projectSectionsForRole,
-  WORKSPACE_NAV,
-} from "@/components/layout/nav-config";
-import { SidebarAccountFooter } from "@/components/layout/sidebar-account-footer";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { useProject } from "@/hooks/queries/project/project.queries";
-import { appPath } from "@/lib/routes";
-import { cn } from "@/lib/utils";
+import { BrandMark } from "@/components/brand";
+import { useAppRole } from "@/hooks/queries/me";
+import { useProject } from "@/hooks/queries/project";
+import { appPath, cn } from "@/lib";
+import { Skeleton } from "@/ui";
 import {
   Sidebar,
   SidebarContent,
@@ -37,7 +26,17 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/ui/sidebar";
-import { Skeleton } from "@/ui/skeleton";
+import {
+  isNavItemActive,
+  isProjectSectionActive,
+  type NavItem,
+  navItemsForRole,
+  projectIdFromPathname,
+  projectSectionPath,
+  projectSectionsForRole,
+  WORKSPACE_NAV,
+} from "./nav-config";
+import { SidebarAccountFooter } from "./sidebar-account-footer";
 
 /** Clerk's auto-generated default logos encode `"type":"default"` in the path. */
 function isClerkDefaultLogo(url?: string | null) {
@@ -362,8 +361,8 @@ export function AppSidebar() {
                     logoUrl || !organization ? "bg-transparent" : "bg-brand-gradient",
                   )}
                 >
-                  {logoUrl ? (
-                    // Custom org logos from Clerk
+                  {/* Custom org logos from Clerk */}
+                  {logoUrl && (
                     <Image
                       src={logoUrl}
                       alt=""
@@ -371,11 +370,9 @@ export function AppSidebar() {
                       height={32}
                       className="size-full object-cover"
                     />
-                  ) : !organization ? (
-                    <BrandMark className="size-full" />
-                  ) : (
-                    fallbackMark
                   )}
+                  {!logoUrl && !organization && <BrandMark className="size-full" />}
+                  {!logoUrl && organization && fallbackMark}
                 </span>
                 <span className="truncate text-[0.9375rem] font-semibold leading-none tracking-tight text-sidebar-foreground group-data-[collapsible=icon]:hidden">
                   {orgName}

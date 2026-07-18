@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { DocPackDocuments } from "@/components/doc-pack/doc-pack-documents";
-import { docPackDocumentListSchema } from "@/schemas/docPack.schema";
+import { docPackDocumentListSchema } from "@/schemas";
 import { mockDocuments } from "../../../.storybook/mocks/data";
+import { DocPackDocuments } from "./doc-pack-documents";
 
 // Parse the wire-format mocks through the real zod schema so the story
 // receives exactly what the service layer would produce.

@@ -1,8 +1,8 @@
 import { CompassIcon, LayoutDashboardIcon } from "lucide-react";
 import Link from "next/link";
-import { StatusScreen } from "@/components/shared/status-screen";
-import { APP_HOME } from "@/lib/routes";
-import { Button } from "@/ui/button";
+import { StatusScreen } from "@/components/shared";
+import { APP_HOME } from "@/lib";
+import { Button } from "@/ui";
 
 /**
  * Console 404 — handles `notFound()` and unmatched routes under `/app`. Renders inside the

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
+import { Badge } from "./badge";
+import { Button } from "./button";
 import {
   Card,
   CardAction,
@@ -9,7 +9,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/ui/card";
+} from "./card";
 
 const meta = {
   title: "UI/Card",

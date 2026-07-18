@@ -1,9 +1,9 @@
 "use client";
 
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { notify } from "@/lib/toast";
-import { Button } from "@/ui/button";
-import { Toaster } from "@/ui/sonner";
+import { notify } from "@/lib";
+import { Button } from "./button";
+import { Toaster } from "./sonner";
 
 const meta = {
   title: "UI/Toast",

@@ -1,5 +1,4 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
 import {
   type Employee,
   type EmployeeInvitation,
@@ -9,7 +8,7 @@ import {
   employeeSchema,
   type InviteEmployeeInput,
   type UpdateEmployeeInput,
-} from "@/schemas/employee.schema";
+} from "@/schemas";
 
 export const employeeService = {
   async list(): Promise<Employee[]> {

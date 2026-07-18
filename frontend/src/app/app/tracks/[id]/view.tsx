@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { QuizBuilderFlow } from "@/components/doc-pack/quiz-builder-flow";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { Button } from "@/ui/button";
-import { Skeleton } from "@/ui/skeleton";
+import { QuizBuilderFlow } from "@/components/doc-pack";
+import { useAppRole } from "@/hooks/queries/me";
+import { Button, Skeleton } from "@/ui";
 
 export function DocPackDetailView({ id }: { id: string }) {
   const { isAdmin, isLoading } = useAppRole();

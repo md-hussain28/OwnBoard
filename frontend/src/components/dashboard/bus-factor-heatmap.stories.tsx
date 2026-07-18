@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { HttpResponse, http } from "msw";
-import { BusFactorHeatmap } from "@/components/dashboard/bus-factor-heatmap";
 import { loadingForever, notImplemented } from "../../../.storybook/mocks/handlers";
+import { BusFactorHeatmap } from "./bus-factor-heatmap";
 
 const meta = {
   title: "Components/Dashboard/BusFactorHeatmap",

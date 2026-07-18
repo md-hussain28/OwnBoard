@@ -1,17 +1,23 @@
 "use client";
 
+import { GitBranchIcon } from "lucide-react";
 import { useState } from "react";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { useCreateRepo } from "@/hooks/queries/repo/repo.mutations";
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { notify } from "@/lib/toast";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Input } from "@/ui/input";
-import { Skeleton } from "@/ui/skeleton";
-import { Spinner } from "@/ui/spinner";
+import { EmptyState } from "@/components/shared";
+import { useAppRole } from "@/hooks/queries/me";
+import { useCreateRepo, useRepos } from "@/hooks/queries/repo";
+import { notify } from "@/lib";
+import { getApiErrorMessage } from "@/lib/api";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Skeleton,
+  Spinner,
+} from "@/ui";
 
 export function ConnectedReposList() {
   const { isAdmin } = useAppRole();
@@ -73,11 +79,14 @@ export function ConnectedReposList() {
         )}
 
         {!isLoading && !isError && repos?.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            {isAdmin
-              ? "No repos connected yet."
-              : "No repos connected yet. Ask an admin to add one."}
-          </p>
+          <EmptyState
+            icon={GitBranchIcon}
+            tone="mist"
+            compact
+            bordered={false}
+            title="No repos connected yet"
+            description={isAdmin ? undefined : "Ask an admin to add one."}
+          />
         )}
 
         {!isLoading && !isError && repos && repos.length > 0 && (

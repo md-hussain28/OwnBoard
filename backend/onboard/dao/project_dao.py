@@ -5,9 +5,12 @@ from onboard.dao.base_dao import BaseDAO
 from onboard.dao.models.employee import Employee
 from onboard.dao.models.project import (
     Project,
+    ProjectDocType,
+    ProjectDocumentType,
     ProjectFunctionType,
     ProjectMember,
     ProjectRepo,
+    ProjectRepoMember,
 )
 
 
@@ -18,7 +21,11 @@ class ProjectDAO(BaseDAO[Project]):
         result = await self.session.execute(
             select(Project)
             .where(Project.org_id == org_id)
-            .options(selectinload(Project.repo), selectinload(Project.repos).selectinload(ProjectRepo.repo))
+            .options(
+                selectinload(Project.repo),
+                selectinload(Project.repos).selectinload(ProjectRepo.repo),
+                selectinload(Project.repos).selectinload(ProjectRepo.members).selectinload(ProjectRepoMember.employee),
+            )
             .order_by(Project.created_at.desc())
             .limit(limit)
             .offset(offset)
@@ -29,7 +36,11 @@ class ProjectDAO(BaseDAO[Project]):
         result = await self.session.execute(
             select(Project)
             .where(Project.id == project_id, Project.org_id == org_id)
-            .options(selectinload(Project.repo), selectinload(Project.repos).selectinload(ProjectRepo.repo))
+            .options(
+                selectinload(Project.repo),
+                selectinload(Project.repos).selectinload(ProjectRepo.repo),
+                selectinload(Project.repos).selectinload(ProjectRepo.members).selectinload(ProjectRepoMember.employee),
+            )
         )
         return result.scalar_one_or_none()
 
@@ -110,5 +121,73 @@ class ProjectMemberDAO(BaseDAO[ProjectMember]):
         )
         return result.scalar_one_or_none()
 
+    async def get_lead_for_project(self, project_id: str) -> ProjectMember | None:
+        """The single team lead of a project (at most one is enforced by the service)."""
+        result = await self.session.execute(
+            select(ProjectMember)
+            .where(ProjectMember.project_id == project_id, ProjectMember.is_lead.is_(True))
+            .options(selectinload(ProjectMember.employee))
+            .order_by(ProjectMember.created_at.asc())
+        )
+        return result.scalars().first()
+
     async def count_for_project(self, project_id: str) -> int:
         return len(await self.list_employee_ids_for_project(project_id))
+
+
+class ProjectDocTypeDAO(BaseDAO[ProjectDocType]):
+    model = ProjectDocType
+
+    async def list_for_project(self, project_id: str) -> list[ProjectDocType]:
+        result = await self.session.execute(
+            select(ProjectDocType)
+            .where(ProjectDocType.project_id == project_id)
+            .order_by(ProjectDocType.sort_order.asc(), ProjectDocType.name.asc())
+        )
+        return list(result.scalars().all())
+
+    async def get_by_id_for_project(self, project_id: str, doc_type_id: str) -> ProjectDocType | None:
+        result = await self.session.execute(
+            select(ProjectDocType).where(ProjectDocType.id == doc_type_id, ProjectDocType.project_id == project_id)
+        )
+        return result.scalar_one_or_none()
+
+
+class ProjectDocumentTypeDAO(BaseDAO[ProjectDocumentType]):
+    model = ProjectDocumentType
+
+    async def list_for_documents(self, document_ids: list[str]) -> list[ProjectDocumentType]:
+        if not document_ids:
+            return []
+        result = await self.session.execute(
+            select(ProjectDocumentType).where(ProjectDocumentType.document_id.in_(document_ids))
+        )
+        return list(result.scalars().all())
+
+    async def list_for_document(self, document_id: str) -> list[ProjectDocumentType]:
+        result = await self.session.execute(
+            select(ProjectDocumentType).where(ProjectDocumentType.document_id == document_id)
+        )
+        return list(result.scalars().all())
+
+
+class ProjectRepoMemberDAO(BaseDAO[ProjectRepoMember]):
+    model = ProjectRepoMember
+
+    async def get_for_link_and_employee(self, project_repo_id: str, employee_id: str) -> ProjectRepoMember | None:
+        result = await self.session.execute(
+            select(ProjectRepoMember).where(
+                ProjectRepoMember.project_repo_id == project_repo_id,
+                ProjectRepoMember.employee_id == employee_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def list_repo_ids_for_employee(self, project_id: str, employee_id: str) -> list[str]:
+        """The repo ids (within a project) a given employee is assigned to work on."""
+        result = await self.session.execute(
+            select(ProjectRepo.repo_id)
+            .join(ProjectRepoMember, ProjectRepoMember.project_repo_id == ProjectRepo.id)
+            .where(ProjectRepo.project_id == project_id, ProjectRepoMember.employee_id == employee_id)
+        )
+        return list(result.scalars().all())

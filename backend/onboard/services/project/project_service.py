@@ -18,6 +18,7 @@ authorization, and response builders defined in `ProjectServiceBase`:
 
 from onboard.services.project.base import ProjectServiceBase
 from onboard.services.project.crud import ProjectCrudMixin
+from onboard.services.project.docs import ProjectDocsMixin
 from onboard.services.project.function_types import ProjectFunctionTypeMixin
 from onboard.services.project.members import ProjectMemberMixin
 from onboard.services.project.modules import ProjectModuleMixin
@@ -30,6 +31,7 @@ class ProjectService(
     ProjectFunctionTypeMixin,
     ProjectMemberMixin,
     ProjectModuleMixin,
+    ProjectDocsMixin,
     ProjectServiceBase,
 ):
     """Facade composing the project concern mixins over the shared `ProjectServiceBase`."""

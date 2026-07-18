@@ -52,14 +52,32 @@ class DocPackDAO(BaseDAO[DocPack]):
         return result.scalar_one_or_none()
 
     async def list_for_project(self, org_id: str, project_id: str) -> list[DocPack]:
-        """Project-specific tracks (the ones that gate entry to a project), newest first."""
+        """A project's modules (quiz-bearing packs). Excludes the project's knowledge-base pack."""
         result = await self.session.execute(
             select(DocPack)
-            .where(DocPack.org_id == org_id, DocPack.project_id == project_id)
+            .where(
+                DocPack.org_id == org_id,
+                DocPack.project_id == project_id,
+                DocPack.is_knowledge_base.is_(False),
+            )
             .options(selectinload(DocPack.domain), _AUDIENCE_LOAD)
             .order_by(DocPack.sequence_order.asc(), DocPack.created_at.asc())
         )
         return list(result.scalars().all())
+
+    async def get_kb_for_project(self, org_id: str, project_id: str) -> DocPack | None:
+        """A project's single knowledge-base pack (holds reference Docs), if it exists."""
+        result = await self.session.execute(
+            select(DocPack)
+            .where(
+                DocPack.org_id == org_id,
+                DocPack.project_id == project_id,
+                DocPack.is_knowledge_base.is_(True),
+            )
+            .options(selectinload(DocPack.documents))
+            .order_by(DocPack.created_at.asc())
+        )
+        return result.scalars().first()
 
     async def list_auto_assign_targets_for_domain(self, org_id: str, domain_id: str | None) -> list[DocPack]:
         """Packs whose audience includes this employee — 'everyone' packs plus (if the employee has a

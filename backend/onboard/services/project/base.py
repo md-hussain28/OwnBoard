@@ -9,6 +9,7 @@ from onboard.api.schema.project.response import (
     ProjectReadiness,
     ProjectRepoResponse,
     ProjectResponse,
+    RepoAssignee,
 )
 from onboard.config.constants import APP_ROLE_ADMIN
 from onboard.core.common.exceptions import ForbiddenError, NotFoundError, ValidationError
@@ -24,6 +25,7 @@ from onboard.dao.project_dao import (
     ProjectFunctionTypeDAO,
     ProjectMemberDAO,
     ProjectRepoDAO,
+    ProjectRepoMemberDAO,
 )
 from onboard.dao.project_module_dao import (
     ProjectModuleAssignmentDAO,
@@ -53,6 +55,7 @@ class ProjectServiceBase:
         self.project_dao = ProjectDAO(session)
         self.member_dao = ProjectMemberDAO(session)
         self.repo_link_dao = ProjectRepoDAO(session)
+        self.repo_member_dao = ProjectRepoMemberDAO(session)
         self.function_type_dao = ProjectFunctionTypeDAO(session)
         self.module_dao = ProjectModuleDAO(session)
         self.module_type_dao = ProjectModuleTypeDAO(session)
@@ -74,6 +77,12 @@ class ProjectServiceBase:
     async def _assert_can_manage(self, project: Project, viewer: Employee) -> None:
         if not await self._can_manage(project, viewer):
             raise ForbiddenError("Only an admin or this project's team lead can manage it")
+
+    async def _enforce_single_lead(self, project_id: str, keep_employee_id: str) -> None:
+        """A project has at most one team lead — demote every other member currently flagged as lead."""
+        for m in await self.member_dao.list_for_project(project_id):
+            if m.is_lead and m.employee_id != keep_employee_id:
+                await self.member_dao.update(m.id, is_lead=False)
 
     # ---- lookups -----------------------------------------------------------
 
@@ -117,6 +126,9 @@ class ProjectServiceBase:
                 name=link.repo.name if link.repo else None,
                 url=link.repo.url if link.repo else None,
                 is_primary=link.is_primary,
+                assignees=[
+                    RepoAssignee(employee_id=m.employee_id, name=m.employee.name) for m in link.members if m.employee
+                ],
             )
             for link in project.repos
         ]
@@ -125,6 +137,7 @@ class ProjectServiceBase:
         member_count = await self.member_dao.count_for_project(project.id)
         track_count = len(await self.pack_dao.list_for_project(project.org_id, project.id))
         module_count = len(await self.module_dao.list_for_project(project.id))
+        lead = await self.member_dao.get_lead_for_project(project.id)
         return ProjectResponse(
             id=project.id,
             org_id=project.org_id,
@@ -135,6 +148,8 @@ class ProjectServiceBase:
             repo_id=project.repo_id,
             repo_name=project.repo.name if project.repo else None,
             repos=self._repos(project),
+            lead_employee_id=lead.employee_id if lead else None,
+            lead_name=lead.employee.name if lead and lead.employee else None,
             tech_stack=project.tech_stack or [],
             resource_links=project.resource_links or [],
             glossary=project.glossary or [],

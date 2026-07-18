@@ -24,9 +24,12 @@ from onboard.dao.models.organization import Organization
 from onboard.dao.models.policy_doc import PolicyDoc
 from onboard.dao.models.project import (
     Project,
+    ProjectDocType,
+    ProjectDocumentType,
     ProjectFunctionType,
     ProjectMember,
     ProjectRepo,
+    ProjectRepoMember,
     ProjectStatus,
 )
 from onboard.dao.models.project_module import (
@@ -68,7 +71,10 @@ __all__ = [
     "PolicyDoc",
     "Project",
     "ProjectFunctionType",
+    "ProjectDocType",
+    "ProjectDocumentType",
     "ProjectMember",
+    "ProjectRepoMember",
     "ProjectModule",
     "ProjectModuleAssignment",
     "ProjectModuleAssignmentStatus",

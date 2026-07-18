@@ -1,10 +1,13 @@
 """Project create / list / update / delete (Projects PRD §1)."""
 
 from onboard.api.schema.project.response import ProjectResponse
+from onboard.config.constants import APP_ROLE_ADMIN
 from onboard.core.common.exceptions import NotFoundError, ValidationError
 from onboard.dao.models.employee import Employee
 from onboard.dao.models.project import ProjectStatus
+from onboard.services.pack_assignment.auto_assign import assign_project_tracks_to_member
 from onboard.services.project.base import ProjectServiceBase
+from onboard.services.project.module_assign import assign_modules_to_member
 
 
 def _parse_status(status: str) -> ProjectStatus:
@@ -24,6 +27,7 @@ class ProjectCrudMixin(ProjectServiceBase):
         created_by: str | None,
         *,
         status: str | None = None,
+        lead_employee_id: str | None = None,
         tech_stack: list[str] | None = None,
         resource_links: list | None = None,
         glossary: list | None = None,
@@ -32,6 +36,7 @@ class ProjectCrudMixin(ProjectServiceBase):
         if not cleaned:
             raise ValidationError("Project name cannot be empty")
         await self._validate_repo(org_id, repo_id)
+        lead = await self._validate_lead(org_id, lead_employee_id)
         project = await self.project_dao.create(
             org_id=org_id,
             name=cleaned,
@@ -47,8 +52,30 @@ class ProjectCrudMixin(ProjectServiceBase):
             await self.repo_link_dao.create(
                 org_id=org_id, project_id=project.id, repo_id=repo_id, is_primary=True, added_by=created_by
             )
+        if lead is not None:
+            await self.member_dao.create(
+                org_id=org_id,
+                project_id=project.id,
+                employee_id=lead.id,
+                is_lead=True,
+                added_by=created_by,
+            )
+            # Fan out this project's published tracks + function-matched modules to the lead, same as a normal add.
+            await assign_project_tracks_to_member(self.session, org_id, project.id, lead.id)
+            await assign_modules_to_member(self.session, org_id, project.id, lead.id)
         project = await self._get_project(org_id, project.id)
         return await self._base_response(project)
+
+    async def _validate_lead(self, org_id: str, lead_employee_id: str | None) -> Employee | None:
+        """A lead must be a real, non-admin employee in the org (admins can't be project members)."""
+        if lead_employee_id is None:
+            return None
+        employee = await self.employee_dao.get_by_id_for_org(org_id, lead_employee_id)
+        if employee is None:
+            raise ValidationError(f"Employee {lead_employee_id} not found")
+        if employee.app_role == APP_ROLE_ADMIN:
+            raise ValidationError("An admin can't be assigned as a project team lead")
+        return employee
 
     async def list_projects(self, org_id: str) -> list[ProjectResponse]:
         projects = await self.project_dao.list_for_org(org_id)

@@ -96,6 +96,63 @@ class ProjectRepo(AuditBase):
 
     project: Mapped["Project"] = relationship(back_populates="repos")
     repo: Mapped["Repo"] = relationship()
+    members: Mapped[list["ProjectRepoMember"]] = relationship(
+        back_populates="project_repo", cascade="all, delete-orphan"
+    )
+
+
+class ProjectRepoMember(AuditBase):
+    """Which project members work on a given linked repo (many-to-many). Drives the per-repo people
+    list and, later, joins commit ownership back to the right employees."""
+
+    __tablename__ = "project_repo_member"
+    __id_prefix__ = "prm"
+    __table_args__ = (UniqueConstraint("project_repo_id", "employee_id", name="uq_project_repo_member_link_employee"),)
+
+    org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
+    project_repo_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("project_repo.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    employee_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("employee.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    added_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    project_repo: Mapped["ProjectRepo"] = relationship(back_populates="members")
+    employee: Mapped["Employee"] = relationship()
+
+
+class ProjectDocType(AuditBase):
+    """A per-project, admin/lead-defined document type/tag (e.g. "PRD", "KT", "System Design").
+    A document can carry several of these — see ProjectDocumentType."""
+
+    __tablename__ = "project_doc_type"
+    __id_prefix__ = "pdty"
+    __table_args__ = (UniqueConstraint("project_id", "name", name="uq_project_doc_type_project_name"),)
+
+    org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
+    project_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("project.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
+
+class ProjectDocumentType(AuditBase):
+    """Links one uploaded project doc (a DocPackDocument in the project's KB pack) to a ProjectDocType.
+    Many-to-many: a document may have multiple types."""
+
+    __tablename__ = "project_document_type"
+    __id_prefix__ = "pdtl"
+    __table_args__ = (UniqueConstraint("document_id", "doc_type_id", name="uq_project_document_type_doc_type"),)
+
+    org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
+    document_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("doc_pack_document.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    doc_type_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("project_doc_type.id", ondelete="CASCADE"), nullable=False, index=True
+    )
 
 
 class ProjectFunctionType(AuditBase):

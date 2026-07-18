@@ -13,13 +13,21 @@ class GlossaryTerm(BaseModel):
     definition: str
 
 
+class RepoAssignee(BaseModel):
+    """A project member assigned to work on a specific repo."""
+
+    employee_id: str
+    name: str
+
+
 class ProjectRepoResponse(BaseModel):
-    """One repository linked to a project."""
+    """One repository linked to a project, with the members assigned to work on it."""
 
     repo_id: str
     name: str | None
     url: str | None
     is_primary: bool
+    assignees: list[RepoAssignee] = []
 
 
 class ProjectFunctionTypeResponse(BaseModel):
@@ -53,6 +61,9 @@ class ProjectResponse(BaseModel):
     repo_id: str | None  # primary repo (legacy pointer)
     repo_name: str | None
     repos: list[ProjectRepoResponse] = []
+    # The project's single team lead (a member with is_lead=True), if one is assigned.
+    lead_employee_id: str | None = None
+    lead_name: str | None = None
     tech_stack: list[str] = []
     resource_links: list[ResourceLink] = []
     glossary: list[GlossaryTerm] = []
@@ -80,6 +91,10 @@ class ProjectTrackResponse(BaseModel):
     sequence_order: int
     estimated_minutes: int | None
     due_offset_days: int | None  # days after assignment the track is due; null = no deadline
+    # Who the module targets: "all_members" (auto-assigned to everyone) or "manual" (explicit roster).
+    assign_scope: str = "all_members"
+    assigned_count: int = 0  # how many members currently have it (management view)
+    assignee_ids: list[str] = []  # current assignee employee ids — populated for managers only
     # Viewer-specific: their assignment for this track (if any) and whether they've passed it.
     assignment_id: str | None
     my_status: str  # PackAssignmentStatus value, or "not_assigned"
@@ -120,6 +135,66 @@ class ProjectMemberResponse(BaseModel):
     readiness: ProjectReadiness
     # True once they've passed every project track — the documented go-to person for this project/repo.
     is_go_to: bool
+
+
+class MemberSkill(BaseModel):
+    """A subsystem/area a member has commit-derived expertise in (aggregated across project repos)."""
+
+    name: str  # subsystem (top-level path segment)
+    score: float  # summed revert-adjusted expertise
+    commit_count: int
+
+
+class MemberFeature(BaseModel):
+    """A specific file/feature a member has worked on, from commit history."""
+
+    file_path: str
+    repo_name: str | None
+    commit_count: int
+    last_commit_at: datetime | None
+
+
+class ProjectMemberSkillsResponse(BaseModel):
+    """A member's commit-derived skills + features for a project, matched by GitHub handle.
+    `matched` is False when we couldn't tie them to any contributor (no handle / no ingested commits)."""
+
+    employee_id: str
+    name: str
+    github_handle: str | None
+    matched: bool
+    total_commits: int
+    skills: list[MemberSkill] = []
+    features: list[MemberFeature] = []
+
+
+class ProjectDocTypeResponse(BaseModel):
+    """A per-project custom document type/tag (PRD, KT, System Design, …)."""
+
+    id: str
+    name: str
+    sort_order: int = 0
+
+
+class ProjectDocResponse(BaseModel):
+    """One uploaded reference document in the project's knowledge base, with its type tags + ingest state."""
+
+    id: str
+    title: str
+    file_type: str
+    status: str  # uploaded | processing | processed | failed
+    page_count: int | None = None
+    error_message: str | None = None
+    created_at: datetime
+    type_ids: list[str] = []
+    type_names: list[str] = []
+
+
+class ProjectDocsResponse(BaseModel):
+    """The project's Docs surface: the knowledge-base pack id, its documents, and the custom types."""
+
+    pack_id: str
+    documents: list[ProjectDocResponse] = []
+    types: list[ProjectDocTypeResponse] = []
 
 
 class ProjectDetailResponse(ProjectResponse):

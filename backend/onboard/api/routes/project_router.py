@@ -14,6 +14,8 @@ from onboard.api.schema.project.request import (
     ProjectModuleCreateRequest,
     ProjectModuleUpdateRequest,
     ProjectUpdateRequest,
+    RepoMembersRequest,
+    TrackAssignmentRequest,
     UpdateProjectMemberRequest,
 )
 from onboard.api.schema.project.response import (
@@ -21,6 +23,7 @@ from onboard.api.schema.project.response import (
     ProjectDetailResponse,
     ProjectFunctionTypeResponse,
     ProjectMemberResponse,
+    ProjectMemberSkillsResponse,
     ProjectModuleResponse,
     ProjectResponse,
     ProjectTrackResponse,
@@ -43,6 +46,7 @@ async def create_project(
         description=payload.description,
         status=payload.status,
         repo_id=payload.repo_id,
+        lead_employee_id=payload.lead_employee_id,
         created_by=user_id,
         tech_stack=payload.tech_stack,
         resource_links=payload.resource_links,
@@ -154,6 +158,19 @@ async def remove_project_repo(
     return await services.project.remove_repo(org_id, project_id, repo_id, employee)
 
 
+@router.put("/{project_id}/repos/{repo_id}/members", response_model=ProjectResponse)
+async def set_repo_members(
+    project_id: str,
+    repo_id: str,
+    payload: RepoMembersRequest,
+    org_id: CurrentOrgId,
+    employee: CurrentEmployee,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Set which project members are assigned to work on a linked repo."""
+    return await services.project.set_repo_members(org_id, project_id, repo_id, employee, payload.employee_ids)
+
+
 # ---- function types -------------------------------------------------------
 
 
@@ -219,6 +236,17 @@ async def list_project_members(
     return await services.project.list_project_members(org_id, project_id, employee)
 
 
+@router.get("/{project_id}/skills", response_model=list[ProjectMemberSkillsResponse])
+async def list_member_skills(
+    project_id: str,
+    org_id: CurrentOrgId,
+    employee: CurrentEmployee,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Per-member commit-derived skills + features (aggregated across the project's repos)."""
+    return await services.project.get_member_skills(org_id, project_id, employee)
+
+
 @router.post("/{project_id}/members", response_model=list[ProjectMemberResponse], status_code=201)
 async def add_project_members(
     project_id: str,
@@ -282,6 +310,21 @@ async def list_project_tracks(
 ):
     """Project-specific tracks with the viewer's per-track progress."""
     return await services.project.list_project_tracks(org_id, project_id, employee)
+
+
+@router.put("/{project_id}/tracks/{track_id}/assignment", response_model=ProjectTrackResponse)
+async def update_track_assignment(
+    project_id: str,
+    track_id: str,
+    payload: TrackAssignmentRequest,
+    org_id: CurrentOrgId,
+    employee: CurrentEmployee,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Set a module's audience: auto-assign every member ('all_members') or a manual subset."""
+    return await services.project.update_track_assignment(
+        org_id, project_id, track_id, employee, scope=payload.scope, employee_ids=payload.employee_ids
+    )
 
 
 # ---- modules (dev-facing, function-targeted) ------------------------------

@@ -55,3 +55,26 @@ class ProjectRepoMixin(ProjectServiceBase):
             await self.project_dao.update(project_id, repo_id=None)
         project = await self._get_project(org_id, project_id)
         return await self._base_response(project)
+
+    async def set_repo_members(
+        self, org_id: str, project_id: str, repo_id: str, viewer: Employee, employee_ids: list[str]
+    ) -> ProjectResponse:
+        """Set exactly which project members are assigned to work on a linked repo."""
+        project = await self._get_project(org_id, project_id)
+        await self._assert_can_manage(project, viewer)
+        link = await self.repo_link_dao.get_for_project_and_repo(project_id, repo_id)
+        if link is None:
+            raise NotFoundError(f"Repo {repo_id} is not linked to project {project_id}")
+        member_ids = await self.member_dao.list_employee_ids_for_project(project_id)
+        target = {e for e in employee_ids if e in member_ids}  # only project members can be assigned
+        current = {m.employee_id for m in link.members}
+        for emp_id in target - current:
+            await self.repo_member_dao.create(
+                org_id=org_id, project_repo_id=link.id, employee_id=emp_id, added_by=viewer.id
+            )
+        for emp_id in current - target:
+            existing = await self.repo_member_dao.get_for_link_and_employee(link.id, emp_id)
+            if existing is not None:
+                await self.repo_member_dao.delete(existing.id)
+        project = await self._get_project(org_id, project_id)
+        return await self._base_response(project)

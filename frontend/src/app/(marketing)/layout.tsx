@@ -1,5 +1,4 @@
-import { AtmosphereBlobs } from "@/components/layout/atmosphere-blobs";
-import { MarketingHeader } from "@/components/layout/marketing-header";
+import { AtmosphereBlobs, MarketingHeader } from "@/components/layout";
 
 export default function MarketingLayout({
   children,

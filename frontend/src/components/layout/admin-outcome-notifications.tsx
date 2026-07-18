@@ -3,24 +3,18 @@
 import { Bell, CheckCircle2, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { ASSIGNMENT_STATUS_LABEL, assignmentStatusVariant } from "@/components/shared";
+import { useAppRole } from "@/hooks/queries/me";
+import { useAssignmentOutcomes } from "@/hooks/queries/pack-assignment";
 import {
-  ASSIGNMENT_STATUS_LABEL,
-  assignmentStatusVariant,
-} from "@/components/shared/assignment-status";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { useAssignmentOutcomes } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import {
+  cn,
   getSeenOutcomeKeys,
   markOutcomesSeen,
   outcomeSeenKey,
   seedSeenOutcomesIfEmpty,
-} from "@/lib/outcome-seen";
-import { cn } from "@/lib/utils";
-import type { AssignmentOutcome } from "@/schemas/packAssignment.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
-import { Skeleton } from "@/ui/skeleton";
+} from "@/lib";
+import type { AssignmentOutcome } from "@/schemas";
+import { Badge, Button, Popover, PopoverContent, PopoverTrigger, Skeleton } from "@/ui";
 
 function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();

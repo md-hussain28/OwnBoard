@@ -1,9 +1,9 @@
 "use client";
 
 import { BookOpenIcon, GitBranchIcon, LayersIcon, LinkIcon } from "lucide-react";
-import type { ProjectDetail } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { EmptyState } from "@/components/shared";
+import type { ProjectDetail } from "@/schemas";
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/ui";
 
 /** Read-only "understand this project fast" panel — tech stack, repos, links and glossary. */
 export function ProjectContextView({ project }: { project: ProjectDetail }) {
@@ -15,7 +15,14 @@ export function ProjectContextView({ project }: { project: ProjectDetail }) {
     !!project.description;
 
   if (!hasAny) {
-    return <p className="text-sm text-muted-foreground">No project context has been added yet.</p>;
+    return (
+      <EmptyState
+        icon={BookOpenIcon}
+        tone="info"
+        title="No project context yet"
+        description="Tech stack, repos, resource links and a glossary will appear here once they're added."
+      />
+    );
   }
 
   return (

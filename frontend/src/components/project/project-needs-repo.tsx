@@ -2,9 +2,8 @@
 
 import { GitBranchIcon } from "lucide-react";
 import Link from "next/link";
-import { projectSectionPath } from "@/components/layout/nav-config";
-import { Button } from "@/ui/button";
-import { Card, CardContent } from "@/ui/card";
+import { projectSectionPath } from "@/components/layout";
+import { Button, Card, CardContent } from "@/ui";
 
 /**
  * Shown on the codebase-intelligence sections (skill graph, experts, ask) when the

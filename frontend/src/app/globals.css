@@ -1,3 +1,4 @@
+/* biome-ignore-all lint/style/noExcessiveLinesPerFile: Tailwind v4 CSS-first entry file — @theme, @layer, @custom-variant and keyframes must all live in this single entry, so the file legitimately exceeds the default line budget. */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -274,6 +275,35 @@
   .shadow-button {
     box-shadow: var(--shadow-button);
   }
+
+  /* Thin, subtle scrollbar — keeps scroll affordance without a chunky default gutter. */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--sidebar-foreground) 18%, transparent) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--sidebar-foreground) 18%, transparent);
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--sidebar-foreground) 30%, transparent);
+  }
+
+  /* Fully hide the scrollbar while keeping the element scrollable. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @layer components {
@@ -295,6 +325,16 @@
   50% {
     opacity: 0.65;
     transform: scale(1.05);
+  }
+}
+
+/* Cold-start gate — indeterminate highlight sweeping across the progress track. */
+@keyframes shimmer {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(400%);
   }
 }
 
@@ -359,6 +399,202 @@
   }
 }
 
+/* Ask AI — "thinking / doing work" choreography.
+   A scanning orb (radar sweep + breathing glow), phase labels that slide in as the
+   assistant moves through its work, an indeterminate progress track, and a shimmer
+   sweep for the generative-tool placeholders. Motion-only; content stays legible. */
+@keyframes ask-orb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ask-orb-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand-honey) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in oklch, var(--brand-honey) 15%, transparent);
+  }
+}
+
+@keyframes ask-phase-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes ask-phase-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+    filter: blur(2px);
+  }
+}
+
+@keyframes ask-track-slide {
+  0% {
+    transform: translateX(-140%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+@keyframes ask-shimmer-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@layer components {
+  .ask-orb-sweep {
+    position: absolute;
+    inset: -1px;
+    border-radius: 9999px;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      color-mix(in oklch, var(--brand-honey) 85%, transparent) 70deg,
+      var(--brand-teal) 130deg,
+      transparent 170deg
+    );
+    -webkit-mask: radial-gradient(
+      farthest-side,
+      transparent calc(100% - 2px),
+      #000 calc(100% - 2px)
+    );
+    mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+    animation: ask-orb-spin 2.2s linear infinite;
+  }
+
+  .ask-orb-core {
+    animation: ask-orb-glow 2.2s ease-in-out infinite;
+  }
+
+  .ask-phase-in {
+    animation: ask-phase-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .ask-phase-out {
+    animation: ask-phase-out 0.35s cubic-bezier(0.7, 0, 0.84, 0) both;
+  }
+
+  .ask-track-bar {
+    animation: ask-track-slide 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  }
+
+  .ask-shimmer {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .ask-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in oklch, var(--brand-honey) 20%, transparent) 50%,
+      transparent 80%
+    );
+    animation: ask-shimmer-sweep 1.7s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-orb-sweep,
+  .ask-orb-core,
+  .ask-phase-in,
+  .ask-phase-out,
+  .ask-track-bar,
+  .ask-shimmer::after {
+    animation: none;
+  }
+}
+
+/* Product tour — the spotlight ring gently pulses so the eye lands on the
+   highlighted element (the honey glow breathes outward, then fades). */
+@keyframes tour-ring-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 55%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 11px color-mix(in oklch, var(--primary) 0%, transparent);
+  }
+}
+
+@layer components {
+  .tour-ring-pulse {
+    animation: tour-ring-pulse 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-ring-pulse {
+    animation: none;
+  }
+}
+
+/* Product tour launcher — until a new user has opened it once, the round launcher
+   gently floats and emits a pulsing beacon ring, so the eye finds it in the corner. */
+@keyframes tour-fab-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes tour-fab-beacon {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 55%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 16px color-mix(in oklch, var(--primary) 0%, transparent);
+  }
+}
+
+@layer components {
+  .tour-fab-float {
+    animation: tour-fab-float 3s ease-in-out infinite;
+  }
+  .tour-fab-beacon {
+    animation: tour-fab-beacon 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-fab-float,
+  .tour-fab-beacon {
+    animation: none;
+  }
+}
+
 /* Sonner — Evidence desk toast surface (top-right; upload widget stays bottom-right) */
 [data-sonner-toaster][data-y-position="top"] {
   top: 1rem;
@@ -415,9 +651,28 @@
     transition-duration: 0.01ms !important;
   }
 
+  /*
+   * Loading spinners are status indicators, not decoration — a frozen spinner reads as a
+   * hung app. Continuous rotation is essential motion (WCAG 2.3.3 exempts it), so keep the
+   * loaders spinning even under reduced motion. Higher specificity than the `*` reset above
+   * so these win despite it also using `!important`.
+   */
+  .animate-spin {
+    /* biome-ignore lint/complexity/noImportantStyles: intentional — essential loading motion must survive the reduced-motion reset */
+    animation: spin 1s linear infinite !important;
+  }
+
+  .ask-orb-sweep {
+    /* biome-ignore lint/complexity/noImportantStyles: intentional — essential loading motion must survive the reduced-motion reset */
+    animation: ask-orb-spin 2.2s linear infinite !important;
+  }
+
   [data-sonner-toast] {
+    /* biome-ignore lint/complexity/noImportantStyles: intentional — must override sonner's inline transform/animation under reduced-motion */
     --y: 0 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: intentional — must override sonner's inline transform/animation under reduced-motion */
     animation: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: intentional — must override sonner's inline transform/animation under reduced-motion */
     transition: opacity 0.01ms !important;
   }
 }

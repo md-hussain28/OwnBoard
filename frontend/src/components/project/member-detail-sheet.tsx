@@ -1,18 +1,29 @@
 "use client";
 
 import { CrownIcon, GitCommitHorizontalIcon, StarIcon, Trash2Icon } from "lucide-react";
+import { EmptyState } from "@/components/shared";
 import {
+  useProjectSkills,
   useRemoveProjectMember,
   useUpdateProjectMember,
-} from "@/hooks/queries/project/project.mutations";
-import { useProjectSkills } from "@/hooks/queries/project/project.queries";
-import { notify } from "@/lib/toast";
-import type { ProjectFunctionType, ProjectMember } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
-import { Separator } from "@/ui/separator";
-import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/ui/sheet";
+} from "@/hooks/queries/project";
+import { notify } from "@/lib";
+import type { ProjectFunctionType, ProjectMember } from "@/schemas";
+import {
+  Badge,
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Separator,
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/ui";
 import { ReadinessBar } from "./readiness";
 
 function initials(name: string): string {
@@ -153,14 +164,14 @@ export function MemberDetailSheet({
               )}
             </div>
             {!mine?.matched ? (
-              <div className="flex items-start gap-2 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
-                <GitCommitHorizontalIcon className="mt-0.5 size-4 shrink-0" />
-                <span>
-                  No commit-derived skills yet. They appear once a repo this person&apos;s GitHub
-                  handle{member.githubHandle ? "" : " (not set)"} has committed to is linked and
-                  ingested.
-                </span>
-              </div>
+              <EmptyState
+                icon={GitCommitHorizontalIcon}
+                tone="mist"
+                compact
+                bordered={false}
+                title="No commit-derived skills yet"
+                description={`They appear once a repo this person's GitHub handle${member.githubHandle ? "" : " (not set)"} has committed to is linked and ingested.`}
+              />
             ) : (
               <div className="space-y-3">
                 {mine.skills.length > 0 && (

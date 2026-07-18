@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { Skeleton } from "@/ui/skeleton";
+import { getApiErrorMessage } from "@/lib/api";
+import { Skeleton } from "@/ui";
 
 type QueryStateProps = {
   isLoading: boolean;

@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
-import type { CohortDashboard } from "@/schemas/cohort.schema";
+import { cn } from "@/lib";
+import type { CohortDashboard } from "@/schemas";
 import { peopleStillOnboarding } from "./status";
 
 const STAT_TONE_TEXT: Record<"neutral" | "warning" | "danger" | "success", string> = {

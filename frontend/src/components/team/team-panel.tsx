@@ -1,13 +1,20 @@
 "use client";
 
-import { ChevronDownIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { ChevronDownIcon, PlusIcon, SearchIcon, UserPlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { FilterSelect } from "@/components/shared/filter-select";
-import { InviteMemberDialog } from "@/components/team/invite-member-dialog";
-import { ManageDomainsDialog } from "@/components/team/manage-domains-dialog";
-import { MemberRow } from "@/components/team/member-row";
-import { PendingInvitationRow } from "@/components/team/pending-invitation-row";
+import { EmptyState, FilteredEmpty, FilterSelect } from "@/components/shared";
+import { useEmployees, usePendingInvitations } from "@/hooks/queries/employee";
+import { useAppRole } from "@/hooks/queries/me";
+import { useOrgDomains } from "@/hooks/queries/org-domain";
+import { cn } from "@/lib";
+import { getApiErrorMessage } from "@/lib/api";
+import type { Employee, EmployeeInvitation, OrgDomain } from "@/schemas";
+import { Button, Input, Skeleton } from "@/ui";
+import { InviteMemberDialog } from "./invite-member-dialog";
+import { ManageDomainsDialog } from "./manage-domains-dialog";
+import { MemberRow } from "./member-row";
+import { PendingInvitationRow } from "./pending-invitation-row";
 import {
   type DomainFilter,
   matchesEmployee,
@@ -15,17 +22,7 @@ import {
   type ProfileFilter,
   ROLE_FILTERS,
   type RoleFilter,
-} from "@/components/team/team-constants";
-import { useEmployees, usePendingInvitations } from "@/hooks/queries/employee/employee.queries";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { useOrgDomains } from "@/hooks/queries/org-domain/org-domain.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { cn } from "@/lib/utils";
-import type { Employee, EmployeeInvitation } from "@/schemas/employee.schema";
-import type { OrgDomain } from "@/schemas/org-domain.schema";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Skeleton } from "@/ui/skeleton";
+} from "./team-constants";
 
 type PeopleListState = "loading" | "error" | "empty" | "no-matches" | "list";
 
@@ -201,6 +198,7 @@ function PeopleListBody({
   domains,
   employeeId,
   onClearFilters,
+  onInvite,
 }: {
   listState: PeopleListState;
   error: unknown;
@@ -208,6 +206,7 @@ function PeopleListBody({
   domains: OrgDomain[];
   employeeId: string | null | undefined;
   onClearFilters: () => void;
+  onInvite: () => void;
 }) {
   if (listState === "loading") {
     return (
@@ -228,25 +227,23 @@ function PeopleListBody({
 
   if (listState === "empty") {
     return (
-      <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-        No one here yet. Invite someone to get started.
-      </p>
+      <EmptyState
+        icon={UserPlusIcon}
+        tone="honey"
+        title="No one here yet"
+        description="Invite your teammates so you can assign onboarding and track progress."
+        action={
+          <Button type="button" size="sm" onClick={onInvite}>
+            <PlusIcon className="size-3.5" strokeWidth={1.75} />
+            Invite
+          </Button>
+        }
+      />
     );
   }
 
   if (listState === "no-matches") {
-    return (
-      <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
-        <p className="text-sm text-muted-foreground">No one matches your search or filters.</p>
-        <button
-          type="button"
-          onClick={onClearFilters}
-          className="mt-2 text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-        >
-          Clear filters
-        </button>
-      </div>
-    );
+    return <FilteredEmpty noun="people" onClear={onClearFilters} />;
   }
 
   return (
@@ -481,6 +478,7 @@ export function TeamPanel() {
           domains={domains}
           employeeId={employeeId}
           onClearFilters={clearFilters}
+          onInvite={() => setInviteOpen(true)}
         />
       </section>
     </div>

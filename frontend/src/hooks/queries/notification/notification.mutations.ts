@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationKeys } from "@/hooks/queries/notification/notification.queries";
-import { cacheEdit, optimisticEdits, rollbackEdits } from "@/hooks/queries/optimistic";
-import type { Notification, UnreadCount } from "@/schemas/notification.schema";
-import { notificationService } from "@/services/notification.service";
+import { cacheEdit, optimisticEdits, rollbackEdits } from "@/hooks/queries";
+import type { Notification, UnreadCount } from "@/schemas";
+import { notificationService } from "@/services";
+import { notificationKeys } from "./notification.queries";
 
 /** A stand-in read timestamp for the optimistic flip; the real value arrives on refetch. */
 const OPTIMISTIC_READ_AT = "1970-01-01T00:00:00.000Z";

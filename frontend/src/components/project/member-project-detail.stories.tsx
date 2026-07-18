@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { MemberProjectDetail } from "@/components/project/member-project-detail";
-import { projectDetailSchema } from "@/schemas/project.schema";
+import { projectDetailSchema } from "@/schemas";
 import { mockProjectDetailLocked, mockProjectDetailReady } from "../../../.storybook/mocks/data";
 import { handlers } from "../../../.storybook/mocks/handlers";
+import { MemberProjectDetail } from "./member-project-detail";
 
 const meta = {
   title: "Components/Project/MemberProjectDetail",

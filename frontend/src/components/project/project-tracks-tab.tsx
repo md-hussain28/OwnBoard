@@ -11,16 +11,13 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { FilterSelect } from "@/components/shared/filter-select";
-import { QueryState } from "@/components/shared/query-state";
-import { useCreateProjectTrack } from "@/hooks/queries/project/project.mutations";
-import { useProjectTracks } from "@/hooks/queries/project/project.queries";
-import { appPath } from "@/lib/routes";
-import { notify } from "@/lib/toast";
-import type { ProjectTrack } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
+import { EmptyState, FilteredEmpty, FilterSelect, QueryState } from "@/components/shared";
+import { useCreateProjectTrack, useProjectTracks } from "@/hooks/queries/project";
+import { appPath, notify } from "@/lib";
+import type { ProjectTrack } from "@/schemas";
 import {
+  Badge,
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -28,10 +25,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
-import { Spinner } from "@/ui/spinner";
-import { Textarea } from "@/ui/textarea";
+  Input,
+  Spinner,
+  Textarea,
+} from "@/ui";
 import { ModuleAssignDialog } from "./module-assign-dialog";
 import { ProjectSectionHeader } from "./project-section-header";
 
@@ -228,6 +225,13 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const hasFilters = query.trim() !== "" || statusFilter !== "all";
+
+  function clearFilters() {
+    setQuery("");
+    setStatusFilter("all");
+  }
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (tracks ?? []).filter((t) => {
@@ -273,19 +277,17 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
         error={error}
         isEmpty={!!tracks && tracks.length === 0}
         empty={
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border py-10 text-center">
-            <FileStackIcon className="size-6 text-muted-foreground" />
-            <p className="text-sm font-medium">No modules yet</p>
-            <p className="max-w-md text-sm text-pretty text-muted-foreground">
-              Add a module so members have grounded material and a quiz to work through.
-            </p>
-          </div>
+          <EmptyState
+            icon={FileStackIcon}
+            tone="honey"
+            title="No modules yet"
+            description="Add a module so members have grounded material and a quiz to work through."
+            action={<CreateTrackDialog projectId={projectId} />}
+          />
         }
       >
         {filtered.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            No modules match your search or filters.
-          </p>
+          <FilteredEmpty noun="modules" onClear={hasFilters ? clearFilters : undefined} />
         ) : (
           <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
             {filtered.map((track) => (

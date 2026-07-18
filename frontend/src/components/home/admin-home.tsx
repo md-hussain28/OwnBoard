@@ -2,15 +2,12 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useMemo } from "react";
-import {
-  useAssignmentOutcomes,
-  useCohortDashboard,
-} from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { useProjects } from "@/hooks/queries/project/project.queries";
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
-import { useExpertiseScores } from "@/hooks/queries/skill-graph/skill-graph.queries";
-import { subsystemRisks } from "@/lib/skill-graph";
-import { Skeleton } from "@/ui/skeleton";
+import { useAssignmentOutcomes, useCohortDashboard } from "@/hooks/queries/pack-assignment";
+import { useProjects } from "@/hooks/queries/project";
+import { useRepos } from "@/hooks/queries/repo";
+import { useExpertiseScores } from "@/hooks/queries/skill-graph";
+import { subsystemRisks } from "@/lib";
+import { Skeleton } from "@/ui";
 import { buildAttention, NeedsAttention } from "./admin/needs-attention";
 import { ProjectsSection } from "./admin/projects-section";
 import { RiskHighlight } from "./admin/risk-highlight";
@@ -53,7 +50,7 @@ export function AdminHome() {
   const attentionLoading = cohortQuery.isLoading || outcomesQuery.isLoading;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="space-y-8">
       <HomeGreeting name={name} line={status} loading={cohortQuery.isLoading} />
 
       {isBrandNew ? (

@@ -7,14 +7,12 @@ import {
   UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { SectionHeader } from "@/components/home/home-primitives";
-import { ProjectStatusBadge } from "@/components/project/project-status";
-import { QueryState } from "@/components/shared/query-state";
-import { useProjects } from "@/hooks/queries/project/project.queries";
-import { appPath } from "@/lib/routes";
-import { Button } from "@/ui/button";
-import { Card, CardContent } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
+import { SectionHeader } from "@/components/home";
+import { ProjectStatusBadge } from "@/components/project";
+import { EmptyState, QueryState } from "@/components/shared";
+import { useProjects } from "@/hooks/queries/project";
+import { appPath } from "@/lib";
+import { Button, Card, CardContent, Skeleton } from "@/ui";
 
 export function ProjectsSection() {
   const { data: projects, isLoading, isError, error } = useProjects();
@@ -34,21 +32,19 @@ export function ProjectsSection() {
         isEmpty={visible.length === 0}
         loading={<Skeleton className="h-28 w-full rounded-xl" />}
         empty={
-          <Card>
-            <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
-              <span className="flex size-10 items-center justify-center rounded-full bg-brand-honey-soft text-brand-honey">
-                <FolderKanbanIcon className="size-5" />
-              </span>
-              <p className="text-sm text-muted-foreground">
-                No projects yet. Create one to give a team its own onboarding.
-              </p>
+          <EmptyState
+            icon={FolderKanbanIcon}
+            tone="honey"
+            title="No projects yet"
+            description="Create one to give a team its own onboarding."
+            action={
               <Button asChild size="sm">
                 <Link href={appPath("projects")}>
                   <PlusIcon /> New project
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
+            }
+          />
         }
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

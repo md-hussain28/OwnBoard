@@ -3,10 +3,8 @@
 import type { ChatStatus } from "ai";
 import { ArrowUpIcon, SquareIcon } from "lucide-react";
 import type { ComponentProps, FormEvent, KeyboardEvent } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
-import { Spinner } from "@/ui/spinner";
-import { Textarea } from "@/ui/textarea";
+import { cn } from "@/lib";
+import { Button, Spinner, Textarea } from "@/ui";
 
 /**
  * Vercel AI Elements `PromptInput` — the chat composer. A native `<form>` whose `onSubmit` receives
@@ -17,7 +15,8 @@ export function PromptInput({ className, ...props }: ComponentProps<"form">) {
   return (
     <form
       className={cn(
-        "rounded-2xl border border-border bg-card p-2 shadow-soft transition-colors focus-within:border-primary/30",
+        "rounded-3xl border border-border bg-card p-2 shadow-soft transition-all",
+        "focus-within:border-primary/40 focus-within:shadow-button",
         className,
       )}
       {...props}
@@ -78,22 +77,28 @@ export function PromptInputSubmit({
     return (
       <Button
         type="button"
-        size="sm"
+        size="icon"
         variant="outline"
         onClick={onStop}
-        className={className}
+        aria-label="Stop generating"
+        className={cn("size-9 rounded-full", className)}
         {...props}
       >
-        {status === "submitted" ? <Spinner /> : <SquareIcon className="fill-current" />}
-        Stop
+        {status === "submitted" ? <Spinner /> : <SquareIcon className="size-3.5 fill-current" />}
       </Button>
     );
   }
 
   return (
-    <Button type="submit" size="sm" disabled={disabled} className={className} {...props}>
-      <ArrowUpIcon />
-      Ask
+    <Button
+      type="submit"
+      size="icon"
+      disabled={disabled}
+      aria-label="Ask"
+      className={cn("size-9 rounded-full transition-transform active:scale-95", className)}
+      {...props}
+    >
+      <ArrowUpIcon className="size-4" />
     </Button>
   );
 }

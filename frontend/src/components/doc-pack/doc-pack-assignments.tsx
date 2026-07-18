@@ -1,11 +1,11 @@
 "use client";
 
-import { AssignmentRoster } from "@/components/shared/assignment-roster";
 import {
   ASSIGNMENT_STATUS_LABEL,
+  AssignmentRoster,
   assignmentStatusVariant,
-} from "@/components/shared/assignment-status";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+} from "@/components/shared";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui";
 
 export { ASSIGNMENT_STATUS_LABEL, assignmentStatusVariant };
 

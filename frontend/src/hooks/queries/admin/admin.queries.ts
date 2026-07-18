@@ -1,6 +1,6 @@
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
-import { adminService } from "@/services/admin.service";
+import { adminService } from "@/services";
 
 export const adminKeys = {
   all: ["admin"] as const,

@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useProject } from "@/hooks/queries/project/project.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { Skeleton } from "@/ui/skeleton";
+import { useProject } from "@/hooks/queries/project";
+import { getApiErrorMessage } from "@/lib/api";
+import { Skeleton } from "@/ui";
 
 /**
  * Shared project shell — access gate + loading only.

@@ -8,11 +8,10 @@ import {
   Loader2Icon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { AssignmentDocumentReader } from "@/components/doc-pack/assignment-document-reader";
-import { cn } from "@/lib/utils";
-import type { AssignmentDetail } from "@/schemas/packAssignment.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
+import { cn } from "@/lib";
+import type { AssignmentDetail } from "@/schemas";
+import { Badge, Button } from "@/ui";
+import { AssignmentDocumentReader } from "./assignment-document-reader";
 
 type AssignmentDocument = AssignmentDetail["documents"][number];
 

@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Button } from "@/ui/button";
-import { Progress } from "@/ui/progress";
-import { Separator } from "@/ui/separator";
-import { Skeleton } from "@/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/ui/tooltip";
+import { Button } from "./button";
+import { Progress } from "./progress";
+import { Separator } from "./separator";
+import { Skeleton } from "./skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
 
 const meta = {
   title: "UI/Progress & Feedback",

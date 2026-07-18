@@ -1,6 +1,6 @@
-import type { QuestionFormat } from "@/schemas/quiz.schema";
+import type { QuestionFormat } from "@/schemas";
 
-export type { QuestionFormat } from "@/schemas/quiz.schema";
+export type { QuestionFormat } from "@/schemas";
 
 /** Formats the AI generator can produce (multi_select is manual-authoring only). */
 export type GenerateFormat = "mcq_4" | "true_false";

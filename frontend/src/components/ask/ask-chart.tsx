@@ -1,8 +1,8 @@
 "use client";
 
 import { useId } from "react";
-import { cn } from "@/lib/utils";
-import type { AskChart as AskChartData } from "@/schemas/ask.schema";
+import { cn } from "@/lib";
+import type { AskChart as AskChartData } from "@/schemas";
 
 /** DESIGN.md chart order: honey → teal → moss → coral → plum, then two more for headroom. */
 const SERIES = [
@@ -22,7 +22,10 @@ function niceMax(max: number): number {
   if (max <= 0) return 1;
   const pow = 10 ** Math.floor(Math.log10(max));
   const scaled = max / pow;
-  const step = scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10;
+  let step = 10;
+  if (scaled <= 1) step = 1;
+  else if (scaled <= 2) step = 2;
+  else if (scaled <= 5) step = 5;
   return step * pow;
 }
 
@@ -328,12 +331,13 @@ function RadarChart({ chart }: { chart: AskChartData }) {
 }
 
 export function AskChart({ chart, className }: { chart: AskChartData; className?: string }) {
-  const body =
-    chart.type === "pie" || chart.type === "donut" ? (
-      <PieChart chart={chart} />
-    ) : chart.type === "radar" ? (
-      <RadarChart chart={chart} />
-    ) : (
+  let body: React.ReactNode;
+  if (chart.type === "pie" || chart.type === "donut") {
+    body = <PieChart chart={chart} />;
+  } else if (chart.type === "radar") {
+    body = <RadarChart chart={chart} />;
+  } else {
+    body = (
       <>
         <Cartesian chart={chart} />
         {chart.unit && (
@@ -341,6 +345,7 @@ export function AskChart({ chart, className }: { chart: AskChartData; className?
         )}
       </>
     );
+  }
 
   return (
     <div className={cn(className)}>

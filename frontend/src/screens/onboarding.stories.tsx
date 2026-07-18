@@ -5,7 +5,7 @@ import EmployeePacksPage from "@/app/app/onboarding/packs/page";
 import OnboardingPage from "@/app/app/onboarding/page";
 import PolicyQuizPage from "@/app/app/onboarding/policy-quiz/page";
 import UnlockedPage from "@/app/app/onboarding/unlocked/page";
-import { useOnboardingStore } from "@/stores/onboarding-store";
+import { useOnboardingStore } from "@/stores";
 import { withAppShell } from "./story-shell";
 
 /**

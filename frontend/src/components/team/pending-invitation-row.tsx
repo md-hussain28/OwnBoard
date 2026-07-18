@@ -1,14 +1,11 @@
 "use client";
 
 import { MailIcon } from "lucide-react";
-import { displayJobTitle, initials, ROLE_META } from "@/components/team/team-constants";
-import { useRevokeInvitation } from "@/hooks/queries/employee/employee.mutations";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { EmployeeInvitation } from "@/schemas/employee.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Spinner } from "@/ui/spinner";
+import { useRevokeInvitation } from "@/hooks/queries/employee";
+import { cn, notify } from "@/lib";
+import type { EmployeeInvitation } from "@/schemas";
+import { Badge, Button, Spinner } from "@/ui";
+import { displayJobTitle, initials, ROLE_META } from "./team-constants";
 
 function inviteSubtitle(invitation: EmployeeInvitation): string {
   const domain = invitation.domainName?.trim() || null;

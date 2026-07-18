@@ -1,14 +1,33 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminKeys } from "@/hooks/queries/admin/admin.queries";
-import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries/optimistic";
-import type { CreateTenantInput, Tenant } from "@/schemas/admin.schema";
-import { adminService } from "@/services/admin.service";
+import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries";
+import { ID_PREFIXES, typedId } from "@/lib";
+import type { CreateTenantInput, Tenant } from "@/schemas";
+import { adminService } from "@/services";
+import { adminKeys } from "./admin.queries";
+
+const isDraftId = (id: string) => id.startsWith(`${ID_PREFIXES.draft}_`);
 
 export function useCreateTenant() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: CreateTenantInput) => adminService.createTenant(input),
+    onMutate: async (input) => {
+      const snap = await optimisticUpdate<Tenant[]>(queryClient, adminKeys.tenants(), (prev) => {
+        const optimistic: Tenant = {
+          id: typedId(ID_PREFIXES.draft),
+          name: input.name,
+          slug: input.slug ?? null,
+          membersCount: 0,
+          createdAt: new Date().toISOString(),
+        };
+        return prev ? [optimistic, ...prev] : [optimistic];
+      });
+      return snap;
+    },
+    onError: (_err, _input, context) => {
+      rollbackOptimistic(queryClient, adminKeys.tenants(), context);
+    },
     onSuccess: (created) => {
       const tenant: Tenant = {
         id: created.id,
@@ -17,9 +36,10 @@ export function useCreateTenant() {
         membersCount: created.membersCount,
         createdAt: created.createdAt,
       };
-      queryClient.setQueryData<Tenant[]>(adminKeys.tenants(), (prev) =>
-        prev ? [tenant, ...prev.filter((t) => t.id !== tenant.id)] : [tenant],
-      );
+      queryClient.setQueryData<Tenant[]>(adminKeys.tenants(), (prev) => {
+        const rest = prev?.filter((t) => t.id !== tenant.id && !isDraftId(t.id)) ?? [];
+        return [tenant, ...rest];
+      });
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: adminKeys.tenants() });

@@ -2,12 +2,18 @@
 
 import { CodeIcon, FileTextIcon, GitCommitHorizontalIcon } from "lucide-react";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { useProjectDocContent } from "@/hooks/queries/ask/ask.queries";
-import { cn } from "@/lib/utils";
-import type { AskCitation } from "@/schemas/ask.schema";
-import { Badge } from "@/ui/badge";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/ui/sheet";
-import { Skeleton } from "@/ui/skeleton";
+import { useProjectDocContent } from "@/hooks/queries/ask";
+import { cn } from "@/lib";
+import type { AskCitation } from "@/schemas";
+import {
+  Badge,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  Skeleton,
+} from "@/ui";
 
 type AskDocContextValue = { open: (citation: AskCitation) => void };
 

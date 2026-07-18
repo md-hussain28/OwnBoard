@@ -1,5 +1,5 @@
 import { ShieldIcon, UserIcon } from "lucide-react";
-import type { AppRole, Employee } from "@/schemas/employee.schema";
+import type { AppRole, Employee } from "@/schemas";
 
 export type RoleFilter = "all" | AppRole;
 export type ProfileFilter = "all" | "missing_title" | "missing_github" | "complete";

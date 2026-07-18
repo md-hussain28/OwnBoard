@@ -2,11 +2,10 @@
 
 import { BookTextIcon, PencilIcon, PlusIcon, Trash2Icon, UsersIcon } from "lucide-react";
 import { useMemo } from "react";
-import { useRemoveModule } from "@/hooks/queries/project/project.mutations";
-import { notify } from "@/lib/toast";
-import type { ProjectDetail, ProjectModule } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
+import { useRemoveModule } from "@/hooks/queries/project";
+import { notify } from "@/lib";
+import type { ProjectDetail, ProjectModule } from "@/schemas";
+import { Badge, Button } from "@/ui";
 import { ModuleFormDialog } from "./module-form-dialog";
 
 function statusVariant(status: string): "success" | "secondary" | "outline" {

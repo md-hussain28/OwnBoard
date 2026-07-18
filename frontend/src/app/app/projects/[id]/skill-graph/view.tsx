@@ -1,15 +1,10 @@
 "use client";
 
 import { redirect } from "next/navigation";
-import { projectSectionPath } from "@/components/layout/nav-config";
-import { ProjectNeedsRepo } from "@/components/project/project-needs-repo";
-import { primaryProjectRepoId } from "@/components/project/project-repo";
-import {
-  RiskiestFiles,
-  SubsystemBusFactor,
-  TopContributors,
-} from "@/components/skill-graph/skill-graph-panels";
-import { useProject } from "@/hooks/queries/project/project.queries";
+import { projectSectionPath } from "@/components/layout";
+import { ProjectNeedsRepo, primaryProjectRepoId } from "@/components/project";
+import { RiskiestFiles, SubsystemBusFactor, TopContributors } from "@/components/skill-graph";
+import { useProject } from "@/hooks/queries/project";
 
 export function ProjectSkillGraphView({ id }: { id: string }) {
   const { data: project } = useProject(id);

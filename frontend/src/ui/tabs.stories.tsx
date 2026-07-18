@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 
 const meta = {
   title: "UI/Tabs",

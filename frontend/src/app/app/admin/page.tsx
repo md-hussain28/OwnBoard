@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { TenantAdminPanel } from "@/components/admin/tenant-admin-panel";
+import { TenantAdminPanel } from "@/components/admin";
 import { resolvePlatformAdmin } from "@/lib/platform-admin";
 
 export default async function AdminPage() {

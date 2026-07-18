@@ -1,4 +1,4 @@
-import type { ProjectDetail } from "@/schemas/project.schema";
+import type { ProjectDetail } from "@/schemas";
 
 /**
  * The repo the codebase-intelligence sections (skill graph, experts, ask) act on.

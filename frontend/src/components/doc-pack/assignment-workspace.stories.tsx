@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { HttpResponse, http } from "msw";
-import { AssignmentWorkspace } from "@/components/doc-pack/assignment-workspace";
 import {
   mockAssignmentDetail,
   mockAssignmentDocumentContent,
@@ -10,6 +9,7 @@ import {
   loadingForever,
   quizHandlers,
 } from "../../../.storybook/mocks/handlers";
+import { AssignmentWorkspace } from "./assignment-workspace";
 
 const meta = {
   title: "Components/DocPack/AssignmentWorkspace",

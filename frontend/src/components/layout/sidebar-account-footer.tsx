@@ -2,11 +2,11 @@
 
 import { UserButton } from "@clerk/nextjs";
 import { dark, shadcn } from "@clerk/ui/themes";
-import { ThemeSettings } from "@/components/layout/theme-settings";
-import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { cn } from "@/lib/utils";
+import { useAppRole } from "@/hooks/queries/me";
+import { cn } from "@/lib";
 import { SidebarFooter, SidebarSeparator, useSidebar } from "@/ui/sidebar";
+import { ThemeSettings } from "./theme-settings";
+import { WorkspaceSwitcher } from "./workspace-switcher";
 
 /** Shared ghost trigger — matches nav item rhythm. */
 const sidebarTabTrigger = cn(

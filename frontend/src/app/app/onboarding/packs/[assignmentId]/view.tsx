@@ -1,8 +1,8 @@
 "use client";
 
-import { AssignmentWorkspace } from "@/components/doc-pack/assignment-workspace";
-import { MemberOnlyGate } from "@/components/onboarding/member-only-gate";
-import { useAssignmentDetail } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
+import { AssignmentWorkspace } from "@/components/doc-pack";
+import { MemberOnlyGate } from "@/components/onboarding";
+import { useAssignmentDetail } from "@/hooks/queries/pack-assignment";
 
 export function AssignmentView({ assignmentId }: { assignmentId: string }) {
   const { data: detail } = useAssignmentDetail(assignmentId);

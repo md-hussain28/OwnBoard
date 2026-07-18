@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Button } from "@/ui/button";
+import { Button } from "./button";
 import {
   Dialog,
   DialogContent,
@@ -8,8 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
+} from "./dialog";
+import { Input } from "./input";
 
 const meta = {
   title: "UI/Dialog",

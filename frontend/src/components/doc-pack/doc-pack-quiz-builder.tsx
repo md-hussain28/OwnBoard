@@ -1,22 +1,19 @@
 "use client";
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import type { EditableQuestion, GenerateFormat } from "@/components/doc-pack/quiz-builder-types";
-import { QuizGenerateForm } from "@/components/doc-pack/quiz-generate-form";
-import { QuizQuestionEditor } from "@/components/doc-pack/quiz-question-editor";
 import {
+  useDocPack,
+  useDocPackQuiz,
   useGenerateQuiz,
   useRegenerateQuestions,
   useSaveQuiz,
-} from "@/hooks/queries/doc-pack/doc-pack.mutations";
-import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { ID_PREFIXES, typedId } from "@/lib/ids";
-import { notify } from "@/lib/toast";
-import type { AdminQuizTemplate, QuizQuestionCurationItem } from "@/schemas/quiz.schema";
-import { Badge } from "@/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Input } from "@/ui/input";
-import { Skeleton } from "@/ui/skeleton";
+} from "@/hooks/queries/doc-pack";
+import { ID_PREFIXES, notify, typedId } from "@/lib";
+import type { AdminQuizTemplate, QuizQuestionCurationItem } from "@/schemas";
+import { Badge, Card, CardContent, CardHeader, CardTitle, Input, Skeleton } from "@/ui";
+import type { EditableQuestion, GenerateFormat } from "./quiz-builder-types";
+import { QuizGenerateForm } from "./quiz-generate-form";
+import { QuizQuestionEditor } from "./quiz-question-editor";
 
 function toEditable(template: AdminQuizTemplate): EditableQuestion[] {
   return template.questions.map((q) => {
@@ -26,7 +23,7 @@ function toEditable(template: AdminQuizTemplate): EditableQuestion[] {
       questionText: q.questionText,
       options: q.options,
       format: q.format,
-      correctAnswer: isMulti ? "" : typeof q.correctAnswer === "string" ? q.correctAnswer : "",
+      correctAnswer: !isMulti && typeof q.correctAnswer === "string" ? q.correctAnswer : "",
       correctAnswers: isMulti && Array.isArray(q.correctAnswer) ? q.correctAnswer : [],
       sourceCitation: q.sourceCitation,
       dropped: false,

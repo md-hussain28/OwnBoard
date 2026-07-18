@@ -2,10 +2,8 @@
 
 import { CheckIcon, Loader2Icon, SparklesIcon } from "lucide-react";
 import type { FormEvent } from "react";
-import { FORMAT_LABEL, type GenerateFormat } from "@/components/doc-pack/quiz-builder-types";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Textarea } from "@/ui/textarea";
+import { Button, Input, Textarea } from "@/ui";
+import { FORMAT_LABEL, type GenerateFormat } from "./quiz-builder-types";
 
 const GENERATE_FORMATS: GenerateFormat[] = ["mcq_4", "true_false"];
 

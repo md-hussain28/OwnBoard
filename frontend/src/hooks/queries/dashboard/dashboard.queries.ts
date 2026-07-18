@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { dashboardService } from "@/services/dashboard.service";
+import { dashboardService } from "@/services";
 
 export const dashboardKeys = {
   busFactor: (repoId: string) => ["dashboard", "bus-factor", repoId] as const,

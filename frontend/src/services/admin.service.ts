@@ -1,6 +1,5 @@
 import { isAxiosError } from "axios";
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
 import {
   type CreateTenantInput,
   type CreateTenantResponse,
@@ -9,7 +8,7 @@ import {
   platformAdminMeSchema,
   type Tenant,
   tenantListSchema,
-} from "@/schemas/admin.schema";
+} from "@/schemas";
 
 function apiErrorMessage(err: unknown, fallback: string): Error {
   if (isAxiosError(err)) {

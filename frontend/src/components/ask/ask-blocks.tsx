@@ -19,10 +19,7 @@ import {
   XCircleIcon,
 } from "lucide-react";
 import { useState } from "react";
-import { useAskDoc } from "@/components/ask/ask-doc-viewer";
-import { SectionCard } from "@/components/ask/ask-visuals";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { cn, notify } from "@/lib";
 import type {
   AskCodeSnippet,
   AskCommands,
@@ -34,9 +31,10 @@ import type {
   AskQuiz,
   AskResources,
   AskTabs,
-} from "@/schemas/ask.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
+} from "@/schemas";
+import { Badge, Button } from "@/ui";
+import { useAskDoc } from "./ask-doc-viewer";
+import { SectionCard } from "./ask-visuals";
 
 async function copyText(text: string, label = "Copied to clipboard") {
   try {

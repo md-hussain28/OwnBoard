@@ -1,20 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { ChatMessage } from "@/components/chat/chat-message";
-import { ExpertReferralCard } from "@/components/expert/expert-referral-card";
-import { ConnectRepoPrompt } from "@/components/repo/connect-repo-prompt";
-import { useAskCodebase } from "@/hooks/queries/chat/chat.mutations";
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
-import { isNotImplementedError } from "@/lib/api/errors";
-import { ID_PREFIXES, typedId } from "@/lib/ids";
-import type { ArchaeologyCitation, ChatMessage as ChatMessageType } from "@/schemas/chat.schema";
-import type { ExpertReferral } from "@/schemas/expert.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Skeleton } from "@/ui/skeleton";
-import { Spinner } from "@/ui/spinner";
+import { ChatMessage } from "@/components/chat";
+import { ExpertReferralCard } from "@/components/expert";
+import { ConnectRepoPrompt } from "@/components/repo";
+import { useAskCodebase } from "@/hooks/queries/chat";
+import { useRepos } from "@/hooks/queries/repo";
+import { ID_PREFIXES, typedId } from "@/lib";
+import { isNotImplementedError } from "@/lib/api";
+import type {
+  ArchaeologyCitation,
+  ChatMessage as ChatMessageType,
+  ExpertReferral,
+} from "@/schemas";
+import { Badge, Button, Input, Skeleton, Spinner } from "@/ui";
 
 const WELCOME_MESSAGE: ChatMessageType = {
   id: "welcome",
@@ -95,7 +94,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Ask the codebase</h1>
         <p className="text-muted-foreground">

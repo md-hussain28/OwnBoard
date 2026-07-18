@@ -1,20 +1,47 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { employeeKeys } from "@/hooks/queries/employee/employee.queries";
-import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries/optimistic";
+import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries";
+import { ID_PREFIXES, typedId } from "@/lib";
 import type {
   Employee,
   EmployeeInvitation,
   InviteEmployeeInput,
   UpdateEmployeeInput,
-} from "@/schemas/employee.schema";
-import { employeeService } from "@/services/employee.service";
+} from "@/schemas";
+import { employeeService } from "@/services";
+import { employeeKeys } from "./employee.queries";
+
+/** A pending-invite row shown the moment "Invite" is clicked; the invalidate swaps in the real one. */
+function optimisticInvitation(input: InviteEmployeeInput): EmployeeInvitation {
+  return {
+    id: typedId(ID_PREFIXES.draft),
+    emailAddress: input.email,
+    appRole: input.appRole ?? "member",
+    status: "pending",
+    role: input.role ?? null,
+    githubHandle: input.githubHandle ?? null,
+    domainId: input.domainId ?? null,
+    domainName: null,
+    createdAt: new Date().toISOString(),
+  };
+}
 
 export function useInviteEmployee() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: InviteEmployeeInput) => employeeService.invite(input),
-    onSuccess: () => {
+    onMutate: async (input) => {
+      const snap = await optimisticUpdate<EmployeeInvitation[]>(
+        queryClient,
+        employeeKeys.invitations,
+        (prev) => (prev ? [optimisticInvitation(input), ...prev] : prev),
+      );
+      return { snap };
+    },
+    onError: (_err, _input, context) => {
+      rollbackOptimistic(queryClient, employeeKeys.invitations, context?.snap);
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: employeeKeys.all });
       void queryClient.invalidateQueries({ queryKey: employeeKeys.invitations });
     },

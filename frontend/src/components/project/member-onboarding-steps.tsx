@@ -8,10 +8,9 @@ import {
   LockIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { appPath } from "@/lib/routes";
-import { cn } from "@/lib/utils";
-import type { ProjectTrack } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
+import { appPath, cn } from "@/lib";
+import type { ProjectTrack } from "@/schemas";
+import { Badge } from "@/ui";
 
 function TrackStatusPill({ track }: { track: ProjectTrack }) {
   if (track.passed) return <Badge variant="success">Passed</Badge>;

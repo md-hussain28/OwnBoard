@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { skillGraphService } from "@/services/skill-graph.service";
+import { skillGraphService } from "@/services";
 
 export const skillGraphKeys = {
   expertise: (repoId: string) => ["skill-graph", "expertise", repoId] as const,

@@ -1,10 +1,10 @@
 "use client";
 
 import { BookTextIcon, GraduationCapIcon, StarIcon, UsersIcon } from "lucide-react";
-import { QueryState } from "@/components/shared/query-state";
-import { useProjectMembers } from "@/hooks/queries/project/project.queries";
-import type { ProjectDetail, ProjectMember } from "@/schemas/project.schema";
-import { Progress } from "@/ui/progress";
+import { EmptyState, QueryState } from "@/components/shared";
+import { useProjectMembers } from "@/hooks/queries/project";
+import type { ProjectDetail, ProjectMember } from "@/schemas";
+import { Progress } from "@/ui";
 import { projectStatusMeta } from "./project-status";
 import { ReadinessBadge } from "./readiness";
 
@@ -97,9 +97,12 @@ export function ProjectOverviewTab({ project }: { project: ProjectDetail }) {
         error={error}
         isEmpty={roster.length === 0}
         empty={
-          <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-            No members yet. Add people from the Members tab to start their onboarding.
-          </p>
+          <EmptyState
+            icon={UsersIcon}
+            tone="mist"
+            title="No members yet"
+            description="Add people from the Members tab to start their onboarding."
+          />
         }
       >
         <div className="grid gap-4 md:grid-cols-2">

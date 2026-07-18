@@ -3,9 +3,8 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import * as React from "react";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
+import { cn } from "@/lib";
+import { Skeleton, Tooltip, TooltipContent, TooltipTrigger } from "@/ui";
 import { useSidebar } from "./context";
 
 function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {

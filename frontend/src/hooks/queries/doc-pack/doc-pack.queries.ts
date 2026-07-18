@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { docPackService } from "@/services/doc-pack.service";
+import { docPackService } from "@/services";
 
 export const docPackKeys = {
   all: ["doc-packs"] as const,

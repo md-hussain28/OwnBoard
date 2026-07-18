@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, type ReactNode } from "react";
-import { navItemsForRole, PROJECT_SECTIONS, WORKSPACE_NAV } from "@/components/layout/nav-config";
-import { useDocPack } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { useAssignmentDetail } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { useProject } from "@/hooks/queries/project/project.queries";
-import { useRepo } from "@/hooks/queries/repo/repo.queries";
-import { APP_HOME } from "@/lib/routes";
-import type { AppRole } from "@/schemas/employee.schema";
+import { useDocPack } from "@/hooks/queries/doc-pack";
+import { useAppRole } from "@/hooks/queries/me";
+import { useAssignmentDetail } from "@/hooks/queries/pack-assignment";
+import { useProject } from "@/hooks/queries/project";
+import { useRepo } from "@/hooks/queries/repo";
+import { APP_HOME } from "@/lib";
+import type { AppRole } from "@/schemas";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,7 +17,8 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/ui/breadcrumb";
+} from "@/ui";
+import { navItemsForRole, PROJECT_SECTIONS, WORKSPACE_NAV } from "./nav-config";
 
 type Crumb = {
   label: ReactNode;

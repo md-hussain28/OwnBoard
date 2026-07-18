@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useCreateRepo } from "@/hooks/queries/repo/repo.mutations";
-import { notify } from "@/lib/toast";
-import { Button } from "@/ui/button";
+import { useCreateRepo } from "@/hooks/queries/repo";
+import { notify } from "@/lib";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -12,9 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
-import { Spinner } from "@/ui/spinner";
+  Input,
+  Spinner,
+} from "@/ui";
 
 export function ConnectRepoDialog() {
   const [open, setOpen] = useState(false);

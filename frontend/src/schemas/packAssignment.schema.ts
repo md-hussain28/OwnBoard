@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { quizAttemptSchema, quizTemplateSchema } from "@/schemas/quiz.schema";
+import { quizAttemptSchema, quizTemplateSchema } from "./quiz.schema";
 
 export const packAssignmentStatusSchema = z.enum([
   "assigned",

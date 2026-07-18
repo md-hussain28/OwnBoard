@@ -1,8 +1,7 @@
 import { CheckCircle2Icon } from "lucide-react";
 import Link from "next/link";
-import { appPath } from "@/lib/routes";
-import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
+import { appPath, cn } from "@/lib";
+import { Button } from "@/ui";
 
 function SetupStep({
   index,

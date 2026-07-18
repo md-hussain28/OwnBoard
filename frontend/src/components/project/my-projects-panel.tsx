@@ -3,13 +3,10 @@
 import { FolderKanbanIcon, GitBranchIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { FilterSelect } from "@/components/shared/filter-select";
-import { QueryState } from "@/components/shared/query-state";
-import { useMyProjects } from "@/hooks/queries/project/project.queries";
-import { appPath } from "@/lib/routes";
-import { Button } from "@/ui/button";
-import { Card, CardContent } from "@/ui/card";
-import { Input } from "@/ui/input";
+import { EmptyState, FilteredEmpty, FilterSelect, QueryState } from "@/components/shared";
+import { useMyProjects } from "@/hooks/queries/project";
+import { appPath } from "@/lib";
+import { Card, CardContent, Input } from "@/ui";
 import { PROJECT_STATUSES, ProjectStatusBadge } from "./project-status";
 import { ReadinessBadge, ReadinessBar } from "./readiness";
 
@@ -69,36 +66,25 @@ export function MyProjectsPanel() {
         error={error}
         isEmpty={!!projects && projects.length === 0}
         empty={
-          <Card>
-            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <div className="rounded-full bg-brand-mist p-3 text-brand-ink">
-                <FolderKanbanIcon className="size-6" />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                You&apos;re not on any projects yet. An admin will add you to one.
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={FolderKanbanIcon}
+            title="No projects yet"
+            description="You're not on any projects yet. An admin will add you to one."
+          />
         }
       >
         {visible.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
-              <p className="text-sm text-muted-foreground">No projects match your filters.</p>
-              {hasFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
+          <FilteredEmpty
+            noun="projects"
+            onClear={
+              hasFilters
+                ? () => {
                     setQuery("");
                     setStatusFilter("all");
-                  }}
-                >
-                  Clear filters
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+                  }
+                : undefined
+            }
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {visible.map((project) => (

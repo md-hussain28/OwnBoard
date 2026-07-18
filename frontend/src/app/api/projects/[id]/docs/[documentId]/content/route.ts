@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { API_ENDPOINTS } from "@/lib/api";
 import { proxyRequest } from "@/lib/api/proxy";
 
 /** Ordered extracted text for one project document — backs the citation → viewer sheet. */

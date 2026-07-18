@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { HttpResponse, http } from "msw";
-import { AdminProjectsPanel } from "@/components/project/admin-projects-panel";
 import { handlers, loadingForever } from "../../../.storybook/mocks/handlers";
+import { AdminProjectsPanel } from "./admin-projects-panel";
 
 const meta = {
   title: "Components/Project/AdminProjectsPanel",

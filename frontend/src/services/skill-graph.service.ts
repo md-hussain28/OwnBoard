@@ -1,11 +1,10 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
 import {
   type BusFactorFile,
   busFactorFileListSchema,
   type ExpertiseScore,
   expertiseScoreListSchema,
-} from "@/schemas/skill-graph.schema";
+} from "@/schemas";
 
 export const skillGraphService = {
   async expertise(repoId: string): Promise<ExpertiseScore[]> {

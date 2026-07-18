@@ -2,11 +2,11 @@
 
 import { CheckIcon, GlobeIcon, Loader2Icon, UsersIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAudiencePreview } from "@/hooks/queries/doc-pack/doc-pack.mutations";
-import { useOrgDomains } from "@/hooks/queries/org-domain/org-domain.queries";
-import { cn } from "@/lib/utils";
-import type { AudiencePreview } from "@/schemas/docPack.schema";
-import { Skeleton } from "@/ui/skeleton";
+import { useAudiencePreview } from "@/hooks/queries/doc-pack";
+import { useOrgDomains } from "@/hooks/queries/org-domain";
+import { cn } from "@/lib";
+import type { AudiencePreview } from "@/schemas";
+import { Skeleton } from "@/ui";
 
 type AudienceFieldProps = {
   /** Everyone in the org (ignores domain selection while true). */
@@ -191,13 +191,13 @@ export function AudienceField({
 
       {!assignToAll && (
         <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
-          {domainsQuery.isLoading ? (
-            <Skeleton className="h-7 w-full" />
-          ) : domains.length === 0 ? (
+          {domainsQuery.isLoading && <Skeleton className="h-7 w-full" />}
+          {!domainsQuery.isLoading && domains.length === 0 && (
             <p className="text-xs text-muted-foreground">
               No domains yet. Add them under Team → domains, then pick them here.
             </p>
-          ) : (
+          )}
+          {!domainsQuery.isLoading && domains.length > 0 && (
             <ul className="flex flex-wrap gap-2">
               {domains.map((domain) => {
                 const selected = domainIds.includes(domain.id);

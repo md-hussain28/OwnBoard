@@ -9,19 +9,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import {
-  ASSIGNMENT_STATUS_LABEL,
-  assignmentStatusVariant,
-} from "@/components/shared/assignment-status";
-import { useMe } from "@/hooks/queries/me/me.queries";
-import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { cn } from "@/lib/utils";
-import type { PackAssignment, PackAssignmentStatus } from "@/schemas/packAssignment.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Progress } from "@/ui/progress";
-import { Skeleton } from "@/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
+import { ASSIGNMENT_STATUS_LABEL, assignmentStatusVariant } from "@/components/shared";
+import { useMe } from "@/hooks/queries/me";
+import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment";
+import { cn } from "@/lib";
+import type { PackAssignment, PackAssignmentStatus } from "@/schemas";
+import { Badge, Button, Progress, Skeleton, Tooltip, TooltipContent, TooltipTrigger } from "@/ui";
 
 function trackCtaLabel(status: PackAssignmentStatus): string {
   switch (status) {

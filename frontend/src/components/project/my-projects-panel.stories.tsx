@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { HttpResponse, http } from "msw";
-import { MyProjectsPanel } from "@/components/project/my-projects-panel";
 import { mockMyProjects } from "../../../.storybook/mocks/data";
 import { handlers } from "../../../.storybook/mocks/handlers";
+import { MyProjectsPanel } from "./my-projects-panel";
 
 const meta = {
   title: "Components/Project/MyProjectsPanel",

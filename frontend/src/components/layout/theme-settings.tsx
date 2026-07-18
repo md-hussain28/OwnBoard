@@ -10,11 +10,11 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useId, useRef, useState } from "react";
-import { ManageOrgDialog } from "@/components/layout/manage-org-dialog";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { cn } from "@/lib/utils";
+import { useAppRole } from "@/hooks/queries/me";
+import { cn } from "@/lib";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui";
 import { useSidebar } from "@/ui/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
+import { ManageOrgDialog } from "./manage-org-dialog";
 
 const THEME_OPTIONS = [
   { value: "light", label: "Light", icon: SunIcon },

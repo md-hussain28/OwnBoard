@@ -12,18 +12,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
-import { EmployeePackList } from "@/components/doc-pack/employee-pack-list";
-import { projectSectionPath } from "@/components/layout/nav-config";
-import { ReadinessBadge, ReadinessBar } from "@/components/project/readiness";
-import { QueryState } from "@/components/shared/query-state";
-import { useMe } from "@/hooks/queries/me/me.queries";
-import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { useMyProjects } from "@/hooks/queries/project/project.queries";
-import { appPath } from "@/lib/routes";
-import type { PackAssignment, PackAssignmentStatus } from "@/schemas/packAssignment.schema";
-import { Button } from "@/ui/button";
-import { Card, CardContent } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
+import { EmployeePackList } from "@/components/doc-pack";
+import { projectSectionPath } from "@/components/layout";
+import { ReadinessBadge, ReadinessBar } from "@/components/project";
+import { EmptyState, QueryState } from "@/components/shared";
+import { useMe } from "@/hooks/queries/me";
+import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment";
+import { useMyProjects } from "@/hooks/queries/project";
+import { appPath } from "@/lib";
+import type { PackAssignment, PackAssignmentStatus } from "@/schemas";
+import { Button, Card, CardContent, Skeleton } from "@/ui";
 import { firstNameOf, HomeGreeting, SectionHeader } from "./home-primitives";
 
 /** Which assignment to surface as the single "next step". Continue in-flight work first. */
@@ -75,33 +73,23 @@ function NextStepCard({ employeeId }: { employeeId: string }) {
   // Nothing assigned yet — reassure, don't alarm.
   if (assignments.length === 0) {
     return (
-      <Card className="border-brand-honey/25 bg-brand-honey-soft/30">
-        <CardContent className="flex flex-col gap-1 py-6">
-          <p className="text-sm font-medium">You&apos;re all set for now</p>
-          <p className="text-sm text-muted-foreground">
-            Nothing is assigned to you yet. When your team adds an onboarding module, it&apos;ll
-            appear here and on the bell up top.
-          </p>
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={SparklesIcon}
+        tone="mist"
+        title="You're all set for now"
+        description="Nothing is assigned to you yet. New onboarding appears here and on the bell up top."
+      />
     );
   }
 
   if (allDone) {
     return (
-      <Card className="border-brand-moss/30 bg-brand-moss-soft/30">
-        <CardContent className="flex items-center gap-3 py-6">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-moss-soft text-brand-moss">
-            <CheckCircle2Icon className="size-5" />
-          </span>
-          <div className="space-y-0.5">
-            <p className="text-sm font-semibold">You&apos;re all caught up</p>
-            <p className="text-sm text-muted-foreground">
-              Every module you&apos;ve been assigned is complete. Nice work.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={CheckCircle2Icon}
+        tone="moss"
+        title="You're all caught up"
+        description="Every module you've been assigned is complete. Nice work."
+      />
     );
   }
 
@@ -150,12 +138,12 @@ function MyTeamsSection() {
         isEmpty={!!projects && projects.length === 0}
         loading={<Skeleton className="h-28 w-full rounded-xl" />}
         empty={
-          <Card>
-            <CardContent className="flex items-center gap-3 py-6 text-sm text-muted-foreground">
-              <FolderKanbanIcon className="size-5 shrink-0 text-muted-foreground" />
-              You&apos;re not on any teams yet. Someone will add you to one soon.
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={FolderKanbanIcon}
+            tone="mist"
+            title="You're not on any teams yet"
+            description="Someone will add you to one soon."
+          />
         }
       >
         <div className="grid gap-3 sm:grid-cols-2">
@@ -237,7 +225,7 @@ export function MemberHome() {
   const name = firstNameOf(user?.firstName ?? user?.fullName);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="space-y-8">
       <HomeGreeting name={name} line="Here's what's next for you. No rush — one step at a time." />
 
       <NextStepCard employeeId={employeeId} />

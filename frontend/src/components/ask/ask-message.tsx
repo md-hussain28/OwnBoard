@@ -2,9 +2,8 @@
 
 import { getToolName, isToolUIPart, type UIMessage } from "ai";
 import { SparklesIcon } from "lucide-react";
-import { AskToolPart } from "@/components/ask/ask-tool-part";
-import { Message, MessageContent } from "@/ui/ai-elements/message";
-import { Response } from "@/ui/ai-elements/response";
+import { Message, MessageContent, Response } from "@/ui/ai-elements";
+import { AskToolPart } from "./ask-tool-part";
 
 /**
  * Renders one turn of the "Ask project" conversation from its AI SDK `UIMessage` parts. User turns are

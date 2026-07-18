@@ -12,17 +12,24 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useAddProjectRepo, useRemoveProjectRepo } from "@/hooks/queries/project/project.mutations";
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
-import { appPath } from "@/lib/routes";
-import { notify } from "@/lib/toast";
-import type { ProjectDetail, ProjectRepo } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Card, CardContent } from "@/ui/card";
-import { Input } from "@/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
-import { Spinner } from "@/ui/spinner";
+import { EmptyState } from "@/components/shared";
+import { useAddProjectRepo, useRemoveProjectRepo } from "@/hooks/queries/project";
+import { useRepos } from "@/hooks/queries/repo";
+import { appPath, notify } from "@/lib";
+import type { ProjectDetail, ProjectRepo } from "@/schemas";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+} from "@/ui";
 import { ProjectSectionHeader } from "./project-section-header";
 import { RepoMembersDialog } from "./repo-members-dialog";
 
@@ -53,18 +60,16 @@ export function ProjectRepositoriesTab({
       <HowItWorks />
 
       {project.repos.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-            <span className="flex size-11 items-center justify-center rounded-full bg-brand-honey-soft text-brand-honey">
-              <GitBranchIcon className="size-5" />
-            </span>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              {manageable
-                ? "No repositories linked yet — link your first one below to get started."
-                : "No repositories have been linked to this project yet."}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={GitBranchIcon}
+          tone={manageable ? "honey" : "mist"}
+          title="No repositories linked yet"
+          description={
+            manageable
+              ? "Link your first one below to start building each member's skills and Ask answers."
+              : "No repositories have been linked to this project yet."
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {project.repos.map((r) => (

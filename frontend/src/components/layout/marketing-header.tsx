@@ -5,9 +5,9 @@ import { MoonIcon, SunIcon } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { BrandLogo } from "@/components/brand/brand-mark";
-import { APP_HOME } from "@/lib/routes";
-import { Button } from "@/ui/button";
+import { BrandLogo } from "@/components/brand";
+import { APP_HOME } from "@/lib";
+import { Button } from "@/ui";
 
 export function MarketingHeader() {
   const { isSignedIn, isLoaded } = useAuth();

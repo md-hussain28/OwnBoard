@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
-import { AdminOutcomeNotifications } from "@/components/layout/admin-outcome-notifications";
-import { TooltipProvider } from "@/ui/tooltip";
+import { TooltipProvider } from "@/ui";
+import { AdminOutcomeNotifications } from "./admin-outcome-notifications";
 
 const meta = {
   title: "Components/Layout/AdminOutcomeNotifications",

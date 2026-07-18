@@ -1,7 +1,6 @@
 import { CheckCircle2Icon, CircleDashedIcon, LoaderIcon } from "lucide-react";
-import type { ProjectReadiness } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Progress } from "@/ui/progress";
+import type { ProjectReadiness } from "@/schemas";
+import { Badge, Progress } from "@/ui";
 
 /**
  * A member's module-completion standing on a project. Progress only — access is never gated:

@@ -1,17 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { CohortDashboard } from "@/components/doc-pack/cohort-dashboard";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { Button } from "@/ui/button";
-import { Skeleton } from "@/ui/skeleton";
+import { CohortDashboard } from "@/components/doc-pack";
+import { useAppRole } from "@/hooks/queries/me";
+import { Button, Skeleton } from "@/ui";
 
 export default function TracksInsightsPage() {
   const { isAdmin, isLoading } = useAppRole();
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-3xl space-y-3">
+      <div className="space-y-3">
         <Skeleton className="h-8 w-56" />
         <Skeleton className="h-40 w-full" />
       </div>
@@ -33,7 +32,7 @@ export default function TracksInsightsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6">
+    <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="font-heading text-2xl font-semibold tracking-tight text-balance">
           Onboarding overview

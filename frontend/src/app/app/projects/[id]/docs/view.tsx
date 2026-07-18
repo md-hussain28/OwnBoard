@@ -1,19 +1,21 @@
 "use client";
 
 import { LayersIcon } from "lucide-react";
-import { ProjectContextTab } from "@/components/project/project-context-tab";
-import { ProjectContextView } from "@/components/project/project-context-view";
-import { ProjectDocsPanel } from "@/components/project/project-docs-panel";
-import { ProjectSectionHeader } from "@/components/project/project-section-header";
-import { useProject } from "@/hooks/queries/project/project.queries";
-import { Separator } from "@/ui/separator";
+import {
+  ProjectContextTab,
+  ProjectContextView,
+  ProjectDocsPanel,
+  ProjectSectionHeader,
+} from "@/components/project";
+import { useProject } from "@/hooks/queries/project";
+import { Separator } from "@/ui";
 
 export function ProjectDocsView({ id }: { id: string }) {
   const { data: project } = useProject(id);
   if (!project) return null;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="space-y-6" data-tour="project-panel-docs">
       {/* Context (tech stack / links / glossary) — editable for managers, read-only for members. */}
       <section className="space-y-4">
         <ProjectSectionHeader

@@ -1,5 +1,5 @@
 import { type ExternalToast, toast as sonnerToast } from "sonner";
-import { getApiErrorMessage, isNotImplementedError } from "@/lib/api/errors";
+import { getApiErrorMessage, isNotImplementedError } from "@/lib/api";
 
 const MAX_DESCRIPTION_LENGTH = 180;
 const SUCCESS_DURATION_MS = 4000;

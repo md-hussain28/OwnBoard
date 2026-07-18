@@ -1,8 +1,7 @@
 "use client";
 
-import { ProjectContextTab } from "@/components/project/project-context-tab";
-import { ProjectContextView } from "@/components/project/project-context-view";
-import { useProject } from "@/hooks/queries/project/project.queries";
+import { ProjectContextTab, ProjectContextView } from "@/components/project";
+import { useProject } from "@/hooks/queries/project";
 
 export function ProjectContextViewPage({ id }: { id: string }) {
   const { data: project } = useProject(id);

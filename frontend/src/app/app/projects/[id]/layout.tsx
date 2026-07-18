@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ProjectLayoutShell } from "@/components/project/project-layout-shell";
+import { ProjectLayoutShell } from "@/components/project";
 
 /**
  * Await params on the server so the Promise never crosses into the client tree

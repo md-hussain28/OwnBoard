@@ -11,8 +11,8 @@ import {
   SparklesIcon,
   UsersIcon,
 } from "lucide-react";
-import { APP_HOME, appPath } from "@/lib/routes";
-import type { AppRole } from "@/schemas/employee.schema";
+import { APP_HOME, appPath } from "@/lib";
+import type { AppRole } from "@/schemas";
 
 export type NavItem = {
   href: string;

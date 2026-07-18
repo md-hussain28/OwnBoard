@@ -12,20 +12,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useMemo } from "react";
-import {
-  ASSIGNMENT_STATUS_LABEL,
-  assignmentStatusVariant,
-} from "@/components/shared/assignment-status";
-import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack/doc-pack.queries";
-import { useEmployees } from "@/hooks/queries/employee/employee.queries";
-import type { PackAssignmentProgress } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { usePackAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import { cn } from "@/lib/utils";
-import type { DocPack, DocPackListItem } from "@/schemas/docPack.schema";
-import type { PackAssignmentStatus } from "@/schemas/packAssignment.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Skeleton } from "@/ui/skeleton";
+import { ASSIGNMENT_STATUS_LABEL, assignmentStatusVariant, EmptyState } from "@/components/shared";
+import { useDocPack, useDocPackQuiz } from "@/hooks/queries/doc-pack";
+import { useEmployees } from "@/hooks/queries/employee";
+import type { PackAssignmentProgress } from "@/hooks/queries/pack-assignment";
+import { usePackAssignments } from "@/hooks/queries/pack-assignment";
+import { cn } from "@/lib";
+import type { DocPack, DocPackListItem, PackAssignmentStatus } from "@/schemas";
+import { Badge, Button, Skeleton } from "@/ui";
 
 const PROGRESS_STRIP: { status: PackAssignmentStatus; tone: string }[] = [
   { status: "assigned", tone: "bg-muted text-muted-foreground" },
@@ -114,6 +108,11 @@ export function ViewPackPanel({
   const peopleLoading = isAdmin && (assignmentsQuery.isLoading || employeesQuery.isLoading);
   const peopleError = isAdmin && (assignmentsQuery.isError || employeesQuery.isError);
 
+  let quizStatus: React.ReactNode = "Not generated";
+  if (quizQuery.isLoading) quizStatus = <Skeleton className="h-3 w-24" />;
+  else if (quizPublished) quizStatus = "Published";
+  else if (hasQuiz) quizStatus = "Draft";
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-1 pb-2">
       {pack.description ? (
@@ -153,17 +152,7 @@ export function ViewPackPanel({
         <DetailRow
           icon={<FileTextIcon className="size-3.5" aria-hidden />}
           label="Quiz"
-          value={
-            quizQuery.isLoading ? (
-              <Skeleton className="h-3 w-24" />
-            ) : quizPublished ? (
-              "Published"
-            ) : hasQuiz ? (
-              "Draft"
-            ) : (
-              "Not generated"
-            )
-          }
+          value={quizStatus}
         />
         <DetailRow
           icon={<CalendarIcon className="size-3.5" aria-hidden />}
@@ -186,7 +175,13 @@ export function ViewPackPanel({
           <p className="text-sm text-muted-foreground">Could not load documents.</p>
         )}
         {!detailQuery.isLoading && !detailQuery.isError && documents.length === 0 && (
-          <p className="text-sm text-muted-foreground">No documents uploaded yet.</p>
+          <EmptyState
+            icon={FileTextIcon}
+            tone="mist"
+            compact
+            bordered={false}
+            title="No documents uploaded yet"
+          />
         )}
         {!detailQuery.isLoading && documents.length > 0 && (
           <ul className="divide-y divide-border rounded-xl border border-border">
@@ -226,9 +221,14 @@ export function ViewPackPanel({
           )}
 
           {!peopleLoading && !peopleError && assignments.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No one is assigned yet. Use Assign to add people.
-            </p>
+            <EmptyState
+              icon={UsersIcon}
+              tone="mist"
+              compact
+              bordered={false}
+              title="No one is assigned yet"
+              description="Use Assign to add people."
+            />
           )}
 
           {!peopleLoading && !peopleError && assignments.length > 0 && (

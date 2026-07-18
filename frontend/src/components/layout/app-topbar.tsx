@@ -1,10 +1,9 @@
 "use client";
 
-import { AppBreadcrumbs } from "@/components/layout/app-breadcrumbs";
-import { NotificationBell } from "@/components/layout/notification-bell";
-import { TourTrigger } from "@/components/tour/tour-trigger";
-import { Separator } from "@/ui/separator";
+import { Separator } from "@/ui";
 import { SidebarTrigger } from "@/ui/sidebar";
+import { AppBreadcrumbs } from "./app-breadcrumbs";
+import { NotificationBell } from "./notification-bell";
 
 export function AppTopbar() {
   return (
@@ -18,7 +17,6 @@ export function AppTopbar() {
         <AppBreadcrumbs />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        <TourTrigger />
         <div data-tour="notifications">
           <NotificationBell />
         </div>

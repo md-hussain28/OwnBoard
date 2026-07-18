@@ -2,13 +2,12 @@
 
 import { ArrowRightIcon, GitBranchIcon } from "lucide-react";
 import Link from "next/link";
-import { ConnectRepoDialog } from "@/components/repo/connect-repo-dialog";
-import { QueryState } from "@/components/shared/query-state";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
-import { appPath } from "@/lib/routes";
-import { Badge } from "@/ui/badge";
-import { Card, CardContent } from "@/ui/card";
+import { ConnectRepoDialog } from "@/components/repo";
+import { EmptyState, QueryState } from "@/components/shared";
+import { useAppRole } from "@/hooks/queries/me";
+import { useRepos } from "@/hooks/queries/repo";
+import { appPath } from "@/lib";
+import { Badge, Card, CardContent } from "@/ui";
 
 export default function ReposPage() {
   const { isAdmin } = useAppRole();
@@ -32,19 +31,17 @@ export default function ReposPage() {
         error={error}
         isEmpty={(repos ?? []).length === 0}
         empty={
-          <Card>
-            <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-              <span className="flex size-11 items-center justify-center rounded-full bg-brand-honey-soft text-brand-honey">
-                <GitBranchIcon className="size-5" />
-              </span>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                {isAdmin
-                  ? "No repositories yet. Connect one to get started."
-                  : "No repositories have been connected yet."}
-              </p>
-              {isAdmin && <ConnectRepoDialog />}
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={GitBranchIcon}
+            tone={isAdmin ? "honey" : "mist"}
+            title="No repositories yet"
+            description={
+              isAdmin
+                ? "Connect one to build its skill graph from git history."
+                : "No repositories have been connected yet."
+            }
+            action={isAdmin ? <ConnectRepoDialog /> : undefined}
+          />
         }
       >
         <div className="grid gap-3 sm:grid-cols-2">

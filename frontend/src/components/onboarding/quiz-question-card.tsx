@@ -3,10 +3,8 @@
 import { CheckIcon } from "lucide-react";
 import type { ClipboardEvent, MouseEvent } from "react";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { cn } from "@/lib";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/ui";
 
 type Selection = string | string[] | null;
 

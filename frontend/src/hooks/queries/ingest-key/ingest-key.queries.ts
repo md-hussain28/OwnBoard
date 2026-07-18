@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ingestKeyService } from "@/services/ingest-key.service";
+import { ingestKeyService } from "@/services";
 
 export const ingestKeyKeys = {
   all: (repoId: string) => ["ingest-keys", repoId] as const,

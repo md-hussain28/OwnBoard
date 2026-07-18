@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { IncomingBadge, IncomingFeature } from "@/components/layout/incoming-feature";
+import { IncomingBadge, IncomingFeature } from "./incoming-feature";
 
 const meta = {
   title: "Components/Layout/IncomingFeature",

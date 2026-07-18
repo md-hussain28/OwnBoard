@@ -1,9 +1,9 @@
 "use client";
 
 import { ArrowUpRightIcon, CodeIcon, FileTextIcon, GitCommitHorizontalIcon } from "lucide-react";
-import { useAskDoc } from "@/components/ask/ask-doc-viewer";
-import { cn } from "@/lib/utils";
-import type { AskCitations } from "@/schemas/ask.schema";
+import { cn } from "@/lib";
+import type { AskCitations } from "@/schemas";
+import { useAskDoc } from "./ask-doc-viewer";
 
 const ICON = { doc: FileTextIcon, code: CodeIcon, commit: GitCommitHorizontalIcon };
 

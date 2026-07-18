@@ -2,16 +2,15 @@
 
 import { CheckIcon, UserPlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useSetTrackAssignment } from "@/hooks/queries/project/project.mutations";
 import {
   useProjectFunctionTypes,
   useProjectMembers,
-} from "@/hooks/queries/project/project.queries";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { ProjectTrack } from "@/schemas/project.schema";
-import { Button } from "@/ui/button";
+  useSetTrackAssignment,
+} from "@/hooks/queries/project";
+import { cn, notify } from "@/lib";
+import type { ProjectTrack } from "@/schemas";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -19,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
+} from "@/ui";
 import { FilterSelect } from "../shared/filter-select";
 
 type Scope = "all_members" | "manual";

@@ -1,7 +1,7 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import type { PackAssignment, PackAssignmentStatus } from "@/schemas/packAssignment.schema";
-import { packAssignmentService } from "@/services/pack-assignment.service";
+import type { PackAssignment, PackAssignmentStatus } from "@/schemas";
+import { packAssignmentService } from "@/services";
 
 export const packAssignmentKeys = {
   all: ["pack-assignments"] as const,

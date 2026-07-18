@@ -2,17 +2,12 @@
 
 import { PlusIcon, XIcon } from "lucide-react";
 import { useState } from "react";
+import { useCreateFunctionType, useCreateModule, useUpdateModule } from "@/hooks/queries/project";
+import { cn, notify } from "@/lib";
+import type { ProjectFunctionType, ProjectModule, ResourceLink } from "@/schemas";
 import {
-  useCreateFunctionType,
-  useCreateModule,
-  useUpdateModule,
-} from "@/hooks/queries/project/project.mutations";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { ProjectFunctionType, ProjectModule, ResourceLink } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import {
+  Badge,
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -20,11 +15,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
-import { Spinner } from "@/ui/spinner";
-import { Textarea } from "@/ui/textarea";
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+  Textarea,
+} from "@/ui";
 
 export function ModuleFormDialog({
   projectId,

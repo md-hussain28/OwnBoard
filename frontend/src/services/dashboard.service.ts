@@ -1,11 +1,10 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
 import {
   type BusFactorEntry,
   busFactorListSchema,
   type QuizAnalytics,
   quizAnalyticsSchema,
-} from "@/schemas/dashboard.schema";
+} from "@/schemas";
 
 export const dashboardService = {
   async getBusFactor(repoId: string): Promise<BusFactorEntry[]> {

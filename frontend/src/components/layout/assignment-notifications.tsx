@@ -3,23 +3,12 @@
 import { BookOpen, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import {
-  ASSIGNMENT_STATUS_LABEL,
-  assignmentStatusVariant,
-} from "@/components/shared/assignment-status";
-import { useMe } from "@/hooks/queries/me/me.queries";
-import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import {
-  getSeenAssignmentIds,
-  markAssignmentsSeen,
-  seedSeenAssignmentsIfEmpty,
-} from "@/lib/assignment-seen";
-import { cn } from "@/lib/utils";
-import type { PackAssignment, PackAssignmentStatus } from "@/schemas/packAssignment.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
-import { Skeleton } from "@/ui/skeleton";
+import { ASSIGNMENT_STATUS_LABEL, assignmentStatusVariant } from "@/components/shared";
+import { useMe } from "@/hooks/queries/me";
+import { useEmployeeAssignments } from "@/hooks/queries/pack-assignment";
+import { cn, getSeenAssignmentIds, markAssignmentsSeen, seedSeenAssignmentsIfEmpty } from "@/lib";
+import type { PackAssignment, PackAssignmentStatus } from "@/schemas";
+import { Badge, Button, Popover, PopoverContent, PopoverTrigger, Skeleton } from "@/ui";
 
 const ACTIONABLE: PackAssignmentStatus[] = [
   "assigned",

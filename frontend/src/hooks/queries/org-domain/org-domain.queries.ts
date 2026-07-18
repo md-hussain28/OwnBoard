@@ -1,12 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { employeeKeys } from "@/hooks/queries/employee/employee.queries";
-import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries/optimistic";
-import type {
-  CreateOrgDomainInput,
-  OrgDomain,
-  UpdateOrgDomainInput,
-} from "@/schemas/org-domain.schema";
-import { orgDomainService } from "@/services/org-domain.service";
+import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries";
+import { employeeKeys } from "@/hooks/queries/employee";
+import type { CreateOrgDomainInput, OrgDomain, UpdateOrgDomainInput } from "@/schemas";
+import { orgDomainService } from "@/services";
 
 export const orgDomainKeys = {
   all: ["org-domains"] as const,

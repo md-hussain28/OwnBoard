@@ -1,7 +1,6 @@
 import { UserCheckIcon } from "lucide-react";
-import type { ExpertReferral } from "@/schemas/expert.schema";
-import { Badge } from "@/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import type { ExpertReferral } from "@/schemas";
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/ui";
 
 /** "Who to ask" card — the routed expert, why them, and a ready-to-send intro (PRD §6.6). */
 export function ExpertReferralCard({ referral }: { referral: ExpertReferral }) {

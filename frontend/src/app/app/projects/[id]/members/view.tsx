@@ -2,11 +2,9 @@
 
 import { UsersIcon } from "lucide-react";
 import { redirect } from "next/navigation";
-import { projectSectionPath } from "@/components/layout/nav-config";
-import { AddMembersDialog } from "@/components/project/add-members-dialog";
-import { ProjectMemberPanel } from "@/components/project/project-member-panel";
-import { ProjectSectionHeader } from "@/components/project/project-section-header";
-import { useProject } from "@/hooks/queries/project/project.queries";
+import { projectSectionPath } from "@/components/layout";
+import { AddMembersDialog, ProjectMemberPanel, ProjectSectionHeader } from "@/components/project";
+import { useProject } from "@/hooks/queries/project";
 
 export function ProjectMembersView({ id }: { id: string }) {
   const { data: project } = useProject(id);
@@ -15,7 +13,7 @@ export function ProjectMembersView({ id }: { id: string }) {
   if (!project.canManage) redirect(projectSectionPath(project.id, ""));
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="space-y-4" data-tour="project-panel-members">
       <ProjectSectionHeader
         icon={UsersIcon}
         title="Members"

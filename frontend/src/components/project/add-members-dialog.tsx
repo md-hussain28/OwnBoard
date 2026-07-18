@@ -2,19 +2,16 @@
 
 import { CheckIcon, PlusIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useEmployees } from "@/hooks/queries/employee/employee.queries";
+import { useEmployees } from "@/hooks/queries/employee";
 import {
   useAddProjectMembers,
   useCreateFunctionType,
-} from "@/hooks/queries/project/project.mutations";
-import {
   useProjectFunctionTypes,
   useProjectMembers,
-} from "@/hooks/queries/project/project.queries";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
+} from "@/hooks/queries/project";
+import { cn, notify } from "@/lib";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -22,10 +19,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
-import { Spinner } from "@/ui/spinner";
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+} from "@/ui";
 
 export function AddMembersDialog({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState(false);

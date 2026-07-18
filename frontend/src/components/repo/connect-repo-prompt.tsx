@@ -1,8 +1,7 @@
 import { GitBranchIcon } from "lucide-react";
 import Link from "next/link";
-import { appPath } from "@/lib/routes";
-import { Button } from "@/ui/button";
-import { Card, CardContent } from "@/ui/card";
+import { appPath } from "@/lib";
+import { Button, Card, CardContent } from "@/ui";
 
 /** Empty state shown on knowledge-base surfaces before any repository has been connected. */
 export function ConnectRepoPrompt({

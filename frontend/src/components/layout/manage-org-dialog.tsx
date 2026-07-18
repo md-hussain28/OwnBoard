@@ -11,18 +11,17 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
+import { cn, notify } from "@/lib";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
+  Input,
+} from "@/ui";
 
 type ManageOrgDialogProps = {
   open: boolean;

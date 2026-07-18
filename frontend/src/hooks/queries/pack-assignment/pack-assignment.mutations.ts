@@ -1,12 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  type OptimisticSnapshot,
-  optimisticUpdate,
-  rollbackOptimistic,
-} from "@/hooks/queries/optimistic";
-import { packAssignmentKeys } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
-import type { AssignmentDetail, PackAssignment } from "@/schemas/packAssignment.schema";
-import { packAssignmentService } from "@/services/pack-assignment.service";
+import { type OptimisticSnapshot, optimisticUpdate, rollbackOptimistic } from "@/hooks/queries";
+import type { AssignmentDetail, PackAssignment } from "@/schemas";
+import { packAssignmentService } from "@/services";
+import { packAssignmentKeys } from "./pack-assignment.queries";
 
 export function useCreateAssignments(packId: string) {
   const queryClient = useQueryClient();

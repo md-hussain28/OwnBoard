@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { employeeService } from "@/services/employee.service";
+import { employeeService } from "@/services";
 
 export const employeeKeys = {
   all: ["employees"] as const,

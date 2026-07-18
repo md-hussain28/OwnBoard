@@ -1,9 +1,9 @@
 "use client";
 
-import { ROLE_META } from "@/components/team/team-constants";
-import { cn } from "@/lib/utils";
-import type { AppRole } from "@/schemas/employee.schema";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
+import { cn } from "@/lib";
+import type { AppRole } from "@/schemas";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui";
+import { ROLE_META } from "./team-constants";
 
 export function RoleSelect({
   value,

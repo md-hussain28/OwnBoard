@@ -2,13 +2,12 @@
 
 import { BrainIcon, MessagesSquareIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
-import { RepoConnectPanel } from "@/components/repo/repo-connect-panel";
-import { useAppRole } from "@/hooks/queries/me/me.queries";
-import { useRepo } from "@/hooks/queries/repo/repo.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { appPath } from "@/lib/routes";
-import { Card, CardContent } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
+import { RepoConnectPanel } from "@/components/repo";
+import { useAppRole } from "@/hooks/queries/me";
+import { useRepo } from "@/hooks/queries/repo";
+import { appPath } from "@/lib";
+import { getApiErrorMessage } from "@/lib/api";
+import { Card, CardContent, Skeleton } from "@/ui";
 
 const EXPLORE = [
   { href: appPath("dashboard"), label: "Skill graph", icon: BrainIcon },

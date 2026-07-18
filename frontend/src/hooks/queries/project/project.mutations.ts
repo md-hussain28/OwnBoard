@@ -1,11 +1,5 @@
 import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  type CacheEdit,
-  cacheEdit,
-  optimisticEdits,
-  rollbackEdits,
-} from "@/hooks/queries/optimistic";
-import { projectKeys } from "@/hooks/queries/project/project.queries";
+import { type CacheEdit, cacheEdit, optimisticEdits, rollbackEdits } from "@/hooks/queries";
 import type {
   AddProjectRepoInput,
   CreateProjectInput,
@@ -21,10 +15,21 @@ import type {
   ProjectTrack,
   UpdateProjectInput,
   UpdateProjectMemberInput,
-} from "@/schemas/project.schema";
-import { projectService } from "@/services/project.service";
+} from "@/schemas";
+import { projectService } from "@/services";
+import { projectKeys } from "./project.queries";
+import {
+  applyModulePatch,
+  applyProjectPatch,
+  optimisticFunctionType,
+  optimisticModule,
+  optimisticProject,
+  optimisticRepo,
+  optimisticTrack,
+} from "./project-cache";
 
-// Docs (knowledge base) mutations live in the sibling `project-docs.mutations.ts`.
+// Docs (knowledge base) mutations live in the sibling `project-docs.mutations.ts`; the pure
+// optimistic-row builders and patch appliers live in `project-cache.ts`.
 
 /**
  * Wire an optimistic mutation across several project caches. Snapshots every edit on
@@ -53,25 +58,19 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateProjectInput) => projectService.create(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.all });
-    },
+    ...optimistic<CreateProjectInput>(
+      queryClient,
+      (input) => [
+        cacheEdit<Project[]>(projectKeys.all, (prev) =>
+          prev ? [optimisticProject(input), ...prev] : prev,
+        ),
+      ],
+      () => {
+        queryClient.invalidateQueries({ queryKey: projectKeys.all });
+        queryClient.invalidateQueries({ queryKey: projectKeys.mine });
+      },
+    ),
   });
-}
-
-/** Fields an update payload touches on a cached project — undefined inputs keep their value. */
-function applyProjectPatch<T extends Project>(project: T, input: UpdateProjectInput): T {
-  return {
-    ...project,
-    name: input.name ?? project.name,
-    description: input.description !== undefined ? input.description : project.description,
-    status: input.status ?? project.status,
-    isArchived: input.isArchived ?? project.isArchived,
-    repoId: input.repoId !== undefined ? input.repoId : project.repoId,
-    techStack: input.techStack ?? project.techStack,
-    resourceLinks: input.resourceLinks ?? project.resourceLinks,
-    glossary: input.glossary ?? project.glossary,
-  };
 }
 
 export function useUpdateProject(id: string) {
@@ -196,10 +195,23 @@ export function useCreateProjectTrack(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateProjectTrackInput) => projectService.createTrack(id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.tracks(id) });
-      queryClient.invalidateQueries({ queryKey: projectKeys.detail(id) });
-    },
+    ...optimistic<CreateProjectTrackInput>(
+      queryClient,
+      (input) => [
+        cacheEdit<ProjectTrack[]>(projectKeys.tracks(id), (prev) =>
+          prev ? [...prev, optimisticTrack(input, prev.length)] : prev,
+        ),
+        cacheEdit<ProjectDetail>(projectKeys.detail(id), (prev) =>
+          prev
+            ? { ...prev, tracks: [...prev.tracks, optimisticTrack(input, prev.tracks.length)] }
+            : prev,
+        ),
+      ],
+      () => {
+        queryClient.invalidateQueries({ queryKey: projectKeys.tracks(id) });
+        queryClient.invalidateQueries({ queryKey: projectKeys.detail(id) });
+      },
+    ),
   });
 }
 
@@ -247,9 +259,17 @@ export function useSetTrackAssignment(id: string) {
 // ---- repos ----------------------------------------------------------------
 
 export function useAddProjectRepo(id: string) {
+  const queryClient = useQueryClient();
   const invalidate = useInvalidateProject(id);
   return useMutation({
     mutationFn: (input: AddProjectRepoInput) => projectService.addRepo(id, input),
+    onMutate: (input) =>
+      optimisticEdits(queryClient, [
+        cacheEdit<ProjectDetail>(projectKeys.detail(id), (prev) =>
+          prev ? { ...prev, repos: [...prev.repos, optimisticRepo(input)] } : prev,
+        ),
+      ]),
+    onError: (_err, _input, context) => rollbackEdits(queryClient, context),
     onSettled: invalidate,
   });
 }
@@ -301,9 +321,28 @@ export function useSetRepoMembers(id: string) {
 // ---- function types -------------------------------------------------------
 
 export function useCreateFunctionType(id: string) {
+  const queryClient = useQueryClient();
   const invalidate = useInvalidateProject(id);
   return useMutation({
     mutationFn: (input: FunctionTypeInput) => projectService.createFunctionType(id, input),
+    onMutate: (input) =>
+      optimisticEdits(queryClient, [
+        cacheEdit<ProjectFunctionType[]>(projectKeys.functionTypes(id), (prev) =>
+          prev ? [...prev, optimisticFunctionType(input, prev.length)] : prev,
+        ),
+        cacheEdit<ProjectDetail>(projectKeys.detail(id), (prev) =>
+          prev
+            ? {
+                ...prev,
+                functionTypes: [
+                  ...prev.functionTypes,
+                  optimisticFunctionType(input, prev.functionTypes.length),
+                ],
+              }
+            : prev,
+        ),
+      ]),
+    onError: (_err, _input, context) => rollbackEdits(queryClient, context),
     onSettled: invalidate,
   });
 }
@@ -359,44 +398,34 @@ export function useRemoveFunctionType(id: string) {
 // ---- modules --------------------------------------------------------------
 
 export function useCreateModule(id: string) {
+  const queryClient = useQueryClient();
   const invalidate = useInvalidateProject(id);
   return useMutation({
     mutationFn: (input: ModuleInput) => projectService.createModule(id, input),
+    onMutate: (input) => {
+      const functionTypes = queryClient.getQueryData<ProjectFunctionType[]>(
+        projectKeys.functionTypes(id),
+      );
+      return optimisticEdits(queryClient, [
+        cacheEdit<ProjectModule[]>(projectKeys.modules(id), (prev) =>
+          prev ? [...prev, optimisticModule(input, prev.length, functionTypes)] : prev,
+        ),
+        cacheEdit<ProjectDetail>(projectKeys.detail(id), (prev) =>
+          prev
+            ? {
+                ...prev,
+                modules: [
+                  ...prev.modules,
+                  optimisticModule(input, prev.modules.length, functionTypes),
+                ],
+              }
+            : prev,
+        ),
+      ]);
+    },
+    onError: (_err, _input, context) => rollbackEdits(queryClient, context),
     onSettled: invalidate,
   });
-}
-
-/** `input.x !== undefined ? input.x : current` — keep the current value when the field is absent. */
-function keep<V>(next: V | undefined, current: V): V {
-  return next !== undefined ? next : current;
-}
-
-/** Resolve function-type ids to their display names from the cached list (unknown ids dropped). */
-function namesForFunctionTypes(ids: string[], functionTypes: ProjectFunctionType[] | undefined) {
-  return ids
-    .map((tid) => functionTypes?.find((f) => f.id === tid)?.name)
-    .filter((n): n is string => Boolean(n));
-}
-
-function applyModulePatch(
-  m: ProjectModule,
-  input: Partial<ModuleInput>,
-  functionTypes: ProjectFunctionType[] | undefined,
-): ProjectModule {
-  return {
-    ...m,
-    name: input.name ?? m.name,
-    description: keep(input.description, m.description),
-    content: keep(input.content, m.content),
-    resourceLinks: input.resourceLinks ?? m.resourceLinks,
-    sequenceOrder: input.sequenceOrder ?? m.sequenceOrder,
-    estimatedMinutes: keep(input.estimatedMinutes, m.estimatedMinutes),
-    status: input.status ?? m.status,
-    functionTypeIds: input.functionTypeIds ?? m.functionTypeIds,
-    functionTypeNames: input.functionTypeIds
-      ? namesForFunctionTypes(input.functionTypeIds, functionTypes)
-      : m.functionTypeNames,
-  };
 }
 
 export function useUpdateModule(id: string) {

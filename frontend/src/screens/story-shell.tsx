@@ -1,5 +1,5 @@
 import type { Decorator } from "@storybook/nextjs-vite";
-import { AppShell } from "@/components/layout/app-shell";
+import { AppShell } from "@/components/layout";
 
 /**
  * Wraps a screen story in the real console chrome — collapsible sidebar,

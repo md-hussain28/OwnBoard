@@ -113,7 +113,81 @@
         },
         "useSelfClosingElements": "warn",
         "useTemplate": "warn",
-        "useObjectSpread": "warn"
+        "useObjectSpread": "warn",
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": [
+                  "@/components/**",
+                  "@/ui/**",
+                  "@/hooks/**",
+                  "@/lib/**",
+                  "@/schemas/**",
+                  "@/services/**",
+                  "@/stores/**",
+                  "@/providers/**",
+                  "@/constants/**",
+                  "@/types/**",
+                  "!@/components/admin",
+                  "!@/components/ask",
+                  "!@/components/brand",
+                  "!@/components/chat",
+                  "!@/components/dashboard",
+                  "!@/components/doc-pack",
+                  "!@/components/expert",
+                  "!@/components/home",
+                  "!@/components/home/admin",
+                  "!@/components/layout",
+                  "!@/components/marketing",
+                  "!@/components/onboarding",
+                  "!@/components/project",
+                  "!@/components/repo",
+                  "!@/components/shared",
+                  "!@/components/skill-graph",
+                  "!@/components/team",
+                  "!@/components/tour",
+                  "!@/ui",
+                  "!@/ui/ai-elements",
+                  "!@/ui/sidebar",
+                  "!@/hooks",
+                  "!@/hooks/queries",
+                  "!@/hooks/queries/admin",
+                  "!@/hooks/queries/ask",
+                  "!@/hooks/queries/chat",
+                  "!@/hooks/queries/dashboard",
+                  "!@/hooks/queries/doc-pack",
+                  "!@/hooks/queries/employee",
+                  "!@/hooks/queries/expert",
+                  "!@/hooks/queries/ingest-key",
+                  "!@/hooks/queries/me",
+                  "!@/hooks/queries/notification",
+                  "!@/hooks/queries/org-domain",
+                  "!@/hooks/queries/pack-assignment",
+                  "!@/hooks/queries/project",
+                  "!@/hooks/queries/quiz",
+                  "!@/hooks/queries/quiz-domain",
+                  "!@/hooks/queries/repo",
+                  "!@/hooks/queries/skill-graph",
+                  "!@/lib",
+                  "!@/lib/api",
+                  "!@/lib/tour",
+                  "!@/lib/api/proxy",
+                  "!@/lib/api/backend-client",
+                  "!@/lib/platform-admin",
+                  "!@/schemas",
+                  "!@/services",
+                  "!@/stores",
+                  "!@/providers",
+                  "!@/constants",
+                  "!@/types"
+                ],
+                "message": "Import from the folder's barrel index (e.g. \"@/ui\", \"@/components/shared\", \"@/hooks/queries/project\"), not a file inside it. Each module folder's index.ts is its public API."
+              }
+            ]
+          }
+        }
       }
     }
   },
@@ -165,6 +239,19 @@
       ],
       "linter": {
         "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/error.tsx", "**/global-error.tsx"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          },
           "style": {
             "noDefaultExport": "off"
           }

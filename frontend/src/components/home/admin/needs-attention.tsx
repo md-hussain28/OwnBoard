@@ -8,14 +8,11 @@ import {
   XCircleIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { SectionHeader } from "@/components/home/home-primitives";
-import { appPath } from "@/lib/routes";
-import type { SubsystemRisk } from "@/lib/skill-graph";
-import { cn } from "@/lib/utils";
-import type { CohortDashboard } from "@/schemas/cohort.schema";
-import type { AssignmentOutcome } from "@/schemas/packAssignment.schema";
-import { Card, CardContent } from "@/ui/card";
-import { Skeleton } from "@/ui/skeleton";
+import { SectionHeader } from "@/components/home";
+import type { SubsystemRisk } from "@/lib";
+import { appPath, cn } from "@/lib";
+import type { AssignmentOutcome, CohortDashboard } from "@/schemas";
+import { Card, CardContent, Skeleton } from "@/ui";
 
 export type AttentionItem = {
   id: string;

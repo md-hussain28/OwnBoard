@@ -10,12 +10,9 @@ import {
   Undo2Icon,
   XIcon,
 } from "lucide-react";
-import { type EditableQuestion, FORMAT_LABEL } from "@/components/doc-pack/quiz-builder-types";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Textarea } from "@/ui/textarea";
+import { cn } from "@/lib";
+import { Badge, Button, Input, Textarea } from "@/ui";
+import { type EditableQuestion, FORMAT_LABEL } from "./quiz-builder-types";
 
 type QuizQuestionEditorProps = {
   questions: EditableQuestion[];

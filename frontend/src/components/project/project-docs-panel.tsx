@@ -11,21 +11,20 @@ import {
   XIcon,
 } from "lucide-react";
 import { useRef, useState } from "react";
-import { QueryState } from "@/components/shared/query-state";
-import { useProjectDocs } from "@/hooks/queries/project/project.queries";
+import { EmptyState, QueryState } from "@/components/shared";
 import {
   useCreateDocType,
   useDeleteDocType,
   useDeleteProjectDoc,
+  useProjectDocs,
   useSetDocTypes,
   useUploadProjectDocs,
-} from "@/hooks/queries/project/project-docs.mutations";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import type { ProjectDoc, ProjectDocType } from "@/schemas/project.schema";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
+} from "@/hooks/queries/project";
+import { cn, notify } from "@/lib";
+import type { ProjectDoc, ProjectDocType } from "@/schemas";
 import {
+  Badge,
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -33,9 +32,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
-import { Spinner } from "@/ui/spinner";
+  Input,
+  Spinner,
+} from "@/ui";
 import { ProjectSectionHeader } from "./project-section-header";
 
 function statusBadge(status: string) {
@@ -72,15 +71,17 @@ export function ProjectDocsPanel({
         error={error}
         isEmpty={documents.length === 0}
         empty={
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border py-10 text-center">
-            <FileTextIcon className="size-6 text-muted-foreground" />
-            <p className="text-sm font-medium">No documents yet</p>
-            <p className="max-w-md text-sm text-pretty text-muted-foreground">
-              {manageable
+          <EmptyState
+            icon={FileTextIcon}
+            tone={manageable ? "honey" : "mist"}
+            title="No documents yet"
+            description={
+              manageable
                 ? "Upload PDFs so the team has reference material and Ask project can cite them."
-                : "No reference documents have been added to this project yet."}
-            </p>
-          </div>
+                : "No reference documents have been added to this project yet."
+            }
+            action={manageable ? <UploadButton projectId={projectId} /> : undefined}
+          />
         }
       >
         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">

@@ -15,16 +15,12 @@ import { useState } from "react";
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
-} from "@/hooks/queries/notification/notification.mutations";
-import {
   useNotifications,
   useUnreadNotificationsCount,
-} from "@/hooks/queries/notification/notification.queries";
-import { cn } from "@/lib/utils";
-import type { Notification, NotificationType } from "@/schemas/notification.schema";
-import { Button } from "@/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
-import { Skeleton } from "@/ui/skeleton";
+} from "@/hooks/queries/notification";
+import { cn } from "@/lib";
+import type { Notification, NotificationType } from "@/schemas";
+import { Button, Popover, PopoverContent, PopoverTrigger, Skeleton } from "@/ui";
 
 const POLL_MS = 45_000;
 

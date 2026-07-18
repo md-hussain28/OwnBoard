@@ -1,5 +1,4 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
 import {
   type AddProjectRepoInput,
   type CreateProjectInput,
@@ -32,7 +31,7 @@ import {
   projectTrackSchema,
   type UpdateProjectInput,
   type UpdateProjectMemberInput,
-} from "@/schemas/project.schema";
+} from "@/schemas";
 
 export const projectService = {
   async list(): Promise<Project[]> {

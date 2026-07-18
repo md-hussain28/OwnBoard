@@ -2,12 +2,11 @@
 
 import { FolderPlusIcon, UserRoundIcon } from "lucide-react";
 import { useState } from "react";
-import { useEmployees } from "@/hooks/queries/employee/employee.queries";
-import { useCreateProject } from "@/hooks/queries/project/project.mutations";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
+import { useEmployees } from "@/hooks/queries/employee";
+import { useCreateProject } from "@/hooks/queries/project";
+import { cn, notify } from "@/lib";
 import {
+  Button,
   Dialog,
   DialogClose,
   DialogContent,
@@ -16,11 +15,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
-import { Spinner } from "@/ui/spinner";
-import { Textarea } from "@/ui/textarea";
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+  Textarea,
+} from "@/ui";
 import { PROJECT_STATUSES, projectStatusMeta } from "./project-status";
 
 const NO_LEAD = "__none__";

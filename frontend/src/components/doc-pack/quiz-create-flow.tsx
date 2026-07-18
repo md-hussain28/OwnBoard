@@ -2,15 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { AudienceField } from "@/components/doc-pack/audience-field";
-import { QuizDomainsField } from "@/components/doc-pack/quiz-domains-field";
-import { useCreateDocPack } from "@/hooks/queries/doc-pack/doc-pack.mutations";
-import { notify } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Spinner } from "@/ui/spinner";
-import { Textarea } from "@/ui/textarea";
+import { useCreateDocPack } from "@/hooks/queries/doc-pack";
+import { cn, notify } from "@/lib";
+import { Button, Input, Spinner, Textarea } from "@/ui";
+import { AudienceField } from "./audience-field";
+import { QuizDomainsField } from "./quiz-domains-field";
 
 const STEPS = [
   { id: 1, label: "Details" },

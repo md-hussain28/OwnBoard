@@ -1,11 +1,10 @@
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
 import {
   type CreateQuizDomainInput,
   type QuizDomain,
   quizDomainListSchema,
   quizDomainSchema,
-} from "@/schemas/quiz-domain.schema";
+} from "@/schemas";
 
 export const quizDomainService = {
   async list(): Promise<QuizDomain[]> {

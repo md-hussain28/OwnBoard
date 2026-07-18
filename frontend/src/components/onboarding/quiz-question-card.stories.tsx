@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { QuizQuestionCard } from "@/components/onboarding/quiz-question-card";
+import { QuizQuestionCard } from "./quiz-question-card";
 
 const meta = {
   title: "Components/Onboarding/QuizQuestionCard",

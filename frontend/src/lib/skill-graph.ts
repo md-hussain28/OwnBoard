@@ -1,4 +1,4 @@
-import type { ExpertiseScore } from "@/schemas/skill-graph.schema";
+import type { ExpertiseScore } from "@/schemas";
 
 export type RiskLevel = "low" | "medium" | "high";
 

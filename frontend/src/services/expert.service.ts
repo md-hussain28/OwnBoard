@@ -1,7 +1,6 @@
 import { z } from "zod";
-import { getApiClient } from "@/lib/api/api-client";
-import { API_ENDPOINTS } from "@/lib/api/endpoint";
-import { type ExpertReferral, expertReferralSchema } from "@/schemas/expert.schema";
+import { API_ENDPOINTS, getApiClient } from "@/lib/api";
+import { type ExpertReferral, expertReferralSchema } from "@/schemas";
 
 const expertSchema = z.object({
   id: z.string(),

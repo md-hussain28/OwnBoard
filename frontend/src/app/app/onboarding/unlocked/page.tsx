@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { MemberOnlyGate } from "@/components/onboarding/member-only-gate";
-import { useOnboardingStore } from "@/stores/onboarding-store";
-import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { MemberOnlyGate } from "@/components/onboarding";
+import { useOnboardingStore } from "@/stores";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@/ui";
 
 export default function UnlockedPage() {
   const setStep = useOnboardingStore((s) => s.setStep);
@@ -16,7 +15,7 @@ export default function UnlockedPage() {
 
   return (
     <MemberOnlyGate>
-      <div className="max-w-2xl">
+      <div>
         <Card>
           <CardHeader>
             <CardTitle>Repo access unlocked</CardTitle>

@@ -89,7 +89,11 @@ class ArchaeologyService:
 
     async def _ask_llm(self, question: str, hits: list[dict], commits) -> _LLMAnswer | None:
         code_context = "\n\n".join(f"[FILE {h['file_path']}]\n{h['content'][:1500]}" for h in hits)
-        commit_context = "\n".join(f"[COMMIT {c.hash[:10]}] {c.message.splitlines()[0][:160]}" for c in commits)
+        # An empty commit message yields `[]` from splitlines() — guard the index so ingested repos
+        # with empty-message commits don't 500 the whole answer.
+        commit_context = "\n".join(
+            f"[COMMIT {c.hash[:10]}] {(c.message.splitlines() or [''])[0][:160]}" for c in commits
+        )
         messages = [
             {
                 "role": "system",

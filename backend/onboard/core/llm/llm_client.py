@@ -50,6 +50,9 @@ class LLMClient:
             stream=True,
         )
         async for chunk in stream:
+            # Some chunks (e.g. the final usage-only frame) carry an empty `choices` list.
+            if not chunk.choices:
+                continue
             yield chunk.choices[0].delta.content or ""
 
     async def parse(self, messages: list[dict[str, str]], response_model: type[TModel]) -> TModel | None:

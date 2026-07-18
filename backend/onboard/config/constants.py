@@ -29,6 +29,13 @@ INGEST_MAX_FILES = 20_000
 INGEST_MAX_CHUNKS = 20_000
 INGEST_MAX_CHUNK_CHARS = 12_000  # per code chunk; longer content is truncated before embedding
 
+# Skill-graph expertise scoring (PRD §6.2): commit weight decays with a 180-day half-life so recent
+# work counts more, and is penalised when a contributor's changes were shortly reverted.
+EXPERTISE_HALF_LIFE_DAYS = 180.0
+EXPERTISE_REVERT_PENALTY = 0.15  # score multiplier lost per associated revert, floored at 0.2
+
+# Archaeology Q&A escalates to a human below this answer confidence (PRD §6.4/§7 — never guess).
+ARCHAEOLOGY_CONFIDENCE_THRESHOLD = 0.55
 
 APP_TITLE = "OwnBoard API"
 APP_DESCRIPTION = "Backend for OwnBoard - onboarding quizzes, repo readiness gating, skill-graph bus-factor detection"

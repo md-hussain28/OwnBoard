@@ -4,7 +4,7 @@ from typing import Any
 from sqlalchemy import delete, select
 
 from onboard.dao.base_dao import BaseDAO
-from onboard.dao.models.doc_pack import DocChunk
+from onboard.dao.models.doc_pack import DocChunk, DocPack
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,5 +98,33 @@ class DocChunkDAO(BaseDAO[DocChunk]):
         )
         if document_id is not None:
             stmt = stmt.where(DocChunk.document_id == document_id)
+        result = await self.session.execute(stmt)
+        return [(row[0], float(row[1])) for row in result.all()]
+
+    async def similarity_search_for_project(
+        self,
+        org_id: str,
+        project_id: str,
+        query_embedding: list[float],
+        *,
+        top_k: int = 6,
+    ) -> list[tuple[DocChunk, float]]:
+        """Cosine-distance nearest neighbors across every doc pack belonging to a project.
+
+        Joins `DocPack` and filters on `DocPack.project_id` (project-specific tracks) so a single
+        query spans all of a project's uploaded docs, always org-scoped.
+        """
+        distance = DocChunk.embedding.cosine_distance(query_embedding)
+        stmt = (
+            select(DocChunk, distance.label("distance"))
+            .join(DocPack, DocChunk.doc_pack_id == DocPack.id)
+            .where(
+                DocChunk.org_id == org_id,
+                DocPack.project_id == project_id,
+                DocChunk.embedding.is_not(None),
+            )
+            .order_by(distance)
+            .limit(top_k)
+        )
         result = await self.session.execute(stmt)
         return [(row[0], float(row[1])) for row in result.all()]

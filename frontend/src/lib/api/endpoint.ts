@@ -69,4 +69,8 @@ export const API_ENDPOINTS = {
   experts: "/experts",
   dashboardBusFactor: (repoId: string) => `/dashboard/bus-factor?repoId=${repoId}`,
   dashboardQuizAnalytics: (repoId: string) => `/dashboard/quiz-analytics?repoId=${repoId}`,
+
+  // GitHub knowledge base — ingest key management (repo-scoped).
+  ingestKeys: (repoId: string) => `/repos/${repoId}/ingest-keys`,
+  ingestKey: (repoId: string, keyId: string) => `/repos/${repoId}/ingest-keys/${keyId}`,
 } as const;

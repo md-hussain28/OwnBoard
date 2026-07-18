@@ -20,7 +20,7 @@ function ModuleCard({ projectId, module }: { projectId: string; module: ProjectM
       { moduleId: module.id, status: completed ? "in_progress" : "completed" },
       {
         onSuccess: () =>
-          notify.success(completed ? "Marked in progress" : "Module completed", {
+          notify.success(completed ? "Marked in progress" : "Doc completed", {
             description: module.name,
           }),
         onError: (err) => notify.apiError(err, "Could not update progress"),
@@ -114,9 +114,7 @@ export function MemberModulesList({
 }) {
   if (modules.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No modules assigned to you on this project yet.
-      </p>
+      <p className="text-sm text-muted-foreground">No docs assigned to you on this project yet.</p>
     );
   }
   return (

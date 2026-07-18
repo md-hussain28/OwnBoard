@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon, CrownIcon, GitBranchIcon, Trash2Icon } from "lucide-react";
-import Link from "next/link";
+import { CalendarIcon, CrownIcon, GitBranchIcon, Trash2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useDeleteProject } from "@/hooks/queries/project/project.mutations";
@@ -28,7 +27,17 @@ import { EditProjectDialog } from "./edit-project-dialog";
 import { ProjectContextTab } from "./project-context-tab";
 import { ProjectMemberPanel } from "./project-member-panel";
 import { ProjectModulesTab } from "./project-modules-tab";
+import { ProjectOverviewTab } from "./project-overview-tab";
+import { ProjectStatusBadge } from "./project-status";
 import { ProjectTracksTab } from "./project-tracks-tab";
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
 
 function DeleteProjectButton({ projectId, name }: { projectId: string; name: string }) {
   const [open, setOpen] = useState(false);
@@ -45,8 +54,8 @@ function DeleteProjectButton({ projectId, name }: { projectId: string; name: str
         <DialogHeader>
           <DialogTitle>Delete project?</DialogTitle>
           <DialogDescription>
-            This permanently deletes <span className="font-medium">{name}</span>, its
-            project-specific modules, and all memberships. This cannot be undone.
+            This permanently deletes <span className="font-medium">{name}</span>, its onboarding,
+            docs, and all memberships. This cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -88,46 +97,48 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
   }
 
   if (isError || !project) {
-    return (
-      <div className="space-y-3">
-        <BackLink />
-        <p className="text-sm text-muted-foreground">Could not load this project.</p>
-      </div>
-    );
+    return <p className="text-sm text-muted-foreground">Could not load this project.</p>;
   }
 
   return (
     <div className="space-y-6">
-      <BackLink />
       <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
-            {project.status === "archived" && <Badge variant="secondary">Archived</Badge>}
+            <ProjectStatusBadge status={project.status} />
+            {project.isArchived && <Badge variant="outline">Archived</Badge>}
             {project.myIsLead && !project.isAdmin && (
               <Badge variant="default">
                 <CrownIcon className="size-3" /> You lead this
               </Badge>
             )}
           </div>
-          {project.description && <p className="text-muted-foreground">{project.description}</p>}
-          {project.repoName && (
-            <p className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-              <GitBranchIcon className="size-3.5" />
-              {project.repoUrl ? (
-                <a
-                  href={project.repoUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hover:text-foreground"
-                >
-                  {project.repoName}
-                </a>
-              ) : (
-                project.repoName
-              )}
-            </p>
+          {project.description && (
+            <p className="max-w-2xl text-muted-foreground">{project.description}</p>
           )}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarIcon className="size-3.5" /> Created {formatDate(project.createdAt)}
+            </span>
+            {project.repoName && (
+              <span className="inline-flex items-center gap-1.5">
+                <GitBranchIcon className="size-3.5" />
+                {project.repoUrl ? (
+                  <a
+                    href={project.repoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-foreground"
+                  >
+                    {project.repoName}
+                  </a>
+                ) : (
+                  project.repoName
+                )}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <EditProjectDialog project={project} />
@@ -136,13 +147,17 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
         </div>
       </div>
 
-      <Tabs defaultValue="members">
+      <Tabs defaultValue="overview">
         <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="members">Members ({project.memberCount})</TabsTrigger>
-          <TabsTrigger value="modules">Modules ({project.moduleCount})</TabsTrigger>
           <TabsTrigger value="tracks">Onboarding ({project.trackCount})</TabsTrigger>
+          <TabsTrigger value="modules">Docs ({project.moduleCount})</TabsTrigger>
           <TabsTrigger value="context">Context</TabsTrigger>
         </TabsList>
+        <TabsContent value="overview">
+          <ProjectOverviewTab project={project} />
+        </TabsContent>
         <TabsContent value="members">
           <Card>
             <CardHeader className="flex-row items-center justify-between space-y-0">
@@ -169,16 +184,5 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
         </TabsContent>
       </Tabs>
     </div>
-  );
-}
-
-function BackLink() {
-  return (
-    <Link
-      href={appPath("projects")}
-      className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <ArrowLeftIcon className="size-4" /> All projects
-    </Link>
   );
 }

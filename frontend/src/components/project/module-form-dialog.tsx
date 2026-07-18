@@ -96,9 +96,9 @@ export function ModuleFormDialog({
     const onDone = {
       onSuccess: () => {
         setOpen(false);
-        notify.success(isEdit ? "Module updated" : "Module created", { description: name.trim() });
+        notify.success(isEdit ? "Doc updated" : "Doc created", { description: name.trim() });
       },
-      onError: (err: unknown) => notify.apiError(err, "Could not save module"),
+      onError: (err: unknown) => notify.apiError(err, "Could not save doc"),
     };
     if (isEdit) update.mutate({ moduleId: module.id, input }, onDone);
     else create.mutate(input, onDone);
@@ -110,10 +110,10 @@ export function ModuleFormDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit module" : "New module"}</DialogTitle>
+            <DialogTitle>{isEdit ? "Edit doc" : "New doc"}</DialogTitle>
             <DialogDescription>
-              A module is dev-facing context. It auto-assigns to members whose function matches the
-              types below — leave types empty to reach everyone on the project.
+              A doc is dev-facing project context. It auto-assigns to members whose function matches
+              the types below — leave types empty to reach everyone on the project.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -156,7 +156,7 @@ export function ModuleFormDialog({
               <span className="text-sm font-medium">Function types</span>
               {functionTypes.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  No function types yet — add some to target this module by role.
+                  No function types yet — add some to target this doc by role.
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -246,7 +246,7 @@ export function ModuleFormDialog({
           <DialogFooter>
             <Button type="submit" disabled={pending || !name.trim()}>
               {pending && <Spinner />}
-              {isEdit ? "Save changes" : "Create module"}
+              {isEdit ? "Save changes" : "Create doc"}
             </Button>
           </DialogFooter>
         </form>

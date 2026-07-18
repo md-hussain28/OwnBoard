@@ -20,13 +20,14 @@ import { Input } from "@/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Spinner } from "@/ui/spinner";
 import { Textarea } from "@/ui/textarea";
+import { PROJECT_STATUSES } from "./project-status";
 
 const NO_REPO = "__none__";
 
 /** Build a patch of only the fields that changed. repoId: null clears the link; omitted = unchanged. */
 function buildChanges(
   project: ProjectDetail,
-  form: { name: string; description: string; repoId: string; status: string },
+  form: { name: string; description: string; repoId: string; status: string; isArchived: boolean },
 ): UpdateProjectInput {
   const input: UpdateProjectInput = {};
   if (form.name.trim() !== project.name) input.name = form.name.trim();
@@ -35,6 +36,7 @@ function buildChanges(
   const nextRepoId = form.repoId === NO_REPO ? null : form.repoId;
   if (nextRepoId !== (project.repoId ?? null)) input.repoId = nextRepoId;
   if (form.status !== project.status) input.status = form.status;
+  if (form.isArchived !== project.isArchived) input.isArchived = form.isArchived;
   return input;
 }
 
@@ -44,6 +46,7 @@ export function EditProjectDialog({ project }: { project: ProjectDetail }) {
   const [description, setDescription] = useState(project.description ?? "");
   const [repoId, setRepoId] = useState<string>(project.repoId ?? NO_REPO);
   const [status, setStatus] = useState<string>(project.status);
+  const [isArchived, setIsArchived] = useState<boolean>(project.isArchived);
   const update = useUpdateProject(project.id);
   const { data: repos } = useRepos();
 
@@ -54,6 +57,7 @@ export function EditProjectDialog({ project }: { project: ProjectDetail }) {
       setDescription(project.description ?? "");
       setRepoId(project.repoId ?? NO_REPO);
       setStatus(project.status);
+      setIsArchived(project.isArchived);
     }
     setOpen(next);
   }
@@ -61,7 +65,7 @@ export function EditProjectDialog({ project }: { project: ProjectDetail }) {
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!name.trim()) return;
-    const input = buildChanges(project, { name, description, repoId, status });
+    const input = buildChanges(project, { name, description, repoId, status, isArchived });
     if (Object.keys(input).length === 0) {
       setOpen(false);
       return;
@@ -142,14 +146,32 @@ export function EditProjectDialog({ project }: { project: ProjectDetail }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="archived">Archived</SelectItem>
+                  {PROJECT_STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Archived projects are hidden from the default projects list.
-              </p>
             </div>
+            <label
+              htmlFor="edit-project-archived"
+              className="flex cursor-pointer items-start justify-between gap-4 rounded-lg border border-border p-3"
+            >
+              <span className="space-y-0.5">
+                <span className="block text-sm font-medium">Archived</span>
+                <span className="block text-xs text-muted-foreground">
+                  Hides the project from the default list. Its status is kept.
+                </span>
+              </span>
+              <input
+                id="edit-project-archived"
+                type="checkbox"
+                checked={isArchived}
+                onChange={(e) => setIsArchived(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-primary"
+              />
+            </label>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={update.isPending || !name.trim()}>

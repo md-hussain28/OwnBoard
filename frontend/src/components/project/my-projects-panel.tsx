@@ -6,6 +6,7 @@ import { QueryState } from "@/components/shared/query-state";
 import { useMyProjects } from "@/hooks/queries/project/project.queries";
 import { appPath } from "@/lib/routes";
 import { Card, CardContent } from "@/ui/card";
+import { ProjectStatusBadge } from "./project-status";
 import { ReadinessBadge, ReadinessBar } from "./readiness";
 
 export function MyProjectsPanel() {
@@ -16,7 +17,8 @@ export function MyProjectsPanel() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">My projects</h1>
         <p className="text-muted-foreground">
-          Projects you&apos;ve been added to. Pass a project&apos;s onboarding modules to unlock it.
+          Projects you&apos;ve been added to. Complete a project&apos;s onboarding to unlock full
+          access.
         </p>
       </div>
 
@@ -44,14 +46,15 @@ export function MyProjectsPanel() {
               <Card className="h-full transition-shadow duration-200 group-hover:shadow-soft">
                 <CardContent className="space-y-4 py-5">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
                       {project.readiness.locked && (
-                        <LockIcon className="size-4 text-muted-foreground" />
+                        <LockIcon className="size-4 shrink-0 text-muted-foreground" />
                       )}
-                      <p className="font-semibold leading-tight">{project.name}</p>
+                      <p className="truncate font-semibold leading-tight">{project.name}</p>
                     </div>
                     <ReadinessBadge readiness={project.readiness} />
                   </div>
+                  <ProjectStatusBadge status={project.status} />
                   {project.description && (
                     <p className="line-clamp-2 text-sm text-muted-foreground">
                       {project.description}

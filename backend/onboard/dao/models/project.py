@@ -16,8 +16,14 @@ if TYPE_CHECKING:
 
 
 class ProjectStatus(str, enum.Enum):
+    """Where a project sits in its lifecycle. Orthogonal to `is_archived`, which only controls
+    whether the project is hidden from the default list — a completed project can still be archived."""
+
+    not_started = "not_started"
     active = "active"
-    archived = "archived"
+    paused = "paused"
+    completed = "completed"
+    abandoned = "abandoned"
 
 
 class Project(AuditBase):
@@ -40,6 +46,9 @@ class Project(AuditBase):
         nullable=False,
         default=ProjectStatus.active,
     )
+    # Hide-from-default-list toggle, independent of lifecycle status. Any project (including a
+    # completed one) can be archived without losing its lifecycle stage.
+    is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     # Legacy single "primary" repo link. Repos are now managed as a list via `ProjectRepo`; this column is
     # kept as the primary pointer (mirrored into ProjectRepo.is_primary) so existing skill-graph hooks work.
     repo_id: Mapped[str | None] = mapped_column(

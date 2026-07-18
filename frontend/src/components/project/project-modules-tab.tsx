@@ -29,13 +29,13 @@ export function ProjectModulesTab({ project }: { project: ProjectDetail }) {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">Modules</CardTitle>
+          <CardTitle className="text-base">Docs</CardTitle>
           <ModuleFormDialog
             projectId={project.id}
             functionTypes={project.functionTypes}
             trigger={
               <Button size="sm">
-                <PlusIcon className="size-4" /> New module
+                <PlusIcon className="size-4" /> New doc
               </Button>
             }
           />
@@ -43,7 +43,7 @@ export function ProjectModulesTab({ project }: { project: ProjectDetail }) {
         <CardContent>
           {project.modules.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No modules yet. Modules are dev-facing context that auto-assigns by function.
+              No docs yet. Docs are dev-facing project context that auto-assigns by function.
             </p>
           ) : (
             <ul className="divide-y divide-border">
@@ -110,8 +110,8 @@ function DeleteModuleButton({
       disabled={remove.isPending}
       onClick={() =>
         remove.mutate(moduleId, {
-          onSuccess: () => notify.success("Module deleted", { description: name }),
-          onError: (err) => notify.apiError(err, "Could not delete module"),
+          onSuccess: () => notify.success("Doc deleted", { description: name }),
+          onError: (err) => notify.apiError(err, "Could not delete doc"),
         })
       }
     >
@@ -143,8 +143,8 @@ function FunctionTypesCard({ project }: { project: ProjectDetail }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Per-project roles (e.g. Frontend, Backend). Tag modules with these and assign each member
-          a function — matching modules auto-assign.
+          Per-project roles (e.g. Frontend, Backend). Tag docs with these and assign each member a
+          function — matching docs auto-assign.
         </p>
         <div className="flex flex-wrap gap-2">
           {project.functionTypes.length === 0 && (

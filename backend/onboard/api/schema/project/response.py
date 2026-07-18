@@ -48,7 +48,8 @@ class ProjectResponse(BaseModel):
     org_id: str
     name: str
     description: str | None
-    status: str
+    status: str  # lifecycle: not_started | active | paused | completed | abandoned
+    is_archived: bool = False  # hidden from the default list, independent of lifecycle status
     repo_id: str | None  # primary repo (legacy pointer)
     repo_name: str | None
     repos: list[ProjectRepoResponse] = []

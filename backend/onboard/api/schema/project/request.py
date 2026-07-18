@@ -14,6 +14,8 @@ class GlossaryTermInput(BaseModel):
 class ProjectCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     description: str | None = None
+    # Lifecycle stage: not_started | active | paused | completed | abandoned. Defaults to active.
+    status: str | None = None
     # Optional link to a connected repo (id) so the member panel can frame go-to people for that codebase.
     repo_id: str | None = None
     tech_stack: list[str] | None = None
@@ -26,8 +28,10 @@ class ProjectUpdateRequest(BaseModel):
     description: str | None = None
     # Pass null to clear the repo link; omit to leave unchanged (router checks "repo_id" in payload).
     repo_id: str | None = None
-    # "active" | "archived".
+    # Lifecycle stage: not_started | active | paused | completed | abandoned.
     status: str | None = None
+    # Hide/unhide from the default project list (independent of lifecycle status).
+    is_archived: bool | None = None
     tech_stack: list[str] | None = None
     resource_links: list[ResourceLinkInput] | None = None
     glossary: list[GlossaryTermInput] | None = None

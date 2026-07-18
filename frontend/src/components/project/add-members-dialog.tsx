@@ -79,8 +79,8 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
         <DialogHeader>
           <DialogTitle>Add members</DialogTitle>
           <DialogDescription>
-            Added members are auto-assigned this project&apos;s onboarding modules and must pass
-            them to unlock the project.
+            Added members are auto-assigned this project&apos;s onboarding and must complete it to
+            unlock the project.
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-72 space-y-1 overflow-y-auto py-2">

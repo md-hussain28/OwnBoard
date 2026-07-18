@@ -47,6 +47,7 @@ export const projectService = {
     const { data } = await getApiClient().post(API_ENDPOINTS.projects, {
       name: input.name,
       description: input.description ?? null,
+      status: input.status,
       repo_id: input.repoId ?? null,
       tech_stack: input.techStack,
       resource_links: input.resourceLinks,
@@ -61,6 +62,7 @@ export const projectService = {
     if (input.description !== undefined) body.description = input.description;
     if (input.repoId !== undefined) body.repo_id = input.repoId;
     if (input.status !== undefined) body.status = input.status;
+    if (input.isArchived !== undefined) body.is_archived = input.isArchived;
     if (input.techStack !== undefined) body.tech_stack = input.techStack;
     if (input.resourceLinks !== undefined) body.resource_links = input.resourceLinks;
     if (input.glossary !== undefined) body.glossary = input.glossary;

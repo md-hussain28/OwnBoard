@@ -93,6 +93,7 @@ const projectBase = {
   name: z.string(),
   description: z.string().nullable(),
   status: z.string(),
+  is_archived: z.boolean().default(false),
   repo_id: z.string().nullable(),
   repo_name: z.string().nullable(),
   repos: z.array(projectRepoSchema).default([]),
@@ -113,6 +114,7 @@ type ProjectBaseInput = {
   name: string;
   description: string | null;
   status: string;
+  is_archived: boolean;
   repo_id: string | null;
   repo_name: string | null;
   repos: ProjectRepo[];
@@ -134,6 +136,7 @@ function toProject(p: ProjectBaseInput) {
     name: p.name,
     description: p.description,
     status: p.status,
+    isArchived: p.is_archived,
     repoId: p.repo_id,
     repoName: p.repo_name,
     repos: p.repos,
@@ -249,6 +252,7 @@ export type ProjectDetail = z.infer<typeof projectDetailSchema>;
 export type CreateProjectInput = {
   name: string;
   description?: string | null;
+  status?: string;
   repoId?: string | null;
   techStack?: string[];
   resourceLinks?: ResourceLink[];
@@ -260,6 +264,7 @@ export type UpdateProjectInput = {
   description?: string | null;
   repoId?: string | null;
   status?: string;
+  isArchived?: boolean;
   techStack?: string[];
   resourceLinks?: ResourceLink[];
   glossary?: GlossaryTerm[];

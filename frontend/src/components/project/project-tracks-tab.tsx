@@ -180,7 +180,7 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Onboarding modules that gate entry to this project.
+          Onboarding steps that gate entry to this project. Members must complete every step.
         </p>
         <CreateTrackDialog projectId={projectId} />
       </div>

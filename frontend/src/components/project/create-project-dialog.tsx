@@ -18,6 +18,7 @@ import { Input } from "@/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Spinner } from "@/ui/spinner";
 import { Textarea } from "@/ui/textarea";
+import { PROJECT_STATUSES } from "./project-status";
 
 const NO_REPO = "__none__";
 
@@ -25,6 +26,7 @@ export function CreateProjectDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [status, setStatus] = useState("active");
   const [repoId, setRepoId] = useState<string>(NO_REPO);
   const create = useCreateProject();
   const { data: repos } = useRepos();
@@ -32,6 +34,7 @@ export function CreateProjectDialog() {
   function reset() {
     setName("");
     setDescription("");
+    setStatus("active");
     setRepoId(NO_REPO);
   }
 
@@ -42,6 +45,7 @@ export function CreateProjectDialog() {
       {
         name: name.trim(),
         description: description.trim() || null,
+        status,
         repoId: repoId === NO_REPO ? null : repoId,
       },
       {
@@ -65,8 +69,8 @@ export function CreateProjectDialog() {
           <DialogHeader>
             <DialogTitle>New project</DialogTitle>
             <DialogDescription>
-              A project bundles its own onboarding modules. Members must pass every module before
-              the project unlocks for them.
+              A project bundles its own onboarding. Members must complete the project&apos;s
+              onboarding before it unlocks for them.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -92,6 +96,23 @@ export function CreateProjectDialog() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium" htmlFor="project-status">
+                Status
+              </label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger id="project-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROJECT_STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium" htmlFor="project-repo">

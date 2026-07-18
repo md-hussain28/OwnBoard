@@ -131,6 +131,7 @@ class ProjectServiceBase:
             name=project.name,
             description=project.description,
             status=project.status.value,
+            is_archived=project.is_archived,
             repo_id=project.repo_id,
             repo_name=project.repo.name if project.repo else None,
             repos=self._repos(project),

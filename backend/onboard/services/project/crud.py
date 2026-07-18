@@ -7,6 +7,13 @@ from onboard.dao.models.project import ProjectStatus
 from onboard.services.project.base import ProjectServiceBase
 
 
+def _parse_status(status: str) -> ProjectStatus:
+    try:
+        return ProjectStatus(status)
+    except ValueError as exc:
+        raise ValidationError(f"Invalid project status: {status}") from exc
+
+
 class ProjectCrudMixin(ProjectServiceBase):
     async def create_project(
         self,
@@ -16,6 +23,7 @@ class ProjectCrudMixin(ProjectServiceBase):
         repo_id: str | None,
         created_by: str | None,
         *,
+        status: str | None = None,
         tech_stack: list[str] | None = None,
         resource_links: list | None = None,
         glossary: list | None = None,
@@ -28,6 +36,7 @@ class ProjectCrudMixin(ProjectServiceBase):
             org_id=org_id,
             name=cleaned,
             description=description,
+            status=_parse_status(status) if status is not None else ProjectStatus.active,
             repo_id=repo_id,
             created_by=created_by,
             tech_stack=tech_stack or [],
@@ -56,6 +65,7 @@ class ProjectCrudMixin(ProjectServiceBase):
         repo_id: str | None = None,
         clear_repo: bool = False,
         status: str | None = None,
+        is_archived: bool | None = None,
         tech_stack: list[str] | None = None,
         resource_links: list | None = None,
         glossary: list | None = None,
@@ -76,10 +86,9 @@ class ProjectCrudMixin(ProjectServiceBase):
             await self._validate_repo(org_id, repo_id)
             fields["repo_id"] = repo_id
         if status is not None:
-            try:
-                fields["status"] = ProjectStatus(status)
-            except ValueError as exc:
-                raise ValidationError(f"Invalid project status: {status}") from exc
+            fields["status"] = _parse_status(status)
+        if is_archived is not None:
+            fields["is_archived"] = is_archived
         if tech_stack is not None:
             fields["tech_stack"] = tech_stack
         if resource_links is not None:

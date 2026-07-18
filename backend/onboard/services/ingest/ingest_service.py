@@ -18,7 +18,7 @@ from onboard.config.constants import (
     EXPERTISE_REVERT_PENALTY,
     INGEST_MAX_CHUNK_CHARS,
 )
-from onboard.core.common.exceptions import NotFoundError
+from onboard.core.common.exceptions import NotFoundError, ValidationError
 from onboard.core.common.ingest_token import generate_ingest_token
 from onboard.dao.code_chunk_dao import CodeChunkDAO
 from onboard.dao.commit_record_dao import CommitRecordDAO
@@ -79,8 +79,14 @@ class IngestService:
         return repo
 
     async def create_key(self, org_id: str, repo_id: str) -> tuple[IngestKey, str]:
-        """Mint a new ingest key for a repo. Returns (row, plaintext) — plaintext shown once."""
+        """Mint a new ingest key for a repo. Returns (row, plaintext) — plaintext shown once.
+
+        One active key per repo: if a non-revoked key already exists, the caller must revoke it before
+        minting another (rotation stays explicit; keys never pile up).
+        """
         await self._require_repo(org_id, repo_id)
+        if await self.ingest_key_dao.has_active_for_repo(org_id, repo_id):
+            raise ValidationError("This repo already has an active ingest key. Revoke it before generating a new one.")
         raw, key_hash, prefix = generate_ingest_token()
         key = await self.ingest_key_dao.create(org_id=org_id, repo_id=repo_id, key_hash=key_hash, key_prefix=prefix)
         return key, raw

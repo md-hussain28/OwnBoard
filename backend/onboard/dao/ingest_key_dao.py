@@ -16,6 +16,19 @@ class IngestKeyDAO(BaseDAO[IngestKey]):
         )
         return result.scalar_one_or_none()
 
+    async def has_active_for_repo(self, org_id: str, repo_id: str) -> bool:
+        """Whether the repo already has a non-revoked key — enforces the one-active-key rule cheaply."""
+        result = await self.session.execute(
+            select(IngestKey.id)
+            .where(
+                IngestKey.org_id == org_id,
+                IngestKey.repo_id == repo_id,
+                IngestKey.revoked_at.is_(None),
+            )
+            .limit(1)
+        )
+        return result.scalar_one_or_none() is not None
+
     async def list_for_repo(self, org_id: str, repo_id: str) -> list[IngestKey]:
         result = await self.session.execute(
             select(IngestKey)

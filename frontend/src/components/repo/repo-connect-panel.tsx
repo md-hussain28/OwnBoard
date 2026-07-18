@@ -22,7 +22,7 @@ import { Spinner } from "@/ui/spinner";
 const INGEST_URL =
   process.env.NEXT_PUBLIC_OWNBOARD_INGEST_URL ?? "http://localhost:8000/api/v1/ingest";
 // Where the composite action lives — update to wherever this repo is hosted.
-const ACTION_REF = "your-org/Onboard-Hackathon/.github/actions/ownboard-extract@main";
+const ACTION_REF = "md-hussain28/OwnBoard/.github/actions/ownboard-extract@main";
 
 function workflowYaml(): string {
   return [
@@ -121,10 +121,20 @@ export function RepoConnectPanel({ repo }: { repo: Repo }) {
             Add it to your repo as a secret named <code className="font-mono">OWNBOARD_KEY</code>{" "}
             (Settings → Secrets and variables → Actions).
           </p>
-          <Button size="sm" variant="outline" onClick={generate} disabled={createKey.isPending}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={generate}
+            disabled={createKey.isPending || activeKeys.length > 0}
+          >
             {createKey.isPending ? <Spinner /> : <KeyRoundIcon />}
             Generate ingest key
           </Button>
+          {activeKeys.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              This repo already has an active key. Revoke it below before generating a new one.
+            </p>
+          )}
           {freshToken && (
             <CodeSnippet label="Copy now — shown only once" code={freshToken} className="pt-1" />
           )}

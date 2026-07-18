@@ -75,7 +75,7 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
           setNewRole("");
           setLocalRoles([]);
           notify.success("Members added", {
-            description: "Onboarding steps and role-matched docs were assigned.",
+            description: "Modules and role-matched docs were assigned.",
           });
         },
         onError: (err) => notify.apiError(err, "Could not add members"),
@@ -108,8 +108,8 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
         <DialogHeader>
           <DialogTitle>Add members</DialogTitle>
           <DialogDescription>
-            Added members are auto-assigned this project&apos;s onboarding and must complete it to
-            unlock the project. Every member also needs a role for targeted docs.
+            Added members are auto-assigned this project&apos;s modules (those set to
+            &ldquo;everyone&rdquo;) and role-matched docs. Every member needs a role.
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-72 space-y-1 overflow-y-auto py-2">

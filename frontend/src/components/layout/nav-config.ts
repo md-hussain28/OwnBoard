@@ -5,11 +5,8 @@ import {
   FolderKanbanIcon,
   GitBranchIcon,
   HomeIcon,
-  InfoIcon,
   LayoutDashboardIcon,
-  LifeBuoyIcon,
   ListChecksIcon,
-  NetworkIcon,
   ScrollTextIcon,
   SparklesIcon,
   UsersIcon,
@@ -129,13 +126,11 @@ export type ProjectSection = {
 
 export const PROJECT_SECTIONS: ProjectSection[] = [
   { key: "", label: "Overview", icon: LayoutDashboardIcon },
-  { key: "onboarding", label: "Modules", icon: ListChecksIcon },
+  // Members leads the working sub-nav — it's the primary surface for admins & leads.
   { key: "members", label: "Members", icon: UsersIcon, access: "manage" },
+  { key: "onboarding", label: "Modules", icon: ListChecksIcon },
   { key: "docs", label: "Docs", icon: ScrollTextIcon },
-  { key: "context", label: "Context", icon: InfoIcon },
-  { key: "repositories", label: "Repositories", icon: GitBranchIcon, access: "manage" },
-  { key: "skill-graph", label: "Skill graph", icon: NetworkIcon, access: "manage" },
-  { key: "experts", label: "Who to ask", icon: LifeBuoyIcon },
+  { key: "repositories", label: "Repos", icon: GitBranchIcon, access: "manage" },
   { key: "ask", label: "Ask project", icon: SparklesIcon },
 ];
 

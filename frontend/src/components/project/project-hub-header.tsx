@@ -143,8 +143,8 @@ export function ProjectHubHeader({ project }: { project: ProjectDetail }) {
         >
           <p className="mb-2 text-sm font-medium">
             {readiness.locked
-              ? "Finish your onboarding to unlock full access to this project"
-              : "You're onboarded — you have full access to this project"}
+              ? "You have modules to work through on this project"
+              : "You're all caught up on this project's modules"}
           </p>
           <ReadinessBar readiness={readiness} />
         </div>

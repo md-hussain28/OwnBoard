@@ -1,12 +1,16 @@
-import { CheckCircle2Icon, LoaderIcon, LockIcon } from "lucide-react";
+import { CheckCircle2Icon, CircleDashedIcon, LoaderIcon } from "lucide-react";
 import type { ProjectReadiness } from "@/schemas/project.schema";
 import { Badge } from "@/ui/badge";
 import { Progress } from "@/ui/progress";
 
-/** One label for a member's standing on a project. */
+/**
+ * A member's module-completion standing on a project. Progress only — access is never gated:
+ * "ready" = all done, "in-progress" = some done, "locked" = assigned but none done yet ("Not started"),
+ * "open" = no modules assigned.
+ */
 export function readinessLabel(r: ProjectReadiness): "ready" | "in-progress" | "locked" | "open" {
   if (r.totalTracks === 0) return "open";
-  if (!r.locked) return "ready";
+  if (r.passedTracks >= r.totalTracks) return "ready";
   return r.passedTracks > 0 ? "in-progress" : "locked";
 }
 
@@ -15,12 +19,12 @@ export function ReadinessBadge({ readiness }: { readiness: ProjectReadiness }) {
   if (label === "ready") {
     return (
       <Badge variant="success">
-        <CheckCircle2Icon className="size-3" /> Ready
+        <CheckCircle2Icon className="size-3" /> Done
       </Badge>
     );
   }
   if (label === "open") {
-    return <Badge variant="outline">Open</Badge>;
+    return <Badge variant="outline">No modules</Badge>;
   }
   if (label === "in-progress") {
     return (
@@ -31,7 +35,7 @@ export function ReadinessBadge({ readiness }: { readiness: ProjectReadiness }) {
   }
   return (
     <Badge variant="secondary">
-      <LockIcon className="size-3" /> Locked
+      <CircleDashedIcon className="size-3" /> Not started
     </Badge>
   );
 }
@@ -42,9 +46,7 @@ export function ReadinessBar({ readiness }: { readiness: ProjectReadiness }) {
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          {totalTracks === 0
-            ? "No onboarding steps yet"
-            : `${passedTracks} of ${totalTracks} steps done`}
+          {totalTracks === 0 ? "No modules yet" : `${passedTracks} of ${totalTracks} modules done`}
         </span>
         <span>{progressPct}%</span>
       </div>

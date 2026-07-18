@@ -70,7 +70,7 @@ export function ProjectOverviewTab({ project }: { project: ProjectDetail }) {
           <Stat
             icon={<GraduationCapIcon className="size-4" />}
             value={project.tracks.length}
-            label="Onboarding steps"
+            label="Modules"
           />
           <Stat
             icon={<BookTextIcon className="size-4" />}
@@ -82,9 +82,9 @@ export function ProjectOverviewTab({ project }: { project: ProjectDetail }) {
 
         <div className="mt-5 space-y-1.5 border-t border-border pt-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-medium">Team onboarding</span>
+            <span className="font-medium">Team module progress</span>
             <span className="text-muted-foreground">
-              {onboarded.length} of {roster.length} onboarded
+              {onboarded.length} of {roster.length} caught up
             </span>
           </div>
           <Progress value={teamPct} />
@@ -104,10 +104,10 @@ export function ProjectOverviewTab({ project }: { project: ProjectDetail }) {
       >
         <div className="grid gap-4 md:grid-cols-2">
           <section className="rounded-xl border border-border p-4">
-            <h3 className="text-sm font-semibold">Still onboarding</h3>
+            <h3 className="text-sm font-semibold">Working through modules</h3>
             {pending.length === 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">
-                Everyone on the team is fully onboarded. 🎉
+                Everyone is caught up on their modules. 🎉
               </p>
             ) : (
               <ul className="mt-1 divide-y divide-border">

@@ -10,19 +10,26 @@ import {
   myProjectListSchema,
   type Project,
   type ProjectDetail,
+  type ProjectDocs,
+  type ProjectDocType,
   type ProjectFunctionType,
   type ProjectMember,
+  type ProjectMemberSkills,
   type ProjectModule,
   type ProjectTrack,
   projectDetailSchema,
+  projectDocsSchema,
+  projectDocTypeSchema,
   projectFunctionTypeListSchema,
   projectFunctionTypeSchema,
   projectListSchema,
   projectMemberListSchema,
+  projectMemberSkillsListSchema,
   projectModuleListSchema,
   projectModuleSchema,
   projectSchema,
   projectTrackListSchema,
+  projectTrackSchema,
   type UpdateProjectInput,
   type UpdateProjectMemberInput,
 } from "@/schemas/project.schema";
@@ -49,6 +56,7 @@ export const projectService = {
       description: input.description ?? null,
       status: input.status,
       repo_id: input.repoId ?? null,
+      lead_employee_id: input.leadEmployeeId ?? null,
       tech_stack: input.techStack,
       resource_links: input.resourceLinks,
       glossary: input.glossary,
@@ -88,6 +96,14 @@ export const projectService = {
 
   async removeRepo(id: string, repoId: string): Promise<Project> {
     const { data } = await getApiClient().delete(API_ENDPOINTS.projectRepo(id, repoId));
+    return projectSchema.parse(data);
+  },
+
+  /** Set exactly which project members are assigned to work on a linked repo. */
+  async setRepoMembers(id: string, repoId: string, employeeIds: string[]): Promise<Project> {
+    const { data } = await getApiClient().put(API_ENDPOINTS.projectRepoMembers(id, repoId), {
+      employee_ids: employeeIds,
+    });
     return projectSchema.parse(data);
   },
 
@@ -132,6 +148,48 @@ export const projectService = {
     return projectMemberListSchema.parse(data);
   },
 
+  async listMemberSkills(id: string): Promise<ProjectMemberSkills[]> {
+    const { data } = await getApiClient().get(API_ENDPOINTS.projectSkills(id));
+    return projectMemberSkillsListSchema.parse(data);
+  },
+
+  // ---- docs (knowledge base) ----------------------------------------------
+
+  async getDocs(id: string): Promise<ProjectDocs> {
+    const { data } = await getApiClient().get(API_ENDPOINTS.projectDocs(id));
+    return projectDocsSchema.parse(data);
+  },
+
+  async uploadDocs(id: string, files: File[]): Promise<ProjectDocs> {
+    const form = new FormData();
+    for (const file of files) form.append("files", file);
+    const { data } = await getApiClient().post(API_ENDPOINTS.projectDocs(id), form, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 120_000,
+    });
+    return projectDocsSchema.parse(data);
+  },
+
+  async deleteDoc(id: string, documentId: string): Promise<void> {
+    await getApiClient().delete(API_ENDPOINTS.projectDoc(id, documentId));
+  },
+
+  async setDocTypes(id: string, documentId: string, typeIds: string[]): Promise<ProjectDocs> {
+    const { data } = await getApiClient().put(API_ENDPOINTS.projectDocTypesForDoc(id, documentId), {
+      type_ids: typeIds,
+    });
+    return projectDocsSchema.parse(data);
+  },
+
+  async createDocType(id: string, name: string): Promise<ProjectDocType> {
+    const { data } = await getApiClient().post(API_ENDPOINTS.projectDocTypes(id), { name });
+    return projectDocTypeSchema.parse(data);
+  },
+
+  async deleteDocType(id: string, typeId: string): Promise<void> {
+    await getApiClient().delete(API_ENDPOINTS.projectDocType(id, typeId));
+  },
+
   async addMembers(
     id: string,
     employeeIds: string[],
@@ -166,6 +224,19 @@ export const projectService = {
   async listTracks(id: string): Promise<ProjectTrack[]> {
     const { data } = await getApiClient().get(API_ENDPOINTS.projectTracks(id));
     return projectTrackListSchema.parse(data);
+  },
+
+  /** Set a module's audience: "all_members" (auto-assign everyone) or "manual" (exactly employeeIds). */
+  async setTrackAssignment(
+    id: string,
+    trackId: string,
+    input: { scope: "all_members" | "manual"; employeeIds?: string[] },
+  ): Promise<ProjectTrack> {
+    const { data } = await getApiClient().put(API_ENDPOINTS.projectTrackAssignment(id, trackId), {
+      scope: input.scope,
+      employee_ids: input.employeeIds ?? null,
+    });
+    return projectTrackSchema.parse(data);
   },
 
   /** Create a project-specific track (draft). Reuses the doc-pack create endpoint with project_id set;

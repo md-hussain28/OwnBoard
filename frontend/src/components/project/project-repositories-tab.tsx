@@ -1,25 +1,27 @@
 "use client";
 
-import { ArrowRightIcon, GitBranchIcon, StarIcon, XIcon } from "lucide-react";
+import { GitBranchIcon, StarIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useAddProjectRepo, useRemoveProjectRepo } from "@/hooks/queries/project/project.mutations";
 import { useRepos } from "@/hooks/queries/repo/repo.queries";
 import { appPath } from "@/lib/routes";
 import { notify } from "@/lib/toast";
-import type { ProjectDetail } from "@/schemas/project.schema";
+import type { ProjectDetail, ProjectRepo } from "@/schemas/project.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent } from "@/ui/card";
 import { Input } from "@/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Spinner } from "@/ui/spinner";
+import { ProjectSectionHeader } from "./project-section-header";
+import { RepoMembersDialog } from "./repo-members-dialog";
 
 const ADD_URL = "__url__";
 
 /**
- * The project's git repositories — where its skill graph, experts, and archaeology
- * Q&A get their evidence. Connecting a repo makes those sub-nav sections light up.
+ * The project's git repositories and who works on each. Commit history from linked repos feeds
+ * per-member skills and the project's Ask answers.
  */
 export function ProjectRepositoriesTab({
   project,
@@ -33,10 +35,11 @@ export function ProjectRepositoriesTab({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Connect a repo to build its skill graph from git history — no source access required. The
-        primary repo powers the Skill graph, Who to ask, and Ask project sections.
-      </p>
+      <ProjectSectionHeader
+        icon={GitBranchIcon}
+        title="Repositories"
+        description="Link the repos this project ships, and assign who works on each. Commit history feeds each person's skills and grounds the project's Ask answers — no source access required."
+      />
 
       {project.repos.length === 0 ? (
         <Card>
@@ -54,41 +57,75 @@ export function ProjectRepositoriesTab({
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {project.repos.map((r) => (
-            <Card key={r.repoId} className="transition-shadow hover:shadow-soft">
-              <CardContent className="flex items-center justify-between gap-3 py-4">
-                <Link href={appPath("repos", r.repoId)} className="group min-w-0">
-                  <p className="flex items-center gap-1.5 truncate font-medium">
-                    {r.name ?? r.url ?? r.repoId}
-                    {r.isPrimary && (
-                      <Badge variant="outline">
-                        <StarIcon className="size-3" /> Primary
-                      </Badge>
-                    )}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">{r.url ?? r.repoId}</p>
-                </Link>
-                <div className="flex shrink-0 items-center gap-2">
-                  {syncedById.get(r.repoId) ? (
-                    <Badge className="bg-brand-moss-soft text-brand-moss">Synced</Badge>
-                  ) : (
-                    <Badge variant="outline">Not synced</Badge>
-                  )}
-                  {manageable ? (
-                    <RemoveRepoButton projectId={project.id} repoId={r.repoId} />
-                  ) : (
-                    <Link href={appPath("repos", r.repoId)}>
-                      <ArrowRightIcon className="size-4 text-muted-foreground" />
-                    </Link>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <RepoCard
+              key={r.repoId}
+              projectId={project.id}
+              repo={r}
+              synced={Boolean(syncedById.get(r.repoId))}
+              manageable={manageable}
+            />
           ))}
         </div>
       )}
 
       {manageable && <LinkRepoControl project={project} />}
     </div>
+  );
+}
+
+function RepoCard({
+  projectId,
+  repo,
+  synced,
+  manageable,
+}: {
+  projectId: string;
+  repo: ProjectRepo;
+  synced: boolean;
+  manageable: boolean;
+}) {
+  return (
+    <Card className="transition-shadow hover:shadow-soft">
+      <CardContent className="space-y-3 py-4">
+        <div className="flex items-start justify-between gap-3">
+          <Link href={appPath("repos", repo.repoId)} className="group min-w-0">
+            <p className="flex items-center gap-1.5 truncate font-medium">
+              {repo.name ?? repo.url ?? repo.repoId}
+              {repo.isPrimary && (
+                <Badge variant="outline">
+                  <StarIcon className="size-3" /> Primary
+                </Badge>
+              )}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{repo.url ?? repo.repoId}</p>
+          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            {synced ? (
+              <Badge className="bg-brand-moss-soft text-brand-moss">Synced</Badge>
+            ) : (
+              <Badge variant="outline">Not synced</Badge>
+            )}
+            {manageable && <RemoveRepoButton projectId={projectId} repoId={repo.repoId} />}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
+          {repo.assignees.length === 0 ? (
+            <span className="text-xs text-muted-foreground">No one assigned yet</span>
+          ) : (
+            repo.assignees.map((a) => (
+              <Badge key={a.employeeId} variant="secondary">
+                {a.name}
+              </Badge>
+            ))
+          )}
+          {manageable && (
+            <div className="ml-auto">
+              <RepoMembersDialog projectId={projectId} repo={repo} />
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

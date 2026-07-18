@@ -3,6 +3,7 @@
 import { SparklesIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { ChatMessage } from "@/components/chat/chat-message";
+import { ProjectSectionHeader } from "@/components/project/project-section-header";
 import { ID_PREFIXES, typedId } from "@/lib/ids";
 import type { ChatMessage as ChatMessageType } from "@/schemas/chat.schema";
 import { type AskProjectCitation, askProjectStream } from "@/services/project-chat.service";
@@ -69,15 +70,11 @@ export function ProjectAskView({ id }: { id: string }) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex items-center gap-2">
-        <SparklesIcon className="size-5 text-brand-teal" />
-        <div>
-          <h2 className="text-lg font-semibold">Ask project</h2>
-          <p className="text-sm text-muted-foreground">
-            Cited answers grounded in this project&apos;s docs and codebase.
-          </p>
-        </div>
-      </div>
+      <ProjectSectionHeader
+        icon={SparklesIcon}
+        title="Ask project"
+        description="Cited answers grounded in this project's docs and codebase."
+      />
 
       <div className="space-y-4 rounded-lg border p-4">
         {messages.map((message) => (

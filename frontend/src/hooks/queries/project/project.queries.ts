@@ -6,6 +6,8 @@ export const projectKeys = {
   mine: ["projects", "mine"] as const,
   detail: (id: string) => ["projects", id] as const,
   members: (id: string) => ["projects", id, "members"] as const,
+  skills: (id: string) => ["projects", id, "skills"] as const,
+  docs: (id: string) => ["projects", id, "docs"] as const,
   tracks: (id: string) => ["projects", id, "tracks"] as const,
   functionTypes: (id: string) => ["projects", id, "function-types"] as const,
   modules: (id: string) => ["projects", id, "modules"] as const,
@@ -34,6 +36,27 @@ export function useProjectMembers(id: string, enabled = true) {
     queryKey: projectKeys.members(id),
     queryFn: () => projectService.listMembers(id),
     enabled: !!id && enabled,
+  });
+}
+
+export function useProjectSkills(id: string, enabled = true) {
+  return useQuery({
+    queryKey: projectKeys.skills(id),
+    queryFn: () => projectService.listMemberSkills(id),
+    enabled: !!id && enabled,
+  });
+}
+
+export function useProjectDocs(id: string, enabled = true) {
+  return useQuery({
+    queryKey: projectKeys.docs(id),
+    queryFn: () => projectService.getDocs(id),
+    enabled: !!id && enabled,
+    // Poll while any document is still being extracted/embedded so status flips to "processed" live.
+    refetchInterval: (query) => {
+      const docs = query.state.data?.documents ?? [];
+      return docs.some((d) => d.status === "uploaded" || d.status === "processing") ? 3000 : false;
+    },
   });
 }
 

@@ -1,13 +1,23 @@
 "use client";
 
-import { ArrowRightIcon, CalendarClockIcon, ClockIcon, FileStackIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  CalendarClockIcon,
+  ClockIcon,
+  FileStackIcon,
+  ListChecksIcon,
+  SearchIcon,
+  UsersIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { FilterSelect } from "@/components/shared/filter-select";
 import { QueryState } from "@/components/shared/query-state";
 import { useCreateProjectTrack } from "@/hooks/queries/project/project.mutations";
 import { useProjectTracks } from "@/hooks/queries/project/project.queries";
 import { appPath } from "@/lib/routes";
 import { notify } from "@/lib/toast";
+import type { ProjectTrack } from "@/schemas/project.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import {
@@ -22,6 +32,8 @@ import {
 import { Input } from "@/ui/input";
 import { Spinner } from "@/ui/spinner";
 import { Textarea } from "@/ui/textarea";
+import { ModuleAssignDialog } from "./module-assign-dialog";
+import { ProjectSectionHeader } from "./project-section-header";
 
 function statusVariant(status: string): "success" | "secondary" | "warning" {
   if (status === "active") return "success";
@@ -35,6 +47,13 @@ function parseOptionalInt(value: string): number | null {
   const n = Number.parseInt(trimmed, 10);
   return Number.isNaN(n) ? null : n;
 }
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "All statuses" },
+  { value: "active", label: "Published" },
+  { value: "draft", label: "Draft" },
+  { value: "needs_review", label: "Needs review" },
+];
 
 function CreateTrackDialog({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState(false);
@@ -62,13 +81,12 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
           setDescription("");
           setEstimatedMinutes("");
           setDueInDays("");
-          notify.success("Onboarding step created", {
+          notify.success("Module created", {
             description: "Upload source docs and build its quiz next.",
           });
-          // Hand off to the existing track authoring surface (docs + quiz builder).
           router.push(appPath("tracks", track.id));
         },
-        onError: (err) => notify.apiError(err, "Could not create onboarding step"),
+        onError: (err) => notify.apiError(err, "Could not create module"),
       },
     );
   }
@@ -76,15 +94,15 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Add step</Button>
+        <Button>Add module</Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>New onboarding step</DialogTitle>
+            <DialogTitle>New module</DialogTitle>
             <DialogDescription>
-              Create the step, then you&apos;ll upload its source documents and build the grounded
-              quiz. Every member must pass it to unlock this project.
+              Create the module, then upload its source documents and build the grounded quiz. You
+              choose who it&apos;s assigned to afterwards.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -155,22 +173,100 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
   );
 }
 
+function ModuleRow({ projectId, track }: { projectId: string; track: ProjectTrack }) {
+  const router = useRouter();
+  const isManual = track.assignScope === "manual";
+  return (
+    <li className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/60">
+      <button
+        type="button"
+        onClick={() => router.push(appPath("tracks", track.id))}
+        className="min-w-0 flex-1 text-left"
+      >
+        <p className="truncate font-medium">{track.name}</p>
+        {track.description && (
+          <p className="truncate text-sm text-muted-foreground">{track.description}</p>
+        )}
+        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <UsersIcon className="size-3.5" />
+            {isManual ? `${track.assignedCount} assigned` : `Everyone (${track.assignedCount})`}
+          </span>
+          {track.estimatedMinutes != null && (
+            <span className="inline-flex items-center gap-1">
+              <ClockIcon className="size-3.5" /> {track.estimatedMinutes} min
+            </span>
+          )}
+          {track.dueOffsetDays != null && (
+            <span className="inline-flex items-center gap-1">
+              <CalendarClockIcon className="size-3.5" /> due in {track.dueOffsetDays} day
+              {track.dueOffsetDays === 1 ? "" : "s"}
+            </span>
+          )}
+        </div>
+      </button>
+      <div className="flex shrink-0 items-center gap-2">
+        <Badge variant={statusVariant(track.status)}>
+          {track.status === "active" ? "Published" : track.status.replace("_", " ")}
+        </Badge>
+        <ModuleAssignDialog projectId={projectId} track={track} />
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Author module"
+          onClick={() => router.push(appPath("tracks", track.id))}
+        >
+          <ArrowRightIcon className="size-4 text-muted-foreground" />
+        </Button>
+      </div>
+    </li>
+  );
+}
+
 export function ProjectTracksTab({ projectId }: { projectId: string }) {
   const { data: tracks, isLoading, isError, error } = useProjectTracks(projectId);
-  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (tracks ?? []).filter((t) => {
+      if (statusFilter !== "all" && t.status !== statusFilter) return false;
+      if (q && !`${t.name} ${t.description ?? ""}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [tracks, query, statusFilter]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold tracking-tight">Onboarding steps</h2>
-          <p className="max-w-2xl text-sm text-pretty text-muted-foreground">
-            Required quizzes that gate entry. Members must pass every step before this project
-            unlocks — separate from role-targeted Docs.
-          </p>
+    <div className="space-y-4">
+      <ProjectSectionHeader
+        icon={ListChecksIcon}
+        title="Modules"
+        description="Learning units with a grounded quiz. Assign each one to everyone on the project or to specific people — completion is tracked, but nothing blocks project access."
+        action={<CreateTrackDialog projectId={projectId} />}
+      />
+
+      {(tracks ?? []).length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-48 flex-1">
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              aria-label="Search modules"
+              placeholder="Search modules..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <FilterSelect
+            aria-label="Filter by status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={STATUS_OPTIONS}
+          />
         </div>
-        <CreateTrackDialog projectId={projectId} />
-      </header>
+      )}
+
       <QueryState
         isLoading={isLoading}
         isError={isError}
@@ -179,53 +275,24 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
         empty={
           <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border py-10 text-center">
             <FileStackIcon className="size-6 text-muted-foreground" />
-            <p className="text-sm font-medium">No onboarding steps yet</p>
+            <p className="text-sm font-medium">No modules yet</p>
             <p className="max-w-md text-sm text-pretty text-muted-foreground">
-              Add a step so new members have a quiz to pass before they unlock this project.
+              Add a module so members have grounded material and a quiz to work through.
             </p>
           </div>
         }
       >
-        <ul className="space-y-2">
-          {tracks?.map((track) => (
-            <li key={track.id}>
-              <button
-                type="button"
-                onClick={() => router.push(appPath("tracks", track.id))}
-                className="flex w-full items-center justify-between rounded-xl border border-border px-4 py-3 text-left transition-shadow duration-200 hover:shadow-soft"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{track.name}</p>
-                  {track.description && (
-                    <p className="truncate text-sm text-muted-foreground">{track.description}</p>
-                  )}
-                  {(track.estimatedMinutes != null || track.dueOffsetDays != null) && (
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      {track.estimatedMinutes != null && (
-                        <span className="inline-flex items-center gap-1">
-                          <ClockIcon className="size-3.5" /> {track.estimatedMinutes} min
-                        </span>
-                      )}
-                      {track.dueOffsetDays != null && (
-                        <span className="inline-flex items-center gap-1">
-                          <CalendarClockIcon className="size-3.5" /> due in {track.dueOffsetDays}{" "}
-                          day
-                          {track.dueOffsetDays === 1 ? "" : "s"}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  <Badge variant={statusVariant(track.status)}>
-                    {track.status === "active" ? "Published" : track.status.replace("_", " ")}
-                  </Badge>
-                  <ArrowRightIcon className="size-4 text-muted-foreground" />
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
+        {filtered.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            No modules match your search or filters.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+            {filtered.map((track) => (
+              <ModuleRow key={track.id} projectId={projectId} track={track} />
+            ))}
+          </ul>
+        )}
       </QueryState>
     </div>
   );

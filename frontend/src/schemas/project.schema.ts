@@ -25,14 +25,26 @@ export type ResourceLink = z.infer<typeof resourceLinkSchema>;
 export const glossaryTermSchema = z.object({ term: z.string(), definition: z.string() });
 export type GlossaryTerm = z.infer<typeof glossaryTermSchema>;
 
+export const repoAssigneeSchema = z
+  .object({ employee_id: z.string(), name: z.string() })
+  .transform((a) => ({ employeeId: a.employee_id, name: a.name }));
+export type RepoAssignee = z.infer<typeof repoAssigneeSchema>;
+
 export const projectRepoSchema = z
   .object({
     repo_id: z.string(),
     name: z.string().nullable(),
     url: z.string().nullable(),
     is_primary: z.boolean(),
+    assignees: z.array(repoAssigneeSchema).default([]),
   })
-  .transform((r) => ({ repoId: r.repo_id, name: r.name, url: r.url, isPrimary: r.is_primary }));
+  .transform((r) => ({
+    repoId: r.repo_id,
+    name: r.name,
+    url: r.url,
+    isPrimary: r.is_primary,
+    assignees: r.assignees,
+  }));
 export type ProjectRepo = z.infer<typeof projectRepoSchema>;
 
 export const projectFunctionTypeSchema = z
@@ -97,6 +109,8 @@ const projectBase = {
   repo_id: z.string().nullable(),
   repo_name: z.string().nullable(),
   repos: z.array(projectRepoSchema).default([]),
+  lead_employee_id: z.string().nullable().default(null),
+  lead_name: z.string().nullable().default(null),
   tech_stack: z.array(z.string()).default([]),
   resource_links: z.array(resourceLinkSchema).default([]),
   glossary: z.array(glossaryTermSchema).default([]),
@@ -118,6 +132,8 @@ type ProjectBaseInput = {
   repo_id: string | null;
   repo_name: string | null;
   repos: ProjectRepo[];
+  lead_employee_id: string | null;
+  lead_name: string | null;
   tech_stack: string[];
   resource_links: ResourceLink[];
   glossary: GlossaryTerm[];
@@ -140,6 +156,8 @@ function toProject(p: ProjectBaseInput) {
     repoId: p.repo_id,
     repoName: p.repo_name,
     repos: p.repos,
+    leadEmployeeId: p.lead_employee_id,
+    leadName: p.lead_name,
     techStack: p.tech_stack,
     resourceLinks: p.resource_links,
     glossary: p.glossary,
@@ -171,6 +189,9 @@ export const projectTrackSchema = z
     sequence_order: z.number(),
     estimated_minutes: z.number().nullable(),
     due_offset_days: z.number().nullable().optional(),
+    assign_scope: z.string().default("all_members"),
+    assigned_count: z.number().default(0),
+    assignee_ids: z.array(z.string()).default([]),
     assignment_id: z.string().nullable(),
     my_status: z.string(),
     passed: z.boolean(),
@@ -183,12 +204,94 @@ export const projectTrackSchema = z
     sequenceOrder: t.sequence_order,
     estimatedMinutes: t.estimated_minutes,
     dueOffsetDays: t.due_offset_days ?? null,
+    assignScope: t.assign_scope,
+    assignedCount: t.assigned_count,
+    assigneeIds: t.assignee_ids,
     assignmentId: t.assignment_id,
     myStatus: t.my_status,
     passed: t.passed,
   }));
 export const projectTrackListSchema = z.array(projectTrackSchema);
 export type ProjectTrack = z.infer<typeof projectTrackSchema>;
+
+export const projectDocTypeSchema = z
+  .object({ id: z.string(), name: z.string(), sort_order: z.number().default(0) })
+  .transform((t) => ({ id: t.id, name: t.name, sortOrder: t.sort_order }));
+export type ProjectDocType = z.infer<typeof projectDocTypeSchema>;
+
+export const projectDocSchema = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    file_type: z.string(),
+    status: z.string(),
+    page_count: z.number().nullable().default(null),
+    error_message: z.string().nullable().default(null),
+    created_at: z.string(),
+    type_ids: z.array(z.string()).default([]),
+    type_names: z.array(z.string()).default([]),
+  })
+  .transform((d) => ({
+    id: d.id,
+    title: d.title,
+    fileType: d.file_type,
+    status: d.status,
+    pageCount: d.page_count,
+    errorMessage: d.error_message,
+    createdAt: d.created_at,
+    typeIds: d.type_ids,
+    typeNames: d.type_names,
+  }));
+export type ProjectDoc = z.infer<typeof projectDocSchema>;
+
+export const projectDocsSchema = z
+  .object({
+    pack_id: z.string(),
+    documents: z.array(projectDocSchema).default([]),
+    types: z.array(projectDocTypeSchema).default([]),
+  })
+  .transform((d) => ({ packId: d.pack_id, documents: d.documents, types: d.types }));
+export type ProjectDocs = z.infer<typeof projectDocsSchema>;
+
+export const memberSkillSchema = z
+  .object({ name: z.string(), score: z.number(), commit_count: z.number() })
+  .transform((s) => ({ name: s.name, score: s.score, commitCount: s.commit_count }));
+
+export const memberFeatureSchema = z
+  .object({
+    file_path: z.string(),
+    repo_name: z.string().nullable(),
+    commit_count: z.number(),
+    last_commit_at: z.string().nullable(),
+  })
+  .transform((f) => ({
+    filePath: f.file_path,
+    repoName: f.repo_name,
+    commitCount: f.commit_count,
+    lastCommitAt: f.last_commit_at,
+  }));
+
+export const projectMemberSkillsSchema = z
+  .object({
+    employee_id: z.string(),
+    name: z.string(),
+    github_handle: z.string().nullable(),
+    matched: z.boolean(),
+    total_commits: z.number(),
+    skills: z.array(memberSkillSchema).default([]),
+    features: z.array(memberFeatureSchema).default([]),
+  })
+  .transform((m) => ({
+    employeeId: m.employee_id,
+    name: m.name,
+    githubHandle: m.github_handle,
+    matched: m.matched,
+    totalCommits: m.total_commits,
+    skills: m.skills,
+    features: m.features,
+  }));
+export const projectMemberSkillsListSchema = z.array(projectMemberSkillsSchema);
+export type ProjectMemberSkills = z.infer<typeof projectMemberSkillsSchema>;
 
 export const projectMemberSchema = z
   .object({
@@ -254,6 +357,7 @@ export type CreateProjectInput = {
   description?: string | null;
   status?: string;
   repoId?: string | null;
+  leadEmployeeId?: string | null;
   techStack?: string[];
   resourceLinks?: ResourceLink[];
   glossary?: GlossaryTerm[];

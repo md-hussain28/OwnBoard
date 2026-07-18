@@ -1,11 +1,12 @@
 "use client";
 
+import { UsersIcon } from "lucide-react";
 import { redirect } from "next/navigation";
 import { projectSectionPath } from "@/components/layout/nav-config";
 import { AddMembersDialog } from "@/components/project/add-members-dialog";
 import { ProjectMemberPanel } from "@/components/project/project-member-panel";
+import { ProjectSectionHeader } from "@/components/project/project-section-header";
 import { useProject } from "@/hooks/queries/project/project.queries";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 
 export function ProjectMembersView({ id }: { id: string }) {
   const { data: project } = useProject(id);
@@ -14,14 +15,14 @@ export function ProjectMembersView({ id }: { id: string }) {
   if (!project.canManage) redirect(projectSectionPath(project.id, ""));
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between space-y-0">
-        <CardTitle>Members</CardTitle>
-        <AddMembersDialog projectId={project.id} />
-      </CardHeader>
-      <CardContent>
-        <ProjectMemberPanel projectId={project.id} manageable />
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <ProjectSectionHeader
+        icon={UsersIcon}
+        title="Members"
+        description="Everyone on this project, their role and onboarding progress. Add teammates and set a team lead."
+        action={<AddMembersDialog projectId={project.id} />}
+      />
+      <ProjectMemberPanel projectId={project.id} manageable />
+    </div>
   );
 }

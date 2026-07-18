@@ -1,22 +1,18 @@
 "use client";
 
-import { CrownIcon, SettingsIcon, StarIcon, XIcon } from "lucide-react";
+import { ChevronRightIcon, CrownIcon, SearchIcon, StarIcon } from "lucide-react";
+import { useMemo, useState } from "react";
+import { FilterSelect } from "@/components/shared/filter-select";
 import { QueryState } from "@/components/shared/query-state";
-import {
-  useRemoveProjectMember,
-  useUpdateProjectMember,
-} from "@/hooks/queries/project/project.mutations";
 import {
   useProjectFunctionTypes,
   useProjectMembers,
 } from "@/hooks/queries/project/project.queries";
-import { notify } from "@/lib/toast";
 import type { ProjectMember } from "@/schemas/project.schema";
 import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
-import { ReadinessBadge } from "./readiness";
+import { Input } from "@/ui/input";
+import { MemberDetailSheet } from "./member-detail-sheet";
+import { ReadinessBadge, readinessLabel } from "./readiness";
 
 function initials(name: string): string {
   return name
@@ -28,6 +24,28 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
+const READINESS_OPTIONS = [
+  { value: "all", label: "All progress" },
+  { value: "ready", label: "Ready" },
+  { value: "in-progress", label: "In progress" },
+  { value: "locked", label: "Not started" },
+  { value: "open", label: "No onboarding" },
+];
+
+function matchesFilters(
+  m: ProjectMember,
+  q: string,
+  functionFilter: string,
+  readinessFilter: string,
+): boolean {
+  if (functionFilter !== "all" && m.functionTypeId !== functionFilter) return false;
+  if (readinessFilter !== "all" && readinessLabel(m.readiness) !== readinessFilter) return false;
+  if (!q) return true;
+  const haystack =
+    `${m.name} ${m.role ?? ""} ${m.githubHandle ?? ""} ${m.functionTypeName ?? ""} ${m.domainName ?? ""}`.toLowerCase();
+  return haystack.includes(q);
+}
+
 export function ProjectMemberPanel({
   projectId,
   manageable = false,
@@ -37,14 +55,34 @@ export function ProjectMemberPanel({
 }) {
   const { data: members, isLoading, isError, error } = useProjectMembers(projectId);
   const { data: functionTypes } = useProjectFunctionTypes(projectId, manageable);
-  const remove = useRemoveProjectMember(projectId);
+  const [query, setQuery] = useState("");
+  const [functionFilter, setFunctionFilter] = useState("all");
+  const [readinessFilter, setReadinessFilter] = useState("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  function handleRemove(employeeId: string, name: string) {
-    remove.mutate(employeeId, {
-      onSuccess: () => notify.success("Member removed", { description: name }),
-      onError: (err) => notify.apiError(err, "Could not remove member"),
-    });
+  // Resolve from the live list so the sheet reflects mutations (e.g. lead toggled) after refetch.
+  const selected = (members ?? []).find((m) => m.employeeId === selectedId) ?? null;
+
+  const functionOptions = useMemo(
+    () => [
+      { value: "all", label: "All roles" },
+      ...(functionTypes ?? []).map((t) => ({ value: t.id, label: t.name })),
+    ],
+    [functionTypes],
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (members ?? []).filter((m) => matchesFilters(m, q, functionFilter, readinessFilter));
+  }, [members, query, functionFilter, readinessFilter]);
+
+  function openMember(m: ProjectMember) {
+    setSelectedId(m.employeeId);
+    setSheetOpen(true);
   }
+
+  const hasFilters = query.trim() !== "" || functionFilter !== "all" || readinessFilter !== "all";
 
   return (
     <QueryState
@@ -54,124 +92,89 @@ export function ProjectMemberPanel({
       isEmpty={!!members && members.length === 0}
       empty={<p className="text-sm text-muted-foreground">No members on this project yet.</p>}
     >
-      <ul className="divide-y divide-border">
-        {members?.map((m) => (
-          <li key={m.employeeId} className="flex items-center gap-3 py-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-mist text-xs font-semibold text-brand-ink">
-              {initials(m.name)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="truncate text-sm font-medium">{m.name}</p>
-                {m.isLead && (
-                  <Badge variant="default">
-                    <CrownIcon className="size-3" /> Lead
-                  </Badge>
-                )}
-                {m.functionTypeName && <Badge variant="secondary">{m.functionTypeName}</Badge>}
-                {m.isGoTo && (
-                  <Badge variant="success">
-                    <StarIcon className="size-3" /> Go-to
-                  </Badge>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-                <span>{m.role ?? m.domainName ?? "Member"}</span>
-                {m.githubHandle && (
-                  <a
-                    href={`https://github.com/${m.githubHandle}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-foreground"
-                  >
-                    @{m.githubHandle}
-                  </a>
-                )}
-              </div>
-            </div>
-            <ReadinessBadge readiness={m.readiness} />
-            {manageable && (
-              <MemberManagePopover
-                projectId={projectId}
-                member={m}
-                functionTypes={functionTypes ?? []}
-                onRemove={() => handleRemove(m.employeeId, m.name)}
-              />
-            )}
-          </li>
-        ))}
-      </ul>
-    </QueryState>
-  );
-}
-
-function MemberManagePopover({
-  projectId,
-  member,
-  functionTypes,
-  onRemove,
-}: {
-  projectId: string;
-  member: ProjectMember;
-  functionTypes: { id: string; name: string }[];
-  onRemove: () => void;
-}) {
-  const update = useUpdateProjectMember(projectId);
-
-  function setFunction(value: string) {
-    update.mutate(
-      {
-        employeeId: member.employeeId,
-        input: { functionTypeId: value },
-      },
-      { onError: (err) => notify.apiError(err, "Could not set role") },
-    );
-  }
-
-  function toggleLead() {
-    update.mutate(
-      { employeeId: member.employeeId, input: { isLead: !member.isLead } },
-      {
-        onSuccess: () =>
-          notify.success(member.isLead ? "Lead removed" : "Promoted to team lead", {
-            description: member.name,
-          }),
-        onError: (err) => notify.apiError(err, "Could not update lead"),
-      },
-    );
-  }
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={`Manage ${member.name}`}>
-          <SettingsIcon className="size-4" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 space-y-3" align="end">
-        <div className="space-y-1.5">
-          <span className="text-xs font-medium text-muted-foreground">Role</span>
-          <Select value={member.functionTypeId ?? ""} onValueChange={setFunction}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose a role" />
-            </SelectTrigger>
-            <SelectContent>
-              {functionTypes.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-48 flex-1">
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              aria-label="Search members"
+              placeholder="Search members..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          {(functionTypes ?? []).length > 0 && (
+            <FilterSelect
+              aria-label="Filter by role"
+              value={functionFilter}
+              onChange={setFunctionFilter}
+              options={functionOptions}
+            />
+          )}
+          <FilterSelect
+            aria-label="Filter by progress"
+            value={readinessFilter}
+            onChange={setReadinessFilter}
+            options={READINESS_OPTIONS}
+          />
         </div>
-        <Button variant="outline" size="sm" className="w-full" onClick={toggleLead}>
-          <CrownIcon className="size-4" />
-          {member.isLead ? "Remove as lead" : "Make team lead"}
-        </Button>
-        <Button variant="ghost" size="sm" className="w-full text-destructive" onClick={onRemove}>
-          <XIcon className="size-4" /> Remove from project
-        </Button>
-      </PopoverContent>
-    </Popover>
+
+        {filtered.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            {hasFilters ? "No members match your search or filters." : "No members yet."}
+          </p>
+        ) : (
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+            {filtered.map((m) => (
+              <li key={m.employeeId}>
+                <button
+                  type="button"
+                  onClick={() => openMember(m)}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60"
+                >
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-mist text-xs font-semibold text-brand-ink">
+                    {initials(m.name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-sm font-medium">{m.name}</p>
+                      {m.isLead && (
+                        <Badge variant="default">
+                          <CrownIcon className="size-3" /> Lead
+                        </Badge>
+                      )}
+                      {m.functionTypeName && (
+                        <Badge variant="secondary">{m.functionTypeName}</Badge>
+                      )}
+                      {m.isGoTo && (
+                        <Badge variant="success">
+                          <StarIcon className="size-3" /> Go-to
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {m.role ?? m.domainName ?? "Member"}
+                      {m.githubHandle ? ` · @${m.githubHandle}` : ""}
+                    </p>
+                  </div>
+                  <ReadinessBadge readiness={m.readiness} />
+                  <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <MemberDetailSheet
+        projectId={projectId}
+        member={selected}
+        manageable={manageable}
+        functionTypes={functionTypes ?? []}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
+    </QueryState>
   );
 }

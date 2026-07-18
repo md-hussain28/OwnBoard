@@ -19,8 +19,18 @@ export const API_ENDPOINTS = {
   myProjects: "/projects/mine",
   project: (id: string) => `/projects/${id}`,
   projectMembers: (id: string) => `/projects/${id}/members`,
+  projectSkills: (id: string) => `/projects/${id}/skills`,
+  projectDocs: (id: string) => `/projects/${id}/docs`,
+  projectDoc: (id: string, documentId: string) => `/projects/${id}/docs/${documentId}`,
+  projectDocTypesForDoc: (id: string, documentId: string) =>
+    `/projects/${id}/docs/${documentId}/types`,
+  projectDocTypes: (id: string) => `/projects/${id}/doc-types`,
+  projectDocType: (id: string, typeId: string) => `/projects/${id}/doc-types/${typeId}`,
   projectMember: (id: string, employeeId: string) => `/projects/${id}/members/${employeeId}`,
+  projectRepoMembers: (id: string, repoId: string) => `/projects/${id}/repos/${repoId}/members`,
   projectTracks: (id: string) => `/projects/${id}/tracks`,
+  projectTrackAssignment: (id: string, trackId: string) =>
+    `/projects/${id}/tracks/${trackId}/assignment`,
   projectRepos: (id: string) => `/projects/${id}/repos`,
   projectRepo: (id: string, repoId: string) => `/projects/${id}/repos/${repoId}`,
   projectFunctionTypes: (id: string) => `/projects/${id}/function-types`,

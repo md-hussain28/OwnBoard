@@ -10,7 +10,18 @@
       "Skill(code-review:*)",
       "Bash(uv run *)",
       "Bash(npx @biomejs/biome check src)",
-      "Bash(npx @biomejs/biome check src --max-diagnostics=100)"
+      "Bash(npx @biomejs/biome check src --max-diagnostics=100)",
+      "Bash(npx @biomejs/biome check src/components/team/team-member-sheet.tsx src/components/team/member-row.tsx)",
+      "Bash(npx @biomejs/biome check --write src/components/team/team-member-sheet.tsx src/components/team/member-row.tsx)",
+      "Bash(npx @biomejs/biome check \"src/app/app/projects/[id]/ask/view.tsx\" \"src/app/app/projects/[id]/members/view.tsx\" \"src/app/app/projects/[id]/docs/view.tsx\" \"src/app/app/projects/[id]/repositories/view.tsx\" \"src/app/app/projects/[id]/onboarding/view.tsx\")",
+      "Bash(echo \"exit: $?\")",
+      "Bash(echo \"biome-exit: $?\")",
+      "Bash(git ls-remote *)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m 'feat\\(frontend\\): optimistic cache updates and split docs mutations *)",
+      "Bash(git commit -q -m 'feat\\(frontend\\): add team member detail sheet *)",
+      "Bash(git commit -q -m 'style\\(frontend\\): constrain project section views to max-w-2xl *)",
+      "Bash(git commit -q -m 'chore: extend local permission allowlist for biome checks *)"
     ]
   },
   "hooks": {

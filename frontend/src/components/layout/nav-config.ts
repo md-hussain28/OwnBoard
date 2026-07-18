@@ -22,6 +22,8 @@ export type NavItem = {
   icon: LucideIcon;
   /** Backend still stubbed — show Incoming badge, keep route clickable for demos. */
   incoming?: boolean;
+  /** Anchor id for the product tour — rendered as `data-tour="nav-<tourId>"`. */
+  tourId?: string;
   /** Match nested routes (e.g. /app/onboarding/policy-quiz). */
   matchPrefix?: boolean;
   /**
@@ -45,6 +47,7 @@ export const WORKSPACE_NAV: NavGroup = {
       label: "Home",
       description: "Your overview",
       icon: HomeIcon,
+      tourId: "home",
     },
     {
       href: appPath("tracks"),
@@ -53,6 +56,7 @@ export const WORKSPACE_NAV: NavGroup = {
       icon: BookOpenCheckIcon,
       matchPrefix: true,
       roles: ["admin"],
+      tourId: "onboarding",
     },
     {
       href: appPath("projects"),
@@ -61,6 +65,7 @@ export const WORKSPACE_NAV: NavGroup = {
       icon: FolderKanbanIcon,
       matchPrefix: true,
       roles: ["admin"],
+      tourId: "projects",
     },
     {
       href: appPath("onboarding", "packs"),
@@ -69,6 +74,7 @@ export const WORKSPACE_NAV: NavGroup = {
       icon: ClipboardCheckIcon,
       matchPrefix: true,
       roles: ["member"],
+      tourId: "modules",
     },
     {
       href: appPath("projects"),
@@ -77,6 +83,7 @@ export const WORKSPACE_NAV: NavGroup = {
       icon: FolderKanbanIcon,
       matchPrefix: true,
       roles: ["member"],
+      tourId: "projects",
     },
   ],
 };

@@ -40,8 +40,13 @@ export const API_ENDPOINTS = {
   projectModule: (id: string, moduleId: string) => `/projects/${id}/modules/${moduleId}`,
   projectModuleProgress: (id: string, moduleId: string) =>
     `/projects/${id}/modules/${moduleId}/progress`,
-  /** Streaming (SSE) project Q&A — consumed by `askProjectStream`, not axios. */
+  /** Streaming project Q&A — Vercel AI SDK UI-message-stream over SSE (useChat transport, not axios). */
   projectAsk: (id: string) => `/projects/${id}/ask`,
+  /** Ranked grounding context (JSON) — debug/inspection view of `/ask`. */
+  projectAskContext: (id: string) => `/projects/${id}/ask/context`,
+  /** Ordered extracted text for one project doc — opens when a citation is clicked. */
+  projectDocContent: (id: string, documentId: string) =>
+    `/projects/${id}/docs/${documentId}/content`,
 
   quizDomains: "/quiz-domains",
   quizDomain: (id: string) => `/quiz-domains/${id}`,

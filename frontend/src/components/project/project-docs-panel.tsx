@@ -12,14 +12,14 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { QueryState } from "@/components/shared/query-state";
+import { useProjectDocs } from "@/hooks/queries/project/project.queries";
 import {
   useCreateDocType,
   useDeleteDocType,
   useDeleteProjectDoc,
   useSetDocTypes,
   useUploadProjectDocs,
-} from "@/hooks/queries/project/project.mutations";
-import { useProjectDocs } from "@/hooks/queries/project/project.queries";
+} from "@/hooks/queries/project/project-docs.mutations";
 import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { ProjectDoc, ProjectDocType } from "@/schemas/project.schema";

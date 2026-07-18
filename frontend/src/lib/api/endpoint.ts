@@ -70,7 +70,10 @@ export const API_ENDPOINTS = {
   dashboardBusFactor: (repoId: string) => `/dashboard/bus-factor?repoId=${repoId}`,
   dashboardQuizAnalytics: (repoId: string) => `/dashboard/quiz-analytics?repoId=${repoId}`,
 
-  // GitHub knowledge base — ingest key management (repo-scoped).
+  // GitHub knowledge base — ingest keys + skill graph + experts (repo-scoped).
   ingestKeys: (repoId: string) => `/repos/${repoId}/ingest-keys`,
   ingestKey: (repoId: string, keyId: string) => `/repos/${repoId}/ingest-keys/${keyId}`,
+  skillGraphExpertise: (repoId: string) => `/repos/${repoId}/skill-graph/expertise`,
+  skillGraphBusFactor: (repoId: string) => `/repos/${repoId}/skill-graph/bus-factor`,
+  repoExperts: (repoId: string) => `/repos/${repoId}/experts`,
 } as const;

@@ -16,6 +16,7 @@ from onboard.dao.models.doc_pack import (
 from onboard.dao.models.employee import Employee
 from onboard.dao.models.expertise_availability import ExpertiseAvailability
 from onboard.dao.models.file_expertise import FileExpertise
+from onboard.dao.models.ingest_key import IngestKey
 from onboard.dao.models.institutional_memory_note import InstitutionalMemoryNote
 from onboard.dao.models.notification import Notification, NotificationType
 from onboard.dao.models.org_domain import OrgDomain
@@ -55,6 +56,7 @@ __all__ = [
     "Employee",
     "ExpertiseAvailability",
     "FileExpertise",
+    "IngestKey",
     "InstitutionalMemoryNote",
     "Notification",
     "NotificationType",

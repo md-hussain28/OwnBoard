@@ -7,6 +7,7 @@ from onboard.services.dashboard.dashboard_service import DashboardService
 from onboard.services.doc_pack.doc_pack_service import DocPackService
 from onboard.services.employee.employee_service import EmployeeService
 from onboard.services.expert_routing.expert_routing_service import ExpertRoutingService
+from onboard.services.ingest.ingest_service import IngestService
 from onboard.services.notification.notification_service import NotificationService
 from onboard.services.org_domain.org_domain_service import OrgDomainService
 from onboard.services.pack_assignment.pack_assignment_service import PackAssignmentService
@@ -24,6 +25,7 @@ class ServiceContainer:
     def __init__(self, session: AsyncSession):
         self.session = session
         self._repo_ingestion: RepoIngestionService | None = None
+        self._ingest: IngestService | None = None
         self._employee: EmployeeService | None = None
         self._org_domain: OrgDomainService | None = None
         self._quiz_domain: QuizDomainService | None = None
@@ -43,6 +45,12 @@ class ServiceContainer:
         if self._repo_ingestion is None:
             self._repo_ingestion = RepoIngestionService(self.session)
         return self._repo_ingestion
+
+    @property
+    def ingest(self) -> IngestService:
+        if self._ingest is None:
+            self._ingest = IngestService(self.session)
+        return self._ingest
 
     @property
     def employee(self) -> EmployeeService:

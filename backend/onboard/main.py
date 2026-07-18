@@ -15,6 +15,7 @@ from onboard.api.routes import (
     employee_router,
     expert_router,
     health_router,
+    ingest_router,
     notification_router,
     org_domain_router,
     pack_assignment_router,
@@ -92,6 +93,11 @@ def create_app() -> FastAPI:
     app.include_router(chat_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(expert_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(dashboard_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(ingest_router.ingest_key_router, prefix=prefix, dependencies=tenant_scoped)
+    # Push ingestion: authenticated by a per-repo API key (see api/dependency/ingest_auth.py), NOT Clerk —
+    # so it is deliberately registered WITHOUT tenant_scoped. It still validates the key + payload caps
+    # before touching the DB, guarding the 512MB host.
+    app.include_router(ingest_router.ingest_router, prefix=prefix)
 
     @app.get("/")
     async def root() -> dict[str, str]:

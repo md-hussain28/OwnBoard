@@ -21,6 +21,15 @@ MAX_DOC_INGEST_ATTEMPTS = 3
 MAX_DOC_PACK_FILE_SIZE_BYTES = 20 * 1024 * 1024  # 20 MB per file
 MAX_DOC_PACK_FILES_PER_UPLOAD = 10
 
+# Push-model ingest (GitHub Action → POST /ingest). These caps bound how much a single request can
+# allocate on the 512MB host — the request is rejected (422) before any DB work if exceeded.
+INGEST_MAX_CONTRIBUTORS = 5_000
+INGEST_MAX_COMMITS = 20_000
+INGEST_MAX_FILES = 20_000
+INGEST_MAX_CHUNKS = 20_000
+INGEST_MAX_CHUNK_CHARS = 12_000  # per code chunk; longer content is truncated before embedding
+
+
 APP_TITLE = "OwnBoard API"
 APP_DESCRIPTION = "Backend for OwnBoard - onboarding quizzes, repo readiness gating, skill-graph bus-factor detection"
 

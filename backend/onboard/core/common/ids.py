@@ -24,6 +24,7 @@ ID_PREFIXES = frozenset(
         "emp",  # employee
         "exav",  # expertise_availability
         "fexp",  # file_expertise
+        "ingk",  # ingest_key (GitHub Action push-ingestion API key)
         "note",  # institutional_memory_note
         "ntf",  # notification
         "pack",  # doc_pack

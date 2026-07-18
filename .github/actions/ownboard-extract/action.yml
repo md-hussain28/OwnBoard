@@ -1,0 +1,36 @@
+name: OwnBoard Extract
+description: Extract git-history metadata from this repo and push it to OwnBoard (no repo access granted).
+branding:
+  icon: git-commit
+  color: yellow
+
+inputs:
+  api_key:
+    description: Per-repo OwnBoard ingest key (store as a secret). Shown once in the OwnBoard UI.
+    required: true
+  endpoint:
+    description: OwnBoard ingest URL, e.g. https://your-api.onrender.com/api/v1/ingest
+    required: true
+  max_commits:
+    description: Cap how many commits of history to send.
+    required: false
+    default: "1000"
+  paths:
+    description: Comma-separated path prefixes to restrict code chunking (default all tracked source).
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - shell: bash
+      run: python "$GITHUB_ACTION_PATH/extract.py"
+      env:
+        OWNBOARD_API_KEY: ${{ inputs.api_key }}
+        OWNBOARD_ENDPOINT: ${{ inputs.endpoint }}
+        OWNBOARD_MAX_COMMITS: ${{ inputs.max_commits }}
+        OWNBOARD_PATHS: ${{ inputs.paths }}
+        OWNBOARD_REPO_NAME: ${{ github.repository }}

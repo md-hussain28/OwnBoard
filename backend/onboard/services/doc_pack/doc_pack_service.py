@@ -1,5 +1,7 @@
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import PurePosixPath
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -341,7 +343,7 @@ class DocPackService:
 
         return created
 
-    async def get_ingest_status(self, org_id: str, pack_id: str) -> tuple[list, list[str]]:
+    async def get_ingest_status(self, org_id: str, pack_id: str) -> tuple[Sequence[Any], list[str]]:
         """Lightweight status rows for polling, plus ids of stale documents to requeue.
 
         Ingestion runs as an in-process background task, so a host restart/OOM mid-ingest strands

@@ -9,9 +9,11 @@ from onboard.core.llm.llm_client import LLMClient, get_llm_client
 from onboard.core.rag.chunking import ChunkDraft, chunk_extracted_document
 from onboard.core.rag.extract import extract_document
 from onboard.core.storage.supabase_client import SupabaseStorageClient, get_storage_client
+from onboard.dao.code_chunk_dao import CodeChunkDAO
 from onboard.dao.doc_chunk_dao import DocChunkDAO
 from onboard.dao.doc_pack_dao import DocPackDAO, DocPackDocumentDAO
 from onboard.dao.models.doc_pack import DocChunk, DocumentStatus
+from onboard.dao.repo_dao import RepoDAO
 
 
 @dataclass
@@ -36,17 +38,46 @@ class RAGService:
         self.doc_pack_dao = DocPackDAO(session)
         self.document_dao = DocPackDocumentDAO(session)
         self.doc_chunk_dao = DocChunkDAO(session)
+        self.repo_dao = RepoDAO(session)
+        self.code_chunk_dao = CodeChunkDAO(session)
 
     async def _storage_client(self) -> SupabaseStorageClient:
         if self._storage is None:
             self._storage = await get_storage_client()
         return self._storage
 
-    async def chunk_and_embed(self, repo_id: str):
-        raise NotImplementedError("chunk_and_embed is not implemented yet")
+    async def embed_pending_chunks(self, repo_id: str | None = None, limit: int = 500) -> int:
+        """Embed code chunks that landed at ingest with `embedding = NULL`.
 
-    async def retrieve(self, repo_id: str, query: str):
-        raise NotImplementedError("retrieve is not implemented yet")
+        This is the one heavy step in the pipeline. It runs off the web dyno via
+        `onboard.jobs.embed_pending` (a GitHub Actions cron), and is also exposed as a bounded,
+        admin-only manual trigger. One call embeds up to `limit` pending chunks and returns how many
+        it wrote; callers loop until it returns 0.
+        """
+        pending = await self.code_chunk_dao.list_pending(limit, repo_id=repo_id)
+        if not pending:
+            return 0
+        embedded = 0
+        for start in range(0, len(pending), EMBEDDING_BATCH_SIZE):
+            batch = pending[start : start + EMBEDDING_BATCH_SIZE]
+            # Prefix with the path so retrieval can match on filename cues, not just body text.
+            vectors = await self.llm.embed_batch([f"{c.file_path}\n\n{c.content}" for c in batch])
+            for chunk, vector in zip(batch, vectors, strict=True):
+                chunk.embedding = vector
+            embedded += len(batch)
+        await self.session.commit()
+        return embedded
+
+    async def retrieve_code(self, org_id: str, repo_id: str, query: str, *, top_k: int = 5) -> list[dict]:
+        """Semantic search over a repo's embedded code chunks (PRD §6.3). One query embed + kNN."""
+        if await self.repo_dao.get_by_id_for_org(org_id, repo_id) is None:
+            raise NotFoundError(f"Repo {repo_id} not found")
+        query_embedding = await self.llm.embed(query)
+        hits = await self.code_chunk_dao.similarity_search(repo_id, query_embedding, top_k=top_k)
+        return [
+            {"file_path": chunk.file_path, "content": chunk.content, "score": max(0.0, 1.0 - distance)}
+            for chunk, distance in hits
+        ]
 
     async def ingest_doc_pack_document(self, org_id: str, document_id: str) -> int:
         """Extract → chunk → batch-embed → upsert `doc_chunk` rows. Returns chunk count."""

@@ -24,6 +24,13 @@ class DocPackStatus(str, enum.Enum):
     needs_review = "needs_review"
 
 
+class DocPackAssignScope(str, enum.Enum):
+    """Who a *project* module targets. Ignored for company/general tracks (project_id IS NULL)."""
+
+    all_members = "all_members"  # every current + future project member (auto-assigned)
+    manual = "manual"  # only the members explicitly assigned via the roster
+
+
 class DocumentStatus(str, enum.Enum):
     uploaded = "uploaded"
     processing = "processing"
@@ -68,6 +75,16 @@ class DocPack(AuditBase):
     # org is auto-assigned this track once its quiz is published; otherwise the audience is the set of
     # OrgDomains in `audience_domains`. Manual assignment via the roster still works regardless.
     assign_to_all: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    # True for a project's single knowledge-base pack (holds reference Docs, not a gating/quiz module).
+    # These are excluded from the project's Modules list; their documents feed the "Ask project" KB.
+    is_knowledge_base: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    # Project modules only: whether the module auto-assigns to every project member or is manually targeted.
+    assign_scope: Mapped[DocPackAssignScope] = mapped_column(
+        Enum(DocPackAssignScope, name="doc_pack_assign_scope"),
+        nullable=False,
+        default=DocPackAssignScope.all_members,
+        server_default="all_members",
+    )
     # Pass bar as a percentage 1..100 (default 100 = the historical "must get everything right"). Grading
     # compares the attempt score against this threshold instead of a hard-coded 1.0 (Doc Pack PRD §10.6).
     pass_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=100, server_default="100")

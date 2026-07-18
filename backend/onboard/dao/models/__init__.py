@@ -16,6 +16,7 @@ from onboard.dao.models.doc_pack import (
 from onboard.dao.models.employee import Employee
 from onboard.dao.models.expertise_availability import ExpertiseAvailability
 from onboard.dao.models.file_expertise import FileExpertise
+from onboard.dao.models.ingest_key import IngestKey
 from onboard.dao.models.institutional_memory_note import InstitutionalMemoryNote
 from onboard.dao.models.notification import Notification, NotificationType
 from onboard.dao.models.org_domain import OrgDomain
@@ -23,9 +24,12 @@ from onboard.dao.models.organization import Organization
 from onboard.dao.models.policy_doc import PolicyDoc
 from onboard.dao.models.project import (
     Project,
+    ProjectDocType,
+    ProjectDocumentType,
     ProjectFunctionType,
     ProjectMember,
     ProjectRepo,
+    ProjectRepoMember,
     ProjectStatus,
 )
 from onboard.dao.models.project_module import (
@@ -55,6 +59,7 @@ __all__ = [
     "Employee",
     "ExpertiseAvailability",
     "FileExpertise",
+    "IngestKey",
     "InstitutionalMemoryNote",
     "Notification",
     "NotificationType",
@@ -66,7 +71,10 @@ __all__ = [
     "PolicyDoc",
     "Project",
     "ProjectFunctionType",
+    "ProjectDocType",
+    "ProjectDocumentType",
     "ProjectMember",
+    "ProjectRepoMember",
     "ProjectModule",
     "ProjectModuleAssignment",
     "ProjectModuleAssignmentStatus",

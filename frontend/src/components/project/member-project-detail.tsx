@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeftIcon,
   ArrowRightIcon,
   CalendarClockIcon,
   CheckCircle2Icon,
@@ -19,7 +18,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { MemberModulesList } from "./member-modules-list";
 import { ProjectContextView } from "./project-context-view";
 import { ProjectMemberPanel } from "./project-member-panel";
+import { ProjectStatusBadge } from "./project-status";
 import { ReadinessBar } from "./readiness";
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+      {children}
+    </h2>
+  );
+}
 
 function TrackStatusPill({ track }: { track: ProjectTrack }) {
   if (track.passed) return <Badge variant="success">Passed</Badge>;
@@ -89,23 +97,19 @@ export function MemberProjectDetail({ project }: { project: ProjectDetail }) {
 
   return (
     <div className="space-y-6">
-      <Link
-        href={appPath("projects")}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeftIcon className="size-4" /> My projects
-      </Link>
-
       <div className="space-y-1">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {locked ? (
             <LockIcon className="size-5 text-muted-foreground" />
           ) : (
             <UnlockIcon className="size-5 text-brand-moss" />
           )}
           <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
+          <ProjectStatusBadge status={project.status} />
         </div>
-        {project.description && <p className="text-muted-foreground">{project.description}</p>}
+        {project.description && (
+          <p className="max-w-2xl text-muted-foreground">{project.description}</p>
+        )}
       </div>
 
       {readiness && (
@@ -113,22 +117,20 @@ export function MemberProjectDetail({ project }: { project: ProjectDetail }) {
           <CardContent className="space-y-3 py-5">
             <p className="text-sm font-medium">
               {locked
-                ? "Complete this project's onboarding to unlock it"
-                : "You're onboarded — you have access to this project"}
+                ? "Finish your onboarding to unlock full access to this project"
+                : "You're onboarded — you have full access to this project"}
             </p>
             <ReadinessBar readiness={readiness} />
           </CardContent>
         </Card>
       )}
 
-      {/* Onboarding tracks that gate the project. */}
+      {/* What to do next: the onboarding steps that gate the project. */}
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Onboarding modules
-        </h2>
+        <SectionHeading>Your onboarding</SectionHeading>
         {project.tracks.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            This project has no onboarding modules yet.
+            This project has no onboarding steps yet — you already have access.
           </p>
         ) : (
           <div className="space-y-2">
@@ -139,51 +141,41 @@ export function MemberProjectDetail({ project }: { project: ProjectDetail }) {
         )}
       </div>
 
-      {/* Reference context to help a new joinee understand the project — available even while locked. */}
+      {/* Get oriented — everything below is visible from day one, even before onboarding is done. */}
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          About this project
-        </h2>
+        <SectionHeading>About this project</SectionHeading>
         <ProjectContextView project={project} />
       </div>
 
-      {/* Dev-facing modules assigned to this member by their function. */}
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle>Team</CardTitle>
+          {project.repoName && (
+            <a
+              href={project.repoUrl ?? undefined}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <GitBranchIcon className="size-3.5" /> {project.repoName}
+            </a>
+          )}
+        </CardHeader>
+        <CardContent>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Who&apos;s on this project and who to ask — a <span className="font-medium">Go-to</span>{" "}
+            badge marks people who&apos;ve finished onboarding.
+          </p>
+          <ProjectMemberPanel projectId={project.id} />
+        </CardContent>
+      </Card>
+
+      {/* Dev-facing docs assigned to this member by their function. */}
       {project.modules.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Your modules
-          </h2>
+          <SectionHeading>Docs</SectionHeading>
           <MemberModulesList projectId={project.id} modules={project.modules} />
         </div>
-      )}
-
-      {/* The member panel + go-to people are revealed once the project is unlocked. */}
-      {locked ? (
-        <Card>
-          <CardContent className="flex items-center gap-3 py-5 text-sm text-muted-foreground">
-            <LockIcon className="size-4 shrink-0" />
-            The team panel unlocks once you&apos;ve passed every onboarding module above.
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle>Team</CardTitle>
-            {project.repoName && (
-              <a
-                href={project.repoUrl ?? undefined}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <GitBranchIcon className="size-3.5" /> {project.repoName}
-              </a>
-            )}
-          </CardHeader>
-          <CardContent>
-            <ProjectMemberPanel projectId={project.id} />
-          </CardContent>
-        </Card>
       )}
     </div>
   );

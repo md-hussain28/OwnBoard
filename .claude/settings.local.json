@@ -1,5 +1,18 @@
 {
-  "description": "Impeccable design detector: runs after Edit/Write/MultiEdit on UI files and surfaces findings as system reminders.",
+  "permissions": {
+    "allow": [
+      "Bash(uv run python -c ' *)",
+      "Bash(npx @biomejs/biome check src/app/app/projects src/components/project src/services/project-chat.service.ts src/app/api/projects)",
+      "Bash(npx tsc *)",
+      "Bash(npx @biomejs/biome check --write src/app/app/projects src/components/layout/nav-config.ts)",
+      "Bash(npx biome *)",
+      "Skill(code-review)",
+      "Skill(code-review:*)",
+      "Bash(uv run *)",
+      "Bash(npx @biomejs/biome check src)",
+      "Bash(npx @biomejs/biome check src --max-diagnostics=100)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
@@ -14,5 +27,6 @@
         ]
       }
     ]
-  }
+  },
+  "description": "Impeccable design detector: runs after Edit/Write/MultiEdit on UI files and surfaces findings as system reminders."
 }

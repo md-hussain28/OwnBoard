@@ -7,10 +7,12 @@ from onboard.services.dashboard.dashboard_service import DashboardService
 from onboard.services.doc_pack.doc_pack_service import DocPackService
 from onboard.services.employee.employee_service import EmployeeService
 from onboard.services.expert_routing.expert_routing_service import ExpertRoutingService
+from onboard.services.ingest.ingest_service import IngestService
 from onboard.services.notification.notification_service import NotificationService
 from onboard.services.org_domain.org_domain_service import OrgDomainService
 from onboard.services.pack_assignment.pack_assignment_service import PackAssignmentService
 from onboard.services.project.project_service import ProjectService
+from onboard.services.project_chat.project_chat_service import ProjectChatService
 from onboard.services.quiz.quiz_service import QuizService
 from onboard.services.quiz_domain.quiz_domain_service import QuizDomainService
 from onboard.services.rag.rag_service import RAGService
@@ -24,6 +26,7 @@ class ServiceContainer:
     def __init__(self, session: AsyncSession):
         self.session = session
         self._repo_ingestion: RepoIngestionService | None = None
+        self._ingest: IngestService | None = None
         self._employee: EmployeeService | None = None
         self._org_domain: OrgDomainService | None = None
         self._quiz_domain: QuizDomainService | None = None
@@ -37,12 +40,19 @@ class ServiceContainer:
         self._pack_assignment: PackAssignmentService | None = None
         self._notification: NotificationService | None = None
         self._project: ProjectService | None = None
+        self._project_chat: ProjectChatService | None = None
 
     @property
     def repo_ingestion(self) -> RepoIngestionService:
         if self._repo_ingestion is None:
             self._repo_ingestion = RepoIngestionService(self.session)
         return self._repo_ingestion
+
+    @property
+    def ingest(self) -> IngestService:
+        if self._ingest is None:
+            self._ingest = IngestService(self.session)
+        return self._ingest
 
     @property
     def employee(self) -> EmployeeService:
@@ -121,6 +131,12 @@ class ServiceContainer:
         if self._project is None:
             self._project = ProjectService(self.session)
         return self._project
+
+    @property
+    def project_chat(self) -> ProjectChatService:
+        if self._project_chat is None:
+            self._project_chat = ProjectChatService(self.session)
+        return self._project_chat
 
 
 def get_service_container(session: AsyncSession = Depends(get_db)) -> ServiceContainer:

@@ -203,8 +203,10 @@ function NotificationsBody({
 export function AssignmentNotifications() {
   const meQuery = useMe();
   const employeeId = meQuery.data?.employeeId ?? "";
+  const isAdmin = meQuery.data?.appRole === "admin";
   const assignmentsQuery = useEmployeeAssignments(employeeId, {
     refetchInterval: 45_000,
+    enabled: !!employeeId && !isAdmin,
   });
   const [open, setOpen] = useState(false);
   const [seenIds, setSeenIds] = useState<Set<string>>(() => new Set());
@@ -241,7 +243,7 @@ export function AssignmentNotifications() {
     }
   }
 
-  if (!employeeId && !meQuery.isLoading) return null;
+  if (isAdmin || (!employeeId && !meQuery.isLoading)) return null;
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>

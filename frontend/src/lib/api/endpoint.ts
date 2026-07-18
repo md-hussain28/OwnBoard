@@ -19,8 +19,18 @@ export const API_ENDPOINTS = {
   myProjects: "/projects/mine",
   project: (id: string) => `/projects/${id}`,
   projectMembers: (id: string) => `/projects/${id}/members`,
+  projectSkills: (id: string) => `/projects/${id}/skills`,
+  projectDocs: (id: string) => `/projects/${id}/docs`,
+  projectDoc: (id: string, documentId: string) => `/projects/${id}/docs/${documentId}`,
+  projectDocTypesForDoc: (id: string, documentId: string) =>
+    `/projects/${id}/docs/${documentId}/types`,
+  projectDocTypes: (id: string) => `/projects/${id}/doc-types`,
+  projectDocType: (id: string, typeId: string) => `/projects/${id}/doc-types/${typeId}`,
   projectMember: (id: string, employeeId: string) => `/projects/${id}/members/${employeeId}`,
+  projectRepoMembers: (id: string, repoId: string) => `/projects/${id}/repos/${repoId}/members`,
   projectTracks: (id: string) => `/projects/${id}/tracks`,
+  projectTrackAssignment: (id: string, trackId: string) =>
+    `/projects/${id}/tracks/${trackId}/assignment`,
   projectRepos: (id: string) => `/projects/${id}/repos`,
   projectRepo: (id: string, repoId: string) => `/projects/${id}/repos/${repoId}`,
   projectFunctionTypes: (id: string) => `/projects/${id}/function-types`,
@@ -30,6 +40,8 @@ export const API_ENDPOINTS = {
   projectModule: (id: string, moduleId: string) => `/projects/${id}/modules/${moduleId}`,
   projectModuleProgress: (id: string, moduleId: string) =>
     `/projects/${id}/modules/${moduleId}/progress`,
+  /** Streaming (SSE) project Q&A — consumed by `askProjectStream`, not axios. */
+  projectAsk: (id: string) => `/projects/${id}/ask`,
 
   quizDomains: "/quiz-domains",
   quizDomain: (id: string) => `/quiz-domains/${id}`,
@@ -69,4 +81,13 @@ export const API_ENDPOINTS = {
   experts: "/experts",
   dashboardBusFactor: (repoId: string) => `/dashboard/bus-factor?repoId=${repoId}`,
   dashboardQuizAnalytics: (repoId: string) => `/dashboard/quiz-analytics?repoId=${repoId}`,
+
+  // GitHub knowledge base — push-model ingestion + skill graph + experts + archaeology (repo-scoped).
+  ingestKeys: (repoId: string) => `/repos/${repoId}/ingest-keys`,
+  ingestKey: (repoId: string, keyId: string) => `/repos/${repoId}/ingest-keys/${keyId}`,
+  skillGraphExpertise: (repoId: string) => `/repos/${repoId}/skill-graph/expertise`,
+  skillGraphBusFactor: (repoId: string) => `/repos/${repoId}/skill-graph/bus-factor`,
+  repoExperts: (repoId: string) => `/repos/${repoId}/experts`,
+  repoChatAsk: (repoId: string) => `/repos/${repoId}/chat/ask`,
+  repoChunkAndEmbed: (repoId: string) => `/repos/${repoId}/rag/chunk-and-embed`,
 } as const;

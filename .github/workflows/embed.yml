@@ -1,0 +1,34 @@
+name: Embed pending code chunks
+
+# Keeps embedding OFF the 512MB Render dyno. Ingestion stores code chunks with embedding=NULL;
+# this job runs on GitHub's runner, calls the OpenAI embeddings API, and writes vectors back.
+# Secrets required (repo settings → Secrets and variables → Actions):
+#   DATABASE_URL   — external Postgres connection string (Render/Neon)
+#   OPENAI_API_KEY — embeddings key
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: embed-pending
+  cancel-in-progress: false
+
+jobs:
+  embed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend
+        working-directory: backend
+        run: pip install -e .
+      - name: Embed pending chunks
+        working-directory: backend
+        env:
+          ENVIRONMENT: production
+          DATABASE_URL_PROD: ${{ secrets.DATABASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python -m onboard.jobs.embed_pending

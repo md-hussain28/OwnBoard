@@ -1,19 +1,33 @@
 """Project membership + readiness: the member roster, per-member gate progress, and the
 member-facing project detail/track surfaces (Projects PRD §1)."""
 
+from collections import defaultdict
+from datetime import UTC, datetime
+
 from onboard.api.schema.project.response import (
+    MemberFeature,
+    MemberSkill,
     MyProjectResponse,
     ProjectDetailResponse,
     ProjectMemberResponse,
+    ProjectMemberSkillsResponse,
     ProjectTrackResponse,
 )
 from onboard.config.constants import APP_ROLE_ADMIN
 from onboard.core.common.exceptions import ForbiddenError, NotFoundError, ValidationError
-from onboard.dao.models.doc_pack import PackAssignment, PackAssignmentStatus
+from onboard.dao.file_expertise_dao import FileExpertiseDAO
+from onboard.dao.models.doc_pack import DocPackAssignScope, PackAssignment, PackAssignmentStatus
 from onboard.dao.models.employee import Employee
-from onboard.services.pack_assignment.auto_assign import assign_project_tracks_to_member
+from onboard.dao.models.quiz_template import QuizType
+from onboard.dao.quiz_template_dao import QuizTemplateDAO
+from onboard.services.pack_assignment.assign_helpers import compute_due_at
+from onboard.services.pack_assignment.auto_assign import assign_pack_to_audience, assign_project_tracks_to_member
 from onboard.services.project.base import ProjectServiceBase, _readiness
 from onboard.services.project.module_assign import assign_modules_to_member
+from onboard.services.skill_graph.skill_graph_service import subsystem_of
+
+_SKILLS_TOP_N = 6
+_FEATURES_TOP_N = 6
 
 
 class ProjectMemberMixin(ProjectServiceBase):
@@ -55,6 +69,11 @@ class ProjectMemberMixin(ProjectServiceBase):
             a = viewer_assignments.get(pack.id)
             if a is not None:
                 gating_for_viewer.append(a)
+            # A plain member only ever sees the tracks actually assigned to them — never drafts or
+            # tracks scoped to other people. Managers (admin/lead) author, so they see every track.
+            if not can_manage and a is None:
+                continue
+            assignee_ids = await self.assignment_dao.list_assigned_employee_ids(pack.id)
             track_responses.append(
                 ProjectTrackResponse(
                     id=pack.id,
@@ -64,6 +83,9 @@ class ProjectMemberMixin(ProjectServiceBase):
                     sequence_order=pack.sequence_order,
                     estimated_minutes=pack.estimated_minutes,
                     due_offset_days=pack.due_offset_days,
+                    assign_scope=pack.assign_scope.value,
+                    assigned_count=len(assignee_ids),
+                    assignee_ids=list(assignee_ids) if can_manage else [],
                     assignment_id=a.id if a else None,
                     my_status=a.status.value if a else "not_assigned",
                     passed=a is not None and a.status == PackAssignmentStatus.passed,
@@ -84,7 +106,8 @@ class ProjectMemberMixin(ProjectServiceBase):
             is_admin=is_admin,
             my_is_lead=my_is_lead,
             can_manage=can_manage,
-            locked=my_readiness.locked if my_readiness else False,
+            # Access is no longer gated by onboarding — modules track progress but never block entry.
+            locked=False,
         )
 
     async def list_project_members(self, org_id: str, project_id: str, viewer: Employee) -> list[ProjectMemberResponse]:
@@ -190,6 +213,9 @@ class ProjectMemberMixin(ProjectServiceBase):
             fields["is_lead"] = is_lead
         if fields:
             await self.member_dao.update(membership.id, **fields)
+        if is_lead:
+            # Only one team lead per project — promoting this member demotes any previous lead.
+            await self._enforce_single_lead(project_id, employee_id)
         if function_changed:
             # Additive: assign modules for the new function. (Existing assignments are left intact.)
             await assign_modules_to_member(self.session, org_id, project_id, employee_id)
@@ -209,3 +235,127 @@ class ProjectMemberMixin(ProjectServiceBase):
     async def list_project_tracks(self, org_id: str, project_id: str, viewer: Employee) -> list[ProjectTrackResponse]:
         detail = await self.get_project_detail(org_id, project_id, viewer)
         return detail.tracks
+
+    async def get_member_skills(
+        self, org_id: str, project_id: str, viewer: Employee
+    ) -> list[ProjectMemberSkillsResponse]:
+        """Per-member skills + features derived from commit history across the project's linked repos,
+        matched to employees by GitHub handle. Visible to any member of the project (team view)."""
+        await self._get_project(org_id, project_id)  # 404 if not in this org
+        is_admin = viewer.app_role == APP_ROLE_ADMIN
+        if not is_admin and await self.member_dao.get_for_project_and_employee(project_id, viewer.id) is None:
+            raise ForbiddenError("You are not a member of this project")
+
+        # Gather every file_expertise row across the project's repos, keyed by contributor GitHub handle.
+        fexp_dao = FileExpertiseDAO(self.session)
+        repo_names: dict[str, str | None] = {}
+        by_handle: dict[str, list] = defaultdict(list)
+        for link in await self.repo_link_dao.list_for_project(project_id):
+            repo_names[link.repo_id] = link.repo.name if link.repo else None
+            for row in await fexp_dao.list_for_repo(link.repo_id):
+                handle = row.contributor.github_handle if row.contributor else None
+                if handle:
+                    by_handle[handle.lower()].append((link.repo_id, row))
+
+        rows_out: list[ProjectMemberSkillsResponse] = []
+        for m in await self.member_dao.list_for_project(project_id):
+            emp = m.employee
+            handle = emp.github_handle
+            entries = by_handle.get(handle.lower(), []) if handle else []
+            rows_out.append(self._member_skills_response(emp, entries, repo_names))
+        # Most-active contributors first; unmatched members sink to the bottom.
+        rows_out.sort(key=lambda r: (not r.matched, -r.total_commits, r.name.lower()))
+        return rows_out
+
+    def _member_skills_response(self, emp, entries, repo_names: dict[str, str | None]) -> ProjectMemberSkillsResponse:
+        subsystem: dict[str, list[float]] = defaultdict(lambda: [0.0, 0])  # name -> [score_sum, commit_sum]
+        total_commits = 0
+        for _repo_id, row in entries:
+            sub = subsystem_of(row.file_path)
+            subsystem[sub][0] += row.revert_adjusted_score
+            subsystem[sub][1] += row.commit_count
+            total_commits += row.commit_count
+        skills = [
+            MemberSkill(name=name, score=round(score, 3), commit_count=commits)
+            for name, (score, commits) in sorted(subsystem.items(), key=lambda kv: kv[1][0], reverse=True)
+        ][:_SKILLS_TOP_N]
+        top_files = sorted(entries, key=lambda e: e[1].revert_adjusted_score, reverse=True)[:_FEATURES_TOP_N]
+        features = [
+            MemberFeature(
+                file_path=row.file_path,
+                repo_name=repo_names.get(repo_id),
+                commit_count=row.commit_count,
+                last_commit_at=row.last_commit_at,
+            )
+            for repo_id, row in top_files
+        ]
+        return ProjectMemberSkillsResponse(
+            employee_id=emp.id,
+            name=emp.name,
+            github_handle=emp.github_handle,
+            matched=bool(entries),
+            total_commits=total_commits,
+            skills=skills,
+            features=features,
+        )
+
+    async def update_track_assignment(
+        self,
+        org_id: str,
+        project_id: str,
+        track_id: str,
+        viewer: Employee,
+        *,
+        scope: str,
+        employee_ids: list[str] | None = None,
+    ) -> ProjectTrackResponse:
+        """Set a module's audience: 'all_members' (auto-assign everyone) or 'manual' (exactly employee_ids)."""
+        project = await self._get_project(org_id, project_id)
+        await self._assert_can_manage(project, viewer)
+        pack = await self.pack_dao.get_by_id_for_org(org_id, track_id)
+        if pack is None or pack.project_id != project_id:
+            raise NotFoundError(f"Module {track_id} not found")
+        try:
+            new_scope = DocPackAssignScope(scope)
+        except ValueError as exc:
+            raise ValidationError(f"Invalid assignment scope: {scope}") from exc
+        await self.pack_dao.update(pack.id, assign_scope=new_scope)
+        pack = await self.pack_dao.get_by_id_for_org(org_id, track_id)
+
+        if new_scope == DocPackAssignScope.all_members:
+            # Additive: give every current project member the module (never revokes anyone).
+            await assign_pack_to_audience(self.session, org_id, pack.id)
+        else:
+            await self._reconcile_manual_assignees(org_id, project_id, pack, viewer, employee_ids or [])
+
+        detail = await self.get_project_detail(org_id, project_id, viewer)
+        for t in detail.tracks:
+            if t.id == track_id:
+                return t
+        raise NotFoundError(f"Module {track_id} not found")
+
+    async def _reconcile_manual_assignees(
+        self, org_id: str, project_id: str, pack, viewer: Employee, employee_ids: list[str]
+    ) -> None:
+        """Make the module's assignee set exactly `employee_ids` (restricted to project members)."""
+        member_ids = await self.member_dao.list_employee_ids_for_project(project_id)
+        target = {e for e in employee_ids if e in member_ids}
+        current = await self.assignment_dao.list_assigned_employee_ids(pack.id)
+        template_dao = QuizTemplateDAO(self.session)
+        published = await template_dao.get_latest_published_for_source(pack.id, QuizType.doc_pack)
+        due_at = compute_due_at(pack, datetime.now(UTC))
+        for emp_id in target - current:
+            await self.assignment_dao.create(
+                org_id=org_id,
+                doc_pack_id=pack.id,
+                employee_id=emp_id,
+                assigned_by=viewer.id,
+                auto_assigned=False,
+                status=PackAssignmentStatus.assigned,
+                quiz_template_id=published.id if published else None,
+                due_at=due_at,
+            )
+        for emp_id in current - target:
+            existing = await self.assignment_dao.get_for_pack_and_employee(pack.id, emp_id)
+            if existing is not None:
+                await self.assignment_dao.delete(existing.id)

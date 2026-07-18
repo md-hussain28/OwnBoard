@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Suspense } from "react";
-import DocPackDetailPage from "@/app/app/tracks/[id]/page";
+import { DocPackDetailView } from "@/app/app/tracks/[id]/view";
 import NewQuizPage from "@/app/app/tracks/new/page";
 import DocPacksPage from "@/app/app/tracks/page";
 import { handlers, loadingForever, notImplemented } from "../../.storybook/mocks/handlers";
@@ -58,31 +57,21 @@ export const CreateQuiz: Story = {
   parameters: { nextjs: { navigation: { pathname: "/app/tracks/new" } } },
 };
 
-// `use(params)` suspends on first render, so the params promise must be stable
-// across renders (module-level) and the page needs a Suspense boundary here.
-const PACK_PARAMS = Promise.resolve({ id: "pack_a1b2c3d4e5f6g7h8i9" });
+const PACK_ID = "pack_a1b2c3d4e5f6g7h8i9";
 
 const PACK_BUILDER_NAV = {
-  nextjs: { navigation: { pathname: "/app/tracks/pack_a1b2c3d4e5f6g7h8i9" } },
+  nextjs: { navigation: { pathname: `/app/tracks/${PACK_ID}` } },
 };
 
 /** Pack builder — documents plus the generate/edit/publish quiz workflow. */
 export const QuizBuilder: Story = {
-  render: () => (
-    <Suspense fallback={null}>
-      <DocPackDetailPage params={PACK_PARAMS} />
-    </Suspense>
-  ),
+  render: () => <DocPackDetailView id={PACK_ID} />,
   parameters: PACK_BUILDER_NAV,
 };
 
 /** Pack builder when the backend quiz domain still answers 501. */
 export const QuizBuilderQuizIncoming: Story = {
-  render: () => (
-    <Suspense fallback={null}>
-      <DocPackDetailPage params={PACK_PARAMS} />
-    </Suspense>
-  ),
+  render: () => <DocPackDetailView id={PACK_ID} />,
   parameters: {
     ...PACK_BUILDER_NAV,
     msw: { handlers: [notImplemented("get", "/api/doc-packs/:id/quiz"), ...handlers] },

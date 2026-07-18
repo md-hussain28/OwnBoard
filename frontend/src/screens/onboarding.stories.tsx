@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Suspense } from "react";
 import CodebaseQuizPage from "@/app/app/onboarding/codebase-quiz/page";
-import AssignmentPage from "@/app/app/onboarding/packs/[assignmentId]/page";
+import { AssignmentView } from "@/app/app/onboarding/packs/[assignmentId]/view";
 import EmployeePacksPage from "@/app/app/onboarding/packs/page";
 import OnboardingPage from "@/app/app/onboarding/page";
 import PolicyQuizPage from "@/app/app/onboarding/policy-quiz/page";
@@ -92,18 +91,12 @@ export const AssignedReading: Story = {
   parameters: { nextjs: { navigation: { pathname: "/app/onboarding/packs" } } },
 };
 
-// `use(params)` suspends on first render, so the params promise must be stable
-// across renders (module-level) and the page needs a Suspense boundary here.
-const ASSIGNMENT_PARAMS = Promise.resolve({ assignmentId: "asg_a1b2c3d4e5f6g7h8i9" });
+const ASSIGNMENT_ID = "asg_a1b2c3d4e5f6g7h8i9";
 
 /** Assignment workspace — read & acknowledge documents, then take the quiz. */
 export const AssignmentWorkspace: Story = {
-  render: () => (
-    <Suspense fallback={null}>
-      <AssignmentPage params={ASSIGNMENT_PARAMS} />
-    </Suspense>
-  ),
+  render: () => <AssignmentView assignmentId={ASSIGNMENT_ID} />,
   parameters: {
-    nextjs: { navigation: { pathname: "/app/onboarding/packs/asg_a1b2c3d4e5f6g7h8i9" } },
+    nextjs: { navigation: { pathname: `/app/onboarding/packs/${ASSIGNMENT_ID}` } },
   },
 };

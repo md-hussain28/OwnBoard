@@ -1,158 +1,24 @@
 "use client";
 
-import { PlusIcon, StarIcon, Trash2Icon, XIcon } from "lucide-react";
+import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useState } from "react";
-import {
-  useAddProjectRepo,
-  useRemoveProjectRepo,
-  useUpdateProject,
-} from "@/hooks/queries/project/project.mutations";
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
+import { useUpdateProject } from "@/hooks/queries/project/project.mutations";
 import { notify } from "@/lib/toast";
 import type { GlossaryTerm, ProjectDetail, ResourceLink } from "@/schemas/project.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Input } from "@/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
-import { Spinner } from "@/ui/spinner";
 import { Textarea } from "@/ui/textarea";
 
-const ADD_URL = "__url__";
-
-/** Manager-only editor for the project's reference context + linked repos. */
+/** Manager-only editor for the project's reference context (tech stack, links, glossary). */
 export function ProjectContextTab({ project }: { project: ProjectDetail }) {
   return (
     <div className="space-y-4">
-      <ReposCard project={project} />
       <TechStackCard project={project} />
       <ResourceLinksCard project={project} />
       <GlossaryCard project={project} />
     </div>
-  );
-}
-
-function ReposCard({ project }: { project: ProjectDetail }) {
-  const { data: repos } = useRepos();
-  const addRepo = useAddProjectRepo(project.id);
-  const removeRepo = useRemoveProjectRepo(project.id);
-  const [choice, setChoice] = useState<string>("");
-  const [url, setUrl] = useState("");
-  const [name, setName] = useState("");
-
-  const linkedIds = new Set(project.repos.map((r) => r.repoId));
-  const available = (repos ?? []).filter((r) => !linkedIds.has(r.id));
-
-  function handleAdd() {
-    if (choice === ADD_URL) {
-      if (!url.trim()) return;
-      addRepo.mutate(
-        { url: url.trim(), name: name.trim() || null, isPrimary: project.repos.length === 0 },
-        {
-          onSuccess: () => {
-            setUrl("");
-            setName("");
-            setChoice("");
-            notify.success("Repo linked");
-          },
-          onError: (err) => notify.apiError(err, "Could not link repo"),
-        },
-      );
-      return;
-    }
-    if (!choice) return;
-    addRepo.mutate(
-      { repoId: choice, isPrimary: project.repos.length === 0 },
-      {
-        onSuccess: () => {
-          setChoice("");
-          notify.success("Repo linked");
-        },
-        onError: (err) => notify.apiError(err, "Could not link repo"),
-      },
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Repositories</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {project.repos.length > 0 ? (
-          <ul className="divide-y divide-border">
-            {project.repos.map((r) => (
-              <li key={r.repoId} className="flex items-center gap-2 py-2 text-sm">
-                <span className="min-w-0 flex-1 truncate">{r.name ?? r.url ?? r.repoId}</span>
-                {r.isPrimary && (
-                  <Badge variant="outline">
-                    <StarIcon className="size-3" /> Primary
-                  </Badge>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Remove repo"
-                  onClick={() =>
-                    removeRepo.mutate(r.repoId, {
-                      onError: (err) => notify.apiError(err, "Could not remove repo"),
-                    })
-                  }
-                >
-                  <XIcon className="size-4" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">No repos linked yet.</p>
-        )}
-
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-48 flex-1 space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Link a repo</label>
-            <Select value={choice} onValueChange={setChoice}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a repo…" />
-              </SelectTrigger>
-              <SelectContent>
-                {available.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.name}
-                  </SelectItem>
-                ))}
-                <SelectItem value={ADD_URL}>+ New repo by URL…</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {choice !== ADD_URL && (
-            <Button onClick={handleAdd} disabled={!choice || addRepo.isPending}>
-              {addRepo.isPending && <Spinner />} Link
-            </Button>
-          )}
-        </div>
-
-        {choice === ADD_URL && (
-          <div className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed p-3">
-            <div className="min-w-48 flex-1 space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Repo URL</label>
-              <Input
-                placeholder="https://github.com/org/repo"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-              />
-            </div>
-            <div className="min-w-32 flex-1 space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Name (optional)</label>
-              <Input placeholder="repo" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <Button onClick={handleAdd} disabled={!url.trim() || addRepo.isPending}>
-              {addRepo.isPending && <Spinner />} Add
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 

@@ -14,8 +14,12 @@ class GlossaryTermInput(BaseModel):
 class ProjectCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     description: str | None = None
+    # Lifecycle stage: not_started | active | paused | completed | abandoned. Defaults to active.
+    status: str | None = None
     # Optional link to a connected repo (id) so the member panel can frame go-to people for that codebase.
     repo_id: str | None = None
+    # Optional employee to add as the project's team lead at creation time (a scoped admin).
+    lead_employee_id: str | None = None
     tech_stack: list[str] | None = None
     resource_links: list[ResourceLinkInput] | None = None
     glossary: list[GlossaryTermInput] | None = None
@@ -26,8 +30,10 @@ class ProjectUpdateRequest(BaseModel):
     description: str | None = None
     # Pass null to clear the repo link; omit to leave unchanged (router checks "repo_id" in payload).
     repo_id: str | None = None
-    # "active" | "archived".
+    # Lifecycle stage: not_started | active | paused | completed | abandoned.
     status: str | None = None
+    # Hide/unhide from the default project list (independent of lifecycle status).
+    is_archived: bool | None = None
     tech_stack: list[str] | None = None
     resource_links: list[ResourceLinkInput] | None = None
     glossary: list[GlossaryTermInput] | None = None
@@ -47,12 +53,37 @@ class UpdateProjectMemberRequest(BaseModel):
     is_lead: bool | None = None
 
 
+class TrackAssignmentRequest(BaseModel):
+    """Set a project module's audience. scope='all_members' auto-assigns everyone; 'manual' targets
+    exactly `employee_ids` (project members only)."""
+
+    scope: str = Field(pattern="^(all_members|manual)$")
+    employee_ids: list[str] | None = None
+
+
 class AddProjectRepoRequest(BaseModel):
     # Link an existing connected repo by id, OR provide a URL (+ optional name) to register a new one.
     repo_id: str | None = None
     url: str | None = None
     name: str | None = None
     is_primary: bool = False
+
+
+class RepoMembersRequest(BaseModel):
+    """Set exactly which project members are assigned to work on a linked repo."""
+
+    employee_ids: list[str] = Field(default_factory=list)
+
+
+class DocTypeCreateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    sort_order: int = 0
+
+
+class SetDocTypesRequest(BaseModel):
+    """Set a document's type tags to exactly these project doc-type ids."""
+
+    type_ids: list[str] = Field(default_factory=list)
 
 
 class FunctionTypeCreateRequest(BaseModel):

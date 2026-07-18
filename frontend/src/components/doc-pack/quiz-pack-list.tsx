@@ -355,7 +355,7 @@ export function QuizPackList({
           <p className="text-sm text-muted-foreground text-pretty">
             {isAdmin
               ? "Every module you can assign. Open Assign to pick people and see who has passed."
-              : "Published modules in your organization. Your assigned reading is under Readiness."}
+              : "Published modules in your organization. Your assigned reading is under My modules."}
           </p>
         </div>
         {isAdmin && (

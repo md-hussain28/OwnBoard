@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useEmployees } from "@/hooks/queries/employee/employee.queries";
 import { useCreateProject } from "@/hooks/queries/project/project.mutations";
-import { useRepos } from "@/hooks/queries/repo/repo.queries";
 import { notify } from "@/lib/toast";
 import { Button } from "@/ui/button";
 import {
@@ -18,21 +18,26 @@ import { Input } from "@/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Spinner } from "@/ui/spinner";
 import { Textarea } from "@/ui/textarea";
+import { PROJECT_STATUSES } from "./project-status";
 
-const NO_REPO = "__none__";
+const NO_LEAD = "__none__";
 
 export function CreateProjectDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [repoId, setRepoId] = useState<string>(NO_REPO);
+  const [status, setStatus] = useState("active");
+  const [leadEmployeeId, setLeadEmployeeId] = useState<string>(NO_LEAD);
   const create = useCreateProject();
-  const { data: repos } = useRepos();
+  // Only non-admin employees can lead (admins can't be project members).
+  const { data: employees } = useEmployees({ enabled: open });
+  const leadCandidates = (employees ?? []).filter((e) => e.appRole === "member");
 
   function reset() {
     setName("");
     setDescription("");
-    setRepoId(NO_REPO);
+    setStatus("active");
+    setLeadEmployeeId(NO_LEAD);
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -42,7 +47,8 @@ export function CreateProjectDialog() {
       {
         name: name.trim(),
         description: description.trim() || null,
-        repoId: repoId === NO_REPO ? null : repoId,
+        status,
+        leadEmployeeId: leadEmployeeId === NO_LEAD ? null : leadEmployeeId,
       },
       {
         onSuccess: (project) => {
@@ -65,8 +71,8 @@ export function CreateProjectDialog() {
           <DialogHeader>
             <DialogTitle>New project</DialogTitle>
             <DialogDescription>
-              A project bundles its own onboarding modules. Members must pass every module before
-              the project unlocks for them.
+              Just a name to start. Add members, modules, docs and repos once it&apos;s created —
+              everything here is editable later.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -94,24 +100,42 @@ export function CreateProjectDialog() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium" htmlFor="project-repo">
-                Linked repo <span className="text-muted-foreground">(optional)</span>
+              <label className="text-sm font-medium" htmlFor="project-status">
+                Status
               </label>
-              <Select value={repoId} onValueChange={setRepoId}>
-                <SelectTrigger id="project-repo">
-                  <SelectValue placeholder="No repo" />
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger id="project-status">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NO_REPO}>No repo</SelectItem>
-                  {repos?.map((repo) => (
-                    <SelectItem key={repo.id} value={repo.id}>
-                      {repo.name}
+                  {PROJECT_STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium" htmlFor="project-lead">
+                Team lead <span className="text-muted-foreground">(optional)</span>
+              </label>
+              <Select value={leadEmployeeId} onValueChange={setLeadEmployeeId}>
+                <SelectTrigger id="project-lead">
+                  <SelectValue placeholder="No team lead" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_LEAD}>No team lead</SelectItem>
+                  {leadCandidates.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.name}
+                      {e.role ? ` · ${e.role}` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Links the project to a codebase, so ready members show up as its go-to people.
+                The lead can manage this project like an admin. You can change them anytime.
               </p>
             </div>
           </div>

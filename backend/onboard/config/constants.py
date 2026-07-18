@@ -21,6 +21,22 @@ MAX_DOC_INGEST_ATTEMPTS = 3
 MAX_DOC_PACK_FILE_SIZE_BYTES = 20 * 1024 * 1024  # 20 MB per file
 MAX_DOC_PACK_FILES_PER_UPLOAD = 10
 
+# Push-model ingest (GitHub Action → POST /ingest). These caps bound how much a single request can
+# allocate on the 512MB host — the request is rejected (422) before any DB work if exceeded.
+INGEST_MAX_CONTRIBUTORS = 5_000
+INGEST_MAX_COMMITS = 20_000
+INGEST_MAX_FILES = 20_000
+INGEST_MAX_CHUNKS = 20_000
+INGEST_MAX_CHUNK_CHARS = 12_000  # per code chunk; longer content is truncated before embedding
+
+# Skill-graph expertise scoring (PRD §6.2): commit weight decays with a 180-day half-life so recent
+# work counts more, and is penalised when a contributor's changes were shortly reverted.
+EXPERTISE_HALF_LIFE_DAYS = 180.0
+EXPERTISE_REVERT_PENALTY = 0.15  # score multiplier lost per associated revert, floored at 0.2
+
+# Archaeology Q&A escalates to a human below this answer confidence (PRD §6.4/§7 — never guess).
+ARCHAEOLOGY_CONFIDENCE_THRESHOLD = 0.55
+
 APP_TITLE = "OwnBoard API"
 APP_DESCRIPTION = "Backend for OwnBoard - onboarding quizzes, repo readiness gating, skill-graph bus-factor detection"
 

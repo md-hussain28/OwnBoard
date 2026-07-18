@@ -24,12 +24,12 @@ export function usePackAssignments(packId: string) {
 
 export function useEmployeeAssignments(
   employeeId: string,
-  options?: { refetchInterval?: number | false },
+  options?: { refetchInterval?: number | false; enabled?: boolean },
 ) {
   return useQuery({
     queryKey: packAssignmentKeys.forEmployee(employeeId),
     queryFn: () => packAssignmentService.listForEmployee(employeeId),
-    enabled: Boolean(employeeId),
+    enabled: Boolean(employeeId) && (options?.enabled ?? true),
     refetchInterval: options?.refetchInterval,
   });
 }

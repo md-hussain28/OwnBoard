@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from onboard.core.common.logger import get_logger
 from onboard.dao.doc_pack_dao import DocPackDAO
 from onboard.dao.employee_dao import EmployeeDAO
-from onboard.dao.models.doc_pack import PackAssignmentStatus
+from onboard.dao.models.doc_pack import DocPackAssignScope, PackAssignmentStatus
 from onboard.dao.models.quiz_template import QuizType
 from onboard.dao.pack_assignment_dao import PackAssignmentDAO
 from onboard.dao.project_dao import ProjectMemberDAO
@@ -45,6 +45,9 @@ async def assign_pack_to_audience(session: AsyncSession, org_id: str, pack_id: s
 
     audience_domain_ids = {a.org_domain_id for a in pack.audience_domains}
     is_project_track = pack.project_id is not None
+    # A manually-scoped project module never auto-assigns — its audience is set explicitly via the roster.
+    if is_project_track and pack.assign_scope == DocPackAssignScope.manual:
+        return 0
     if not is_project_track and not pack.assign_to_all and not audience_domain_ids:
         return 0  # Manual-only track.
 
@@ -130,6 +133,8 @@ async def assign_project_tracks_to_member(session: AsyncSession, org_id: str, pr
     now = datetime.now(UTC)
     created = 0
     for pack in packs:
+        if pack.assign_scope == DocPackAssignScope.manual:
+            continue  # Manually-targeted module — not auto-assigned to new members.
         published = await template_dao.get_latest_published_for_source(pack.id, QuizType.doc_pack)
         if published is None:
             continue  # Draft project track — not gating yet.

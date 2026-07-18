@@ -91,6 +91,74 @@ export function useCreateProjectTrack(id: string) {
   });
 }
 
+// ---- docs (knowledge base) ------------------------------------------------
+
+function useInvalidateDocs(id: string) {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: projectKeys.docs(id) });
+}
+
+export function useUploadProjectDocs(id: string) {
+  const invalidate = useInvalidateDocs(id);
+  return useMutation({
+    mutationFn: (files: File[]) => projectService.uploadDocs(id, files),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteProjectDoc(id: string) {
+  const invalidate = useInvalidateDocs(id);
+  return useMutation({
+    mutationFn: (documentId: string) => projectService.deleteDoc(id, documentId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetDocTypes(id: string) {
+  const invalidate = useInvalidateDocs(id);
+  return useMutation({
+    mutationFn: (vars: { documentId: string; typeIds: string[] }) =>
+      projectService.setDocTypes(id, vars.documentId, vars.typeIds),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCreateDocType(id: string) {
+  const invalidate = useInvalidateDocs(id);
+  return useMutation({
+    mutationFn: (name: string) => projectService.createDocType(id, name),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteDocType(id: string) {
+  const invalidate = useInvalidateDocs(id);
+  return useMutation({
+    mutationFn: (typeId: string) => projectService.deleteDocType(id, typeId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetTrackAssignment(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: {
+      trackId: string;
+      scope: "all_members" | "manual";
+      employeeIds?: string[];
+    }) =>
+      projectService.setTrackAssignment(id, vars.trackId, {
+        scope: vars.scope,
+        employeeIds: vars.employeeIds,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.tracks(id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.members(id) });
+    },
+  });
+}
+
 // ---- repos ----------------------------------------------------------------
 
 export function useAddProjectRepo(id: string) {
@@ -105,6 +173,15 @@ export function useRemoveProjectRepo(id: string) {
   const invalidate = useInvalidateProject(id);
   return useMutation({
     mutationFn: (repoId: string) => projectService.removeRepo(id, repoId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetRepoMembers(id: string) {
+  const invalidate = useInvalidateProject(id);
+  return useMutation({
+    mutationFn: (vars: { repoId: string; employeeIds: string[] }) =>
+      projectService.setRepoMembers(id, vars.repoId, vars.employeeIds),
     onSuccess: invalidate,
   });
 }

@@ -1,9 +1,12 @@
 "use client";
 
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, PlusIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useEmployees } from "@/hooks/queries/employee/employee.queries";
-import { useAddProjectMembers } from "@/hooks/queries/project/project.mutations";
+import {
+  useAddProjectMembers,
+  useCreateFunctionType,
+} from "@/hooks/queries/project/project.mutations";
 import {
   useProjectFunctionTypes,
   useProjectMembers,
@@ -20,19 +23,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/ui/dialog";
+import { Input } from "@/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Spinner } from "@/ui/spinner";
-
-const NO_FUNCTION = "__none__";
 
 export function AddMembersDialog({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [functionTypeId, setFunctionTypeId] = useState<string>(NO_FUNCTION);
+  const [functionTypeId, setFunctionTypeId] = useState("");
+  const [newRole, setNewRole] = useState("");
+  const [localRoles, setLocalRoles] = useState<{ id: string; name: string }[]>([]);
   const { data: employees } = useEmployees({ enabled: open });
   const { data: currentMembers } = useProjectMembers(projectId, open);
   const { data: functionTypes } = useProjectFunctionTypes(projectId, open);
   const add = useAddProjectMembers(projectId);
+  const createRole = useCreateFunctionType(projectId);
+
+  const roles = useMemo(() => {
+    const fetched = functionTypes ?? [];
+    const fetchedIds = new Set(fetched.map((role) => role.id));
+    return [...fetched, ...localRoles.filter((role) => !fetchedIds.has(role.id))];
+  }, [functionTypes, localRoles]);
 
   const existing = useMemo(
     () => new Set((currentMembers ?? []).map((m) => m.employeeId)),
@@ -50,22 +61,40 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
   }
 
   function handleAdd() {
-    if (selected.size === 0) return;
+    if (selected.size === 0 || !functionTypeId) return;
     add.mutate(
       {
         employeeIds: Array.from(selected),
-        functionTypeId: functionTypeId === NO_FUNCTION ? null : functionTypeId,
+        functionTypeId,
       },
       {
         onSuccess: () => {
           setOpen(false);
           setSelected(new Set());
-          setFunctionTypeId(NO_FUNCTION);
+          setFunctionTypeId("");
+          setNewRole("");
+          setLocalRoles([]);
           notify.success("Members added", {
-            description: "Their onboarding tracks and function modules were assigned.",
+            description: "Modules and role-matched docs were assigned.",
           });
         },
         onError: (err) => notify.apiError(err, "Could not add members"),
+      },
+    );
+  }
+
+  function handleCreateRole() {
+    const name = newRole.trim();
+    if (!name) return;
+    createRole.mutate(
+      { name },
+      {
+        onSuccess: (role) => {
+          setLocalRoles((current) => [...current, role]);
+          setFunctionTypeId(role.id);
+          setNewRole("");
+        },
+        onError: (err) => notify.apiError(err, "Could not add role"),
       },
     );
   }
@@ -79,8 +108,8 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
         <DialogHeader>
           <DialogTitle>Add members</DialogTitle>
           <DialogDescription>
-            Added members are auto-assigned this project&apos;s onboarding modules and must pass
-            them to unlock the project.
+            Added members are auto-assigned this project&apos;s modules (those set to
+            &ldquo;everyone&rdquo;) and role-matched docs. Every member needs a role.
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-72 space-y-1 overflow-y-auto py-2">
@@ -115,31 +144,54 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
             );
           })}
         </div>
-        {(functionTypes?.length ?? 0) > 0 && (
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">
-              Function <span className="text-muted-foreground">(optional)</span>
-            </label>
-            <Select value={functionTypeId} onValueChange={setFunctionTypeId}>
-              <SelectTrigger>
-                <SelectValue placeholder="No function" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_FUNCTION}>No function</SelectItem>
-                {functionTypes?.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Modules matching this function auto-assign to everyone added here.
-            </p>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Role <span className="text-destructive">*</span>
+          </label>
+          <Select value={functionTypeId} onValueChange={setFunctionTypeId}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose a role" />
+            </SelectTrigger>
+            <SelectContent>
+              {roles.map((role) => (
+                <SelectItem key={role.id} value={role.id}>
+                  {role.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex gap-2">
+            <Input
+              aria-label="New role name"
+              placeholder="Add a new role"
+              value={newRole}
+              onChange={(event) => setNewRole(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  handleCreateRole();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={createRole.isPending || !newRole.trim()}
+              onClick={handleCreateRole}
+            >
+              {createRole.isPending ? <Spinner /> : <PlusIcon className="size-4" />}
+              Add
+            </Button>
           </div>
-        )}
+          <p className="text-xs text-muted-foreground">
+            Role-matched docs are assigned automatically. A newly added role is selected.
+          </p>
+        </div>
         <DialogFooter>
-          <Button onClick={handleAdd} disabled={add.isPending || selected.size === 0}>
+          <Button
+            onClick={handleAdd}
+            disabled={add.isPending || selected.size === 0 || !functionTypeId}
+          >
             {add.isPending && <Spinner />}
             {add.isPending
               ? "Adding..."

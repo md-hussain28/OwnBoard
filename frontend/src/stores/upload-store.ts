@@ -1,14 +1,15 @@
 import { create } from "zustand";
-import { ID_PREFIXES, typedId } from "@/lib";
+import { ID_PREFIXES, typedId, validateFiles as validateUploadFiles } from "@/lib";
 import { getApiErrorMessage } from "@/lib/api";
 import { docPackService } from "@/services";
 
-// Mirror the backend limits (backend/onboard/config/constants.py) so bad batches fail
-// instantly in the browser instead of tying up the 512MB API instance.
-export const MAX_UPLOAD_FILE_SIZE_BYTES = 20 * 1024 * 1024;
-export const MAX_UPLOAD_FILE_SIZE_MB = MAX_UPLOAD_FILE_SIZE_BYTES / (1024 * 1024);
-export const MAX_UPLOAD_FILES_PER_BATCH = 10;
-const ALLOWED_EXTENSIONS = new Set(["pdf"]);
+// Upload limits + validation live in @/lib/upload (shared with the project-docs upload flow).
+// Re-exported here so existing importers of the store keep working.
+export {
+  MAX_UPLOAD_FILE_SIZE_BYTES,
+  MAX_UPLOAD_FILE_SIZE_MB,
+  MAX_UPLOAD_FILES_PER_BATCH,
+} from "@/lib";
 
 export type UploadPhase = "uploading" | "processing" | "complete" | "failed";
 
@@ -45,19 +46,6 @@ type UploadStore = {
   markJob: (jobId: string, patch: Partial<UploadJob>) => void;
 };
 
-/** First problem with a single file (type, emptiness, size), or null when it is acceptable. */
-function fileError(file: File): string | null {
-  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-  if (!ALLOWED_EXTENSIONS.has(extension)) {
-    return `${file.name} is not supported — only PDF files up to ${MAX_UPLOAD_FILE_SIZE_MB} MB.`;
-  }
-  if (file.size === 0) return `${file.name} is empty.`;
-  if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
-    return `${file.name} is larger than ${MAX_UPLOAD_FILE_SIZE_MB} MB.`;
-  }
-  return null;
-}
-
 export const useUploadStore = create<UploadStore>()((set, get) => ({
   jobs: [],
   minimized: false,
@@ -71,16 +59,7 @@ export const useUploadStore = create<UploadStore>()((set, get) => ({
       jobs: state.jobs.map((job) => (job.id === jobId ? { ...job, ...patch } : job)),
     })),
 
-  validateFiles: (files) => {
-    if (files.length === 0) return "Choose at least one file.";
-    if (files.length > MAX_UPLOAD_FILES_PER_BATCH)
-      return `Upload at most ${MAX_UPLOAD_FILES_PER_BATCH} files at a time.`;
-    for (const file of files) {
-      const error = fileError(file);
-      if (error) return error;
-    }
-    return null;
-  },
+  validateFiles: (files) => validateUploadFiles(files),
 
   startUpload: ({ packId, packName, files, onUploaded }) => {
     const jobId = typedId(ID_PREFIXES.uploadJob);

@@ -1,4 +1,4 @@
-import { API_ENDPOINTS, getApiClient } from "@/lib/api";
+import { API_ENDPOINTS, getApiClient, performSignedUpload } from "@/lib/api";
 import {
   type AddProjectRepoInput,
   type CreateProjectInput,
@@ -159,12 +159,21 @@ export const projectService = {
     return projectDocsSchema.parse(data);
   },
 
-  async uploadDocs(id: string, files: File[]): Promise<ProjectDocs> {
-    const form = new FormData();
-    for (const file of files) form.append("files", file);
-    const { data } = await getApiClient().post(API_ENDPOINTS.projectDocs(id), form, {
-      headers: { "Content-Type": "multipart/form-data" },
-      timeout: 120_000,
+  /**
+   * Upload reference PDFs straight to Supabase Storage via signed URLs, then register them so the
+   * backend indexes them for "Ask project". Bytes bypass the Next.js/Vercel proxy, so the 20MB
+   * limit is real (a proxied multipart POST would 413 at Vercel's ~4.5MB body cap).
+   */
+  async uploadDocs(
+    id: string,
+    files: File[],
+    options?: { onProgress?: (percent: number) => void },
+  ): Promise<ProjectDocs> {
+    const data = await performSignedUpload({
+      urlsEndpoint: API_ENDPOINTS.projectDocsUploadUrls(id),
+      registerEndpoint: API_ENDPOINTS.projectDocsRegister(id),
+      files,
+      onProgress: options?.onProgress,
     });
     return projectDocsSchema.parse(data);
   },

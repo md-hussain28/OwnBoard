@@ -10,6 +10,8 @@ from onboard.api.dependency.auth import ClerkUserId
 from onboard.api.dependency.rbac import CurrentEmployee
 from onboard.api.dependency.service_container import ServiceContainer, get_service_container
 from onboard.api.dependency.tenancy import CurrentOrgId
+from onboard.api.schema.doc_pack.request import RegisterUploadsRequest, SignedUploadRequest
+from onboard.api.schema.doc_pack.response import SignedUploadTargetResponse, SignedUploadUrlsResponse
 from onboard.api.schema.project.request import DocTypeCreateRequest, SetDocTypesRequest
 from onboard.api.schema.project.response import ProjectDocsResponse, ProjectDocTypeResponse
 from onboard.services.doc_pack.doc_pack_service import ingest_document_background
@@ -44,6 +46,45 @@ async def upload_project_docs(
         content = await upload.read()
         payloads.append((upload.filename or "untitled.pdf", content, upload.content_type))
     documents = await services.project.upload_docs(org_id, project_id, employee, payloads, created_by=user_id)
+    for document in documents:
+        background_tasks.add_task(ingest_document_background, org_id, document.id)
+    return await services.project.get_docs(org_id, project_id, employee)
+
+
+@router.post("/{project_id}/docs/upload-urls", response_model=SignedUploadUrlsResponse)
+async def create_project_doc_upload_urls(
+    project_id: str,
+    payload: SignedUploadRequest,
+    org_id: CurrentOrgId,
+    employee: CurrentEmployee,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Direct-to-storage upload step 1 for project reference docs — file bytes go browser → Supabase,
+    bypassing the Vercel serverless request-body cap. Validates PDF-only / ≤20MB before issuing URLs."""
+    targets = await services.project.create_doc_upload_urls(
+        org_id, project_id, employee, [(f.filename, f.content_type, f.size) for f in payload.files]
+    )
+    return SignedUploadUrlsResponse(uploads=[SignedUploadTargetResponse(**t) for t in targets])
+
+
+@router.post("/{project_id}/docs/register", response_model=ProjectDocsResponse, status_code=201)
+async def register_project_docs(
+    project_id: str,
+    payload: RegisterUploadsRequest,
+    org_id: CurrentOrgId,
+    user_id: ClerkUserId,
+    employee: CurrentEmployee,
+    background_tasks: BackgroundTasks,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Step 2: register the uploaded objects, schedule background ingest, and return the refreshed docs."""
+    documents = await services.project.register_uploaded_docs(
+        org_id,
+        project_id,
+        employee,
+        [(f.document_id, f.filename, f.storage_path, f.size) for f in payload.files],
+        created_by=user_id,
+    )
     for document in documents:
         background_tasks.add_task(ingest_document_background, org_id, document.id)
     return await services.project.get_docs(org_id, project_id, employee)

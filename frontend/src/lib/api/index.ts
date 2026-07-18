@@ -4,6 +4,7 @@ export * from "./api-client";
 export * from "./config";
 export * from "./endpoint";
 export * from "./errors";
+export * from "./signed-upload";
 
 // Note: `./backend-client` and `./proxy` are server-only (`import "server-only"`).
 // They are intentionally NOT re-exported here — this barrel is imported by client

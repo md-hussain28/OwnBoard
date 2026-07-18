@@ -42,3 +42,32 @@ class DocPackRetrieveRequest(BaseModel):
     query: str = Field(min_length=1)
     top_k: int = Field(default=8, ge=1, le=32)
     document_id: str | None = None
+
+
+# --- Direct-to-storage upload (browser → Supabase, bypassing the Vercel request-body cap) ---
+
+
+class SignedUploadFileRequest(BaseModel):
+    """One file the client wants to upload; `size` is the declared byte length (validated server-side)."""
+
+    filename: str = Field(min_length=1)
+    content_type: str | None = None
+    size: int = Field(ge=0)
+
+
+class SignedUploadRequest(BaseModel):
+    files: list[SignedUploadFileRequest] = Field(min_length=1)
+
+
+class RegisterUploadItemRequest(BaseModel):
+    """One object the browser has already PUT to storage, echoed back from the signed-url step."""
+
+    document_id: str = Field(min_length=1)
+    filename: str = Field(min_length=1)
+    storage_path: str = Field(min_length=1)
+    content_type: str | None = None
+    size: int = Field(ge=0)
+
+
+class RegisterUploadsRequest(BaseModel):
+    files: list[RegisterUploadItemRequest] = Field(min_length=1)

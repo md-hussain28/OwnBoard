@@ -185,6 +185,97 @@ class DocPackService:
             await self.audience_dao.replace_for_pack(org_id, pack.id, resolved)
         return await self.get_pack(org_id, pack_id)
 
+    def _validate_file_meta(self, filename: str, size: int) -> str:
+        """Validate one file's name + byte size against the allow-list and size cap; return its
+        normalized extension. Shared by the (legacy) server-side upload and the direct-to-storage
+        flow so the 20MB / PDF-only rules can't drift apart."""
+        extension = _extension_for(filename)
+        if extension not in ALLOWED_DOC_PACK_EXTENSIONS:
+            raise ValidationError(f"Unsupported file type: {filename}")
+        if size <= 0:
+            raise ValidationError(f"Empty file: {filename}")
+        if size > MAX_DOC_PACK_FILE_SIZE_BYTES:
+            limit_mb = MAX_DOC_PACK_FILE_SIZE_BYTES // (1024 * 1024)
+            raise ValidationError(f"{filename} is too large — the limit is {limit_mb} MB per file")
+        return extension
+
+    async def create_upload_urls(
+        self,
+        org_id: str,
+        pack_id: str,
+        files: list[tuple[str, str | None, int]],
+    ) -> list[dict]:
+        """Step 1 of the direct-to-storage upload: validate the batch and mint one short-lived
+        signed upload URL per file. No DB rows are created yet — that happens in
+        `register_uploaded_documents` once the browser has PUT the bytes straight to Supabase
+        (bypassing the Vercel serverless request-body cap).
+
+        `files` is a list of `(filename, content_type, size)`. Returns one target dict per file.
+        """
+        pack = await self.get_pack(org_id, pack_id)
+        if not files:
+            raise ValidationError("At least one file is required")
+        if len(files) > MAX_DOC_PACK_FILES_PER_UPLOAD:
+            raise ValidationError(f"Too many files — upload at most {MAX_DOC_PACK_FILES_PER_UPLOAD} at a time")
+
+        storage = await self._storage_client()
+        targets: list[dict] = []
+        for filename, content_type, size in files:
+            extension = self._validate_file_meta(filename, size)
+            document_id = DocPackDocument.generate_pk()
+            storage_path = _storage_path_for(org_id, pack.id, document_id, filename)
+            upload_url, token = await storage.create_signed_upload_url(storage_path)
+            mime = content_type or _CONTENT_TYPES.get(extension, "application/octet-stream")
+            targets.append(
+                {
+                    "document_id": document_id,
+                    "filename": filename,
+                    "storage_path": storage_path,
+                    "upload_url": upload_url,
+                    "token": token,
+                    "content_type": mime,
+                }
+            )
+        return targets
+
+    async def register_uploaded_documents(
+        self,
+        org_id: str,
+        pack_id: str,
+        items: list[tuple[str, str, str, int]],
+        created_by: str | None = None,
+    ) -> list[DocPackDocument]:
+        """Step 2: create `doc_pack_document` rows for files the browser already uploaded to storage.
+
+        `items` is a list of `(document_id, filename, storage_path, size)` echoed back from
+        `create_upload_urls`. Each `storage_path` is re-derived server-side and must match — a client
+        can only ever register objects under its own org/pack prefix, never a path it invented. Caller
+        schedules `ingest_document_background` for each returned document id.
+        """
+        pack = await self.get_pack(org_id, pack_id)
+        if not items:
+            raise ValidationError("At least one file is required")
+        if len(items) > MAX_DOC_PACK_FILES_PER_UPLOAD:
+            raise ValidationError(f"Too many files — upload at most {MAX_DOC_PACK_FILES_PER_UPLOAD} at a time")
+
+        created: list[DocPackDocument] = []
+        for document_id, filename, storage_path, size in items:
+            extension = self._validate_file_meta(filename, size)
+            if storage_path != _storage_path_for(org_id, pack.id, document_id, filename):
+                raise ValidationError(f"Upload path mismatch for {filename}")
+            document = await self.document_dao.create(
+                id=document_id,
+                doc_pack_id=pack.id,
+                title=PurePosixPath(filename).stem or _safe_storage_name(filename),
+                storage_path=storage_path,
+                file_type=extension if extension != "markdown" else "md",
+                file_size_bytes=size,
+                status=DocumentStatus.uploaded,
+                created_by=created_by,
+            )
+            created.append(document)
+        return created
+
     async def upload_documents(
         self,
         org_id: str,
@@ -192,10 +283,12 @@ class DocPackService:
         files: list[tuple[str, bytes, str | None]],
         created_by: str | None = None,
     ) -> list[DocPackDocument]:
-        """Upload files to Supabase Storage and create `doc_pack_document` rows.
+        """Server-side upload: buffer files through the API into Supabase Storage and create rows.
 
-        `files` is a list of `(filename, content, content_type)` tuples.
-        Caller should schedule `ingest_document_background` for each returned document id.
+        Superseded by `create_upload_urls` + `register_uploaded_documents` for browser uploads
+        (which sidestep the Vercel ~4.5MB request-body cap); kept for small server-initiated uploads.
+        `files` is a list of `(filename, content, content_type)` tuples. Caller should schedule
+        `ingest_document_background` for each returned document id.
         """
         pack = await self.get_pack(org_id, pack_id)
         if not files:
@@ -206,14 +299,7 @@ class DocPackService:
         # Validate every file before touching storage, so a bad file in the batch never leaves
         # earlier files half-ingested.
         for filename, content, _ in files:
-            extension = _extension_for(filename)
-            if extension not in ALLOWED_DOC_PACK_EXTENSIONS:
-                raise ValidationError(f"Unsupported file type: {filename}")
-            if not content:
-                raise ValidationError(f"Empty file: {filename}")
-            if len(content) > MAX_DOC_PACK_FILE_SIZE_BYTES:
-                limit_mb = MAX_DOC_PACK_FILE_SIZE_BYTES // (1024 * 1024)
-                raise ValidationError(f"{filename} is too large — the limit is {limit_mb} MB per file")
+            self._validate_file_meta(filename, len(content))
 
         storage = await self._storage_client()
         created: list[DocPackDocument] = []
@@ -223,8 +309,7 @@ class DocPackService:
             for filename, content, content_type in files:
                 extension = _extension_for(filename)
                 document_id = DocPackDocument.generate_pk()
-                safe_name = PurePosixPath(filename).name.replace(" ", "_")
-                storage_path = f"{org_id}/{pack.id}/{document_id}-{safe_name}"
+                storage_path = _storage_path_for(org_id, pack.id, document_id, filename)
                 mime = content_type or _CONTENT_TYPES.get(extension, "application/octet-stream")
 
                 await storage.upload(storage_path, content, mime)
@@ -232,7 +317,7 @@ class DocPackService:
                 document = await self.document_dao.create(
                     id=document_id,
                     doc_pack_id=pack.id,
-                    title=PurePosixPath(filename).stem or safe_name,
+                    title=PurePosixPath(filename).stem or _safe_storage_name(filename),
                     storage_path=storage_path,
                     file_type=extension if extension != "markdown" else "md",
                     file_size_bytes=len(content),
@@ -340,3 +425,14 @@ async def ingest_document_background(org_id: str, document_id: str) -> None:
 def _extension_for(filename: str) -> str:
     suffix = PurePosixPath(filename).suffix.lower().lstrip(".")
     return suffix
+
+
+def _safe_storage_name(filename: str) -> str:
+    return PurePosixPath(filename).name.replace(" ", "_")
+
+
+def _storage_path_for(org_id: str, pack_id: str, document_id: str, filename: str) -> str:
+    """Canonical object key. The `{org_id}/{pack_id}/` prefix is how we scope storage (the
+    service-role key bypasses bucket RLS), so this is the single source of truth for the path —
+    both when minting a signed upload URL and when registering the uploaded object."""
+    return f"{org_id}/{pack_id}/{document_id}-{_safe_storage_name(filename)}"

@@ -21,6 +21,10 @@ export const API_ENDPOINTS = {
   projectMembers: (id: string) => `/projects/${id}/members`,
   projectSkills: (id: string) => `/projects/${id}/skills`,
   projectDocs: (id: string) => `/projects/${id}/docs`,
+  /** Direct-to-storage upload: mint Supabase signed upload URLs (bypasses the Vercel body cap). */
+  projectDocsUploadUrls: (id: string) => `/projects/${id}/docs/upload-urls`,
+  /** Register objects already uploaded to storage → creates rows + starts ingest. */
+  projectDocsRegister: (id: string) => `/projects/${id}/docs/register`,
   projectDoc: (id: string, documentId: string) => `/projects/${id}/docs/${documentId}`,
   projectDocTypesForDoc: (id: string, documentId: string) =>
     `/projects/${id}/docs/${documentId}/types`,
@@ -55,6 +59,10 @@ export const API_ENDPOINTS = {
   docPacks: "/doc-packs",
   docPack: (id: string) => `/doc-packs/${id}`,
   docPackDocuments: (id: string) => `/doc-packs/${id}/documents`,
+  /** Direct-to-storage upload: mint Supabase signed upload URLs (bypasses the Vercel body cap). */
+  docPackDocumentUploadUrls: (id: string) => `/doc-packs/${id}/documents/upload-urls`,
+  /** Register objects already uploaded to storage → creates rows + starts ingest. */
+  docPackDocumentsRegister: (id: string) => `/doc-packs/${id}/documents/register`,
   docPackDocument: (id: string, documentId: string) => `/doc-packs/${id}/documents/${documentId}`,
   docPackDocumentsStatus: (id: string) => `/doc-packs/${id}/documents/status`,
   docPackGenerateQuiz: (id: string) => `/doc-packs/${id}/generate-quiz`,

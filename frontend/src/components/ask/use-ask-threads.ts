@@ -13,6 +13,7 @@ export type AskThread = {
   id: string;
   title: string;
   messages: UIMessage[];
+  createdAt: number;
   updatedAt: number;
 };
 
@@ -62,13 +63,16 @@ export function useAskThreads(projectId: string) {
     (messages: UIMessage[]) => {
       if (!messages.length) return;
       setThreads((prev) => {
+        const now = Date.now();
+        const existing = prev.find((t) => t.id === activeId);
         const entry: AskThread = {
           id: activeId,
           title: deriveTitle(messages),
           messages,
-          updatedAt: Date.now(),
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
         };
-        const exists = prev.some((t) => t.id === activeId);
+        const exists = Boolean(existing);
         const next = (
           exists ? prev.map((t) => (t.id === activeId ? entry : t)) : [entry, ...prev]
         ).sort((a, b) => b.updatedAt - a.updatedAt);

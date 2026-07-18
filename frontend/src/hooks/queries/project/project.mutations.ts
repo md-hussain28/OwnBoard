@@ -58,18 +58,26 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateProjectInput) => projectService.create(input),
-    ...optimistic<CreateProjectInput>(
-      queryClient,
-      (input) => [
-        cacheEdit<Project[]>(projectKeys.all, (prev) =>
-          prev ? [optimisticProject(input), ...prev] : prev,
-        ),
-      ],
-      () => {
-        queryClient.invalidateQueries({ queryKey: projectKeys.all });
-        queryClient.invalidateQueries({ queryKey: projectKeys.mine });
-      },
-    ),
+    onMutate: async (input) => {
+      // Keep the draft's client id so `onSuccess` can swap in the real `proj_…` id before
+      // the refetch settles — otherwise clicking the fresh card links to `new_…`, which the
+      // backend can't resolve → 404.
+      const draft = optimisticProject(input);
+      const snapshots = await optimisticEdits(queryClient, [
+        cacheEdit<Project[]>(projectKeys.all, (prev) => (prev ? [draft, ...prev] : prev)),
+      ]);
+      return { draftId: draft.id, snapshots };
+    },
+    onSuccess: (project, _input, context) => {
+      queryClient.setQueryData<Project[]>(projectKeys.all, (prev) =>
+        prev?.map((p) => (p.id === context?.draftId ? project : p)),
+      );
+    },
+    onError: (_err, _input, context) => rollbackEdits(queryClient, context?.snapshots),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.mine });
+    },
   });
 }
 
@@ -195,23 +203,34 @@ export function useCreateProjectTrack(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateProjectTrackInput) => projectService.createTrack(id, input),
-    ...optimistic<CreateProjectTrackInput>(
-      queryClient,
-      (input) => [
+    onMutate: async (input) => {
+      // One shared draft row across both caches so its client id can be swapped for the real
+      // one on success — a `ModuleRow` links to `track.id`, and a `new_…` id would 404.
+      const tracks = queryClient.getQueryData<ProjectTrack[]>(projectKeys.tracks(id));
+      const draft = optimisticTrack(input, tracks?.length ?? 0);
+      const snapshots = await optimisticEdits(queryClient, [
         cacheEdit<ProjectTrack[]>(projectKeys.tracks(id), (prev) =>
-          prev ? [...prev, optimisticTrack(input, prev.length)] : prev,
+          prev ? [...prev, draft] : prev,
         ),
         cacheEdit<ProjectDetail>(projectKeys.detail(id), (prev) =>
-          prev
-            ? { ...prev, tracks: [...prev.tracks, optimisticTrack(input, prev.tracks.length)] }
-            : prev,
+          prev ? { ...prev, tracks: [...prev.tracks, draft] } : prev,
         ),
-      ],
-      () => {
-        queryClient.invalidateQueries({ queryKey: projectKeys.tracks(id) });
-        queryClient.invalidateQueries({ queryKey: projectKeys.detail(id) });
-      },
-    ),
+      ]);
+      return { draftId: draft.id, snapshots };
+    },
+    onSuccess: (result, _input, context) => {
+      // createTrack returns only the persisted id; graft it onto the existing draft row.
+      const patch = (t: ProjectTrack) => (t.id === context?.draftId ? { ...t, id: result.id } : t);
+      queryClient.setQueryData<ProjectTrack[]>(projectKeys.tracks(id), (prev) => prev?.map(patch));
+      queryClient.setQueryData<ProjectDetail>(projectKeys.detail(id), (prev) =>
+        prev ? { ...prev, tracks: prev.tracks.map(patch) } : prev,
+      );
+    },
+    onError: (_err, _input, context) => rollbackEdits(queryClient, context?.snapshots),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.tracks(id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(id) });
+    },
   });
 }
 
@@ -269,6 +288,14 @@ export function useAddProjectRepo(id: string) {
           prev ? { ...prev, repos: [...prev.repos, optimisticRepo(input)] } : prev,
         ),
       ]),
+    onSuccess: (project) => {
+      // Adopt the server's authoritative repo list (real `repo_…` ids) so the "Set up sync"
+      // link resolves — the "+ New repo by URL" path otherwise leaves a `new_…` draft repoId
+      // that 404s until the refetch settles.
+      queryClient.setQueryData<ProjectDetail>(projectKeys.detail(id), (prev) =>
+        prev ? { ...prev, repos: project.repos } : prev,
+      );
+    },
     onError: (_err, _input, context) => rollbackEdits(queryClient, context),
     onSettled: invalidate,
   });

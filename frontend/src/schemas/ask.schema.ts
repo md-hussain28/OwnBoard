@@ -1,4 +1,18 @@
 import { z } from "zod";
+import {
+  askAccordionSchema,
+  askActionsSchema,
+  askBadgesSchema,
+  askFlowSchema,
+  askGlossarySchema,
+  askKeyTakeawaysSchema,
+  askProgressSchema,
+  askQuoteSchema,
+  askRatingSchema,
+  askStepsSchema,
+  askTableSchema,
+  askTreeSchema,
+} from "./ask-extra.schema";
 
 /**
  * Generative-UI contract for "Ask project".
@@ -357,6 +371,18 @@ export const ASK_TOOL_SCHEMAS = {
   showTabs: askTabsSchema,
   showFlashcards: askFlashcardsSchema,
   showResources: askResourcesSchema,
+  showSteps: askStepsSchema,
+  showTable: askTableSchema,
+  showProgress: askProgressSchema,
+  showRating: askRatingSchema,
+  showGlossary: askGlossarySchema,
+  showBadges: askBadgesSchema,
+  showAccordion: askAccordionSchema,
+  showQuote: askQuoteSchema,
+  showActions: askActionsSchema,
+  showKeyTakeaways: askKeyTakeawaysSchema,
+  showTree: askTreeSchema,
+  showFlow: askFlowSchema,
 } as const;
 
 export type AskToolName = keyof typeof ASK_TOOL_SCHEMAS;

@@ -6,4 +6,5 @@ export * from "./outcome-seen";
 export * from "./routes";
 export * from "./skill-graph";
 export * from "./toast";
+export * from "./upload";
 export * from "./utils";

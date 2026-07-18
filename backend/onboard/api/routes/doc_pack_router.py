@@ -9,6 +9,8 @@ from onboard.api.schema.doc_pack.request import (
     DocPackCreateRequest,
     DocPackRetrieveRequest,
     DocPackUpdateRequest,
+    RegisterUploadsRequest,
+    SignedUploadRequest,
 )
 from onboard.api.schema.doc_pack.response import (
     AudiencePreviewResponse,
@@ -19,6 +21,8 @@ from onboard.api.schema.doc_pack.response import (
     DocPackRetrieveResponse,
     DocumentIngestStatusItem,
     RetrievedDocChunkResponse,
+    SignedUploadTargetResponse,
+    SignedUploadUrlsResponse,
 )
 from onboard.api.schema.quiz.request import (
     GenerateDocPackQuizRequest,
@@ -181,6 +185,45 @@ async def update_doc_pack(
         await assign_pack_to_audience(services.session, org_id, pack_id)
         pack = await services.doc_pack.get_pack(org_id, pack_id)
     return _pack_response(pack)
+
+
+@router.post("/{pack_id}/documents/upload-urls", response_model=SignedUploadUrlsResponse)
+async def create_document_upload_urls(
+    pack_id: str,
+    payload: SignedUploadRequest,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Direct-to-storage upload step 1: mint signed URLs so files go browser → Supabase, sidestepping
+    the Vercel serverless ~4.5MB request-body cap a proxied multipart POST would hit. Validates the
+    batch (PDF-only, ≤20MB each) before handing out any URL."""
+    targets = await services.doc_pack.create_upload_urls(
+        org_id, pack_id, [(f.filename, f.content_type, f.size) for f in payload.files]
+    )
+    return SignedUploadUrlsResponse(uploads=[SignedUploadTargetResponse(**t) for t in targets])
+
+
+@router.post("/{pack_id}/documents/register", response_model=list[DocPackDocumentResponse], status_code=201)
+async def register_documents(
+    pack_id: str,
+    payload: RegisterUploadsRequest,
+    org_id: CurrentOrgId,
+    user_id: ClerkUserId,
+    _admin: RequireAdmin,
+    background_tasks: BackgroundTasks,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Step 2: record the objects the browser uploaded and kick off background ingest."""
+    documents = await services.doc_pack.register_uploaded_documents(
+        org_id,
+        pack_id,
+        [(f.document_id, f.filename, f.storage_path, f.size) for f in payload.files],
+        created_by=user_id,
+    )
+    for document in documents:
+        background_tasks.add_task(ingest_document_background, org_id, document.id)
+    return documents
 
 
 @router.post("/{pack_id}/documents", response_model=list[DocPackDocumentResponse], status_code=201)

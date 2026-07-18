@@ -15,8 +15,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH = "16rem";
-const SIDEBAR_WIDTH_MOBILE = "18rem";
+const SIDEBAR_WIDTH = "14rem";
+const SIDEBAR_WIDTH_MOBILE = "12.5rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
@@ -172,7 +172,11 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className={cn(
+            "bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden",
+            // Sheet defaults to w-3/4 / sm:max-w-sm — force the mobile sidebar token.
+            "w-(--sidebar-width)! max-w-(--sidebar-width)!",
+          )}
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,

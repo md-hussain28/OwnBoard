@@ -94,15 +94,17 @@ function HierarchyElbow({
 
 /**
  * Active project + its sections, nested under the Projects nav item.
- * Projects → Project name → sections, with rounded hierarchy lines.
+ * Project name is quiet context (not a competing nav chip); sections are the destinations.
+ * Overview stays reachable via the name link and the collapsed-rail overview icon.
  */
 function ProjectNest({ projectId }: { projectId: string }) {
   const pathname = usePathname();
   const { data: project } = useProject(projectId);
-  // Overview is the project name row itself — don't list it twice.
+  // Overview is the project-name row — don't list it twice under sections.
   const sections = projectSectionsForRole(project?.canManage ?? false).filter((s) => s.key !== "");
   const onOverview = isProjectSectionActive(pathname, projectId, "");
   const hasSections = sections.length > 0;
+  const projectLabel = project?.name ?? "Project";
 
   return (
     <>
@@ -116,32 +118,38 @@ function ProjectNest({ projectId }: { projectId: string }) {
           "group-data-[collapsible=icon]:hidden",
         )}
       >
-        {/* Projects → project */}
+        {/* Projects → project context label */}
         <SidebarMenuSubItem className="relative pl-3.5">
-          {/*
-            Elbow must be scoped to the project-name row only. If it sits on this
-            SubItem, bottom-1/2 is the midpoint of the whole section tree.
-          */}
           <div className="relative -ml-3.5 pl-3.5">
             <HierarchyElbow
               isLast
               // Reach up to the Projects icon midline (~half of the ~44px parent row).
               stemClassName="bottom-1/2 -top-6"
             />
-            <SidebarMenuSubButton
-              asChild
-              size="sm"
-              isActive={onOverview}
+            <Link
+              href={projectSectionPath(projectId, "")}
+              title={projectLabel}
+              aria-current={onOverview ? "page" : undefined}
               className={cn(
-                nestItemClass(onOverview),
-                "translate-x-0 font-semibold text-sidebar-foreground/80",
+                "group/project-label flex h-8 min-w-0 items-center gap-2 rounded-md pl-3.5 pr-2",
+                "text-[0.8125rem] font-semibold tracking-tight",
+                "text-sidebar-foreground/70",
+                "transition-colors duration-150 ease-out",
+                "hover:text-sidebar-foreground",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                onOverview && "text-sidebar-foreground",
               )}
             >
-              <Link href={projectSectionPath(projectId, "")}>
-                <FolderKanbanIcon className="size-3 shrink-0 opacity-70" strokeWidth={1.75} />
-                <span className="truncate">{project?.name ?? "Project"}</span>
-              </Link>
-            </SidebarMenuSubButton>
+              <FolderKanbanIcon
+                className={cn(
+                  "size-3.5 shrink-0 opacity-60 transition-opacity duration-150",
+                  "group-hover/project-label:opacity-90",
+                  onOverview && "opacity-90 text-sidebar-primary",
+                )}
+                strokeWidth={1.75}
+              />
+              <span className="truncate">{projectLabel}</span>
+            </Link>
           </div>
 
           {/* Project → sections */}
@@ -157,12 +165,7 @@ function ProjectNest({ projectId }: { projectId: string }) {
                 const isLast = index === sections.length - 1;
                 return (
                   <SidebarMenuSubItem key={section.key} className="relative pl-3.5">
-                    <HierarchyElbow
-                      isLast={isLast}
-                      stemClassName={
-                        index === 0 ? "bottom-1/2 -top-3.5" : undefined
-                      }
-                    />
+                    <HierarchyElbow isLast={isLast} />
                     <SidebarMenuSubButton
                       asChild
                       size="sm"
@@ -188,7 +191,7 @@ function ProjectNest({ projectId }: { projectId: string }) {
           <SidebarMenuButton
             asChild
             isActive={onOverview}
-            tooltip={project?.name ?? "Overview"}
+            tooltip={projectLabel}
             className={cn(
               "size-8! gap-0 rounded-lg p-0!",
               "text-sidebar-foreground/70",

@@ -77,8 +77,8 @@ function DeleteProjectButton({ projectId, name }: { projectId: string; name: str
 }
 
 /**
- * Shared hub header for a selected project — rendered once by the project layout
- * and kept above the sub-nav on every section.
+ * Overview-only hub header — name, status, meta, manage actions, readiness.
+ * Other project sections rely on the sidebar for project context.
  */
 export function ProjectHubHeader({ project }: { project: ProjectDetail }) {
   const readiness = project.myReadiness;

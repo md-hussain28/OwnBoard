@@ -3,15 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, type ReactNode } from "react";
-import {
-  navItemsForRole,
-  PROJECT_SECTIONS,
-  WORKSPACE_NAV,
-} from "@/components/layout/nav-config";
+import { navItemsForRole, PROJECT_SECTIONS, WORKSPACE_NAV } from "@/components/layout/nav-config";
 import { useDocPack } from "@/hooks/queries/doc-pack/doc-pack.queries";
 import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { useAssignmentDetail } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
 import { useProject } from "@/hooks/queries/project/project.queries";
+import { useRepo } from "@/hooks/queries/repo/repo.queries";
 import { APP_HOME } from "@/lib/routes";
 import type { AppRole } from "@/schemas/employee.schema";
 import {
@@ -43,6 +40,8 @@ const SEGMENT_LABELS: Record<string, string> = {
   organization: "Organization",
   team: "Team",
   projects: "Projects",
+  repos: "Repos",
+  tracks: "Modules",
   // Project sub-nav sections (kept in sync with PROJECT_SECTIONS)
   ...Object.fromEntries(PROJECT_SECTIONS.filter((s) => s.key).map((s) => [s.key, s.label])),
 };
@@ -95,12 +94,26 @@ function ProjectCrumbLabel({ projectId }: { projectId: string }) {
   return <>{project?.name ?? "Project"}</>;
 }
 
+function RepoCrumbLabel({ repoId }: { repoId: string }) {
+  const { data: repo, isLoading } = useRepo(repoId);
+  if (isLoading && !repo) return <>…</>;
+  return <>{repo?.name ?? "Repository"}</>;
+}
+
 function labelForSegment(segment: string, opts: { isLast: boolean; section: string }): ReactNode {
-  if (opts.isLast && opts.section === "doc-packs" && segment !== "new" && looksLikeId(segment)) {
+  if (
+    opts.isLast &&
+    (opts.section === "doc-packs" || opts.section === "tracks") &&
+    segment !== "new" &&
+    looksLikeId(segment)
+  ) {
     return <DocPackCrumbLabel packId={segment} />;
   }
   if (opts.section === "projects" && segment !== "new" && looksLikeId(segment)) {
     return <ProjectCrumbLabel projectId={segment} />;
+  }
+  if (opts.section === "repos" && looksLikeId(segment)) {
+    return <RepoCrumbLabel repoId={segment} />;
   }
   return SEGMENT_LABELS[segment] ?? (looksLikeId(segment) ? "Details" : titleCase(segment));
 }
@@ -171,6 +184,12 @@ function buildCrumbs(pathname: string, role?: AppRole | null): Crumb[] {
     looksLikeId(projectId)
   ) {
     return projectCrumbs(rootLabel, rootHref, projectId, consoleParts[2]);
+  }
+
+  // Repo detail: Repos → repo name (skip opaque id).
+  const repoId = consoleParts[1];
+  if (consoleParts[0] === "repos" && repoId && looksLikeId(repoId)) {
+    return [{ label: rootLabel, href: rootHref }, { label: <RepoCrumbLabel repoId={repoId} /> }];
   }
 
   if (consoleParts.length === 1 || pathname === rootHref || pathname === `${rootHref}/`) {

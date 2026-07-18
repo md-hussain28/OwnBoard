@@ -1,39 +1,17 @@
-"use client";
-
-import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
-import { ProjectHubHeader } from "@/components/project/project-hub-header";
-import { useProject } from "@/hooks/queries/project/project.queries";
-import { getApiErrorMessage } from "@/lib/api/errors";
-import { Skeleton } from "@/ui/skeleton";
+import { ProjectLayoutShell } from "@/components/project/project-layout-shell";
 
-export default function ProjectLayout({ children }: { children: ReactNode }) {
-  const params = useParams<{ id: string }>();
-  const id = params.id;
-  const { data: project, isLoading, isError, error } = useProject(id);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-52" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-64 w-full rounded-xl" />
-      </div>
-    );
-  }
-
-  if (isError || !project) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        You don&apos;t have access to this project ({getApiErrorMessage(error)}).
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <ProjectHubHeader project={project} />
-      <div>{children}</div>
-    </div>
-  );
+/**
+ * Await params on the server so the Promise never crosses into the client tree
+ * (avoids Next.js sync-params enumeration warnings on client layouts).
+ */
+export default async function ProjectLayout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  return <ProjectLayoutShell id={id}>{children}</ProjectLayoutShell>;
 }

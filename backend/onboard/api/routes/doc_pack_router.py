@@ -92,7 +92,7 @@ def _pack_response(pack: DocPack) -> DocPackResponse:
         estimated_minutes=pack.estimated_minutes,
         due_offset_days=pack.due_offset_days,
         pass_pct=pack.pass_pct,
-        documents=pack.documents or [],
+        documents=[DocPackDocumentResponse.model_validate(d) for d in pack.documents],
     )
 
 

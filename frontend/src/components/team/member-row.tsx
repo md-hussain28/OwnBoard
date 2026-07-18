@@ -5,6 +5,7 @@ import { useState } from "react";
 import { EditMemberDialog, type MemberDialogMode } from "@/components/team/edit-member-dialog";
 import { RoleSelect } from "@/components/team/role-select";
 import { initials, memberSubtitle } from "@/components/team/team-constants";
+import { TeamMemberSheet } from "@/components/team/team-member-sheet";
 import { useUpdateEmployee } from "@/hooks/queries/employee/employee.mutations";
 import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -25,10 +26,17 @@ export function MemberRow({
   const [pendingRole, setPendingRole] = useState<AppRole | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<MemberDialogMode>("view");
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   function openDialog(mode: MemberDialogMode) {
     setDialogMode(mode);
     setDialogOpen(true);
+  }
+
+  /** From the detail sheet's "Edit profile" button: close the sheet, open the edit dialog. */
+  function editFromSheet() {
+    setSheetOpen(false);
+    openDialog("edit");
   }
 
   function handleRoleChange(appRole: AppRole) {
@@ -65,7 +73,7 @@ export function MemberRow({
     >
       <button
         type="button"
-        onClick={() => openDialog("view")}
+        onClick={() => setSheetOpen(true)}
         className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg text-left outline-none sm:gap-3 focus-visible:ring-2 focus-visible:ring-ring/50"
         aria-label={`View details for ${employee.name}`}
       >
@@ -117,6 +125,14 @@ export function MemberRow({
           className="w-[6.75rem] min-w-0 sm:w-auto sm:min-w-[7.5rem]"
         />
       </div>
+
+      <TeamMemberSheet
+        employee={employee}
+        isSelf={isSelf}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onEdit={editFromSheet}
+      />
 
       <EditMemberDialog
         employee={employee}

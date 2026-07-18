@@ -137,7 +137,7 @@ function RepoCard({
     <Card className="transition-shadow hover:shadow-soft">
       <CardContent className="space-y-3 py-4">
         <div className="flex items-start justify-between gap-3">
-          <Link href={appPath("repos", repo.repoId)} className="group min-w-0">
+          <div className="min-w-0">
             <p className="flex items-center gap-1.5 truncate font-medium">
               {repo.name ?? repo.url ?? repo.repoId}
               {repo.isPrimary && (
@@ -147,16 +147,46 @@ function RepoCard({
               )}
             </p>
             <p className="truncate text-xs text-muted-foreground">{repo.url ?? repo.repoId}</p>
-          </Link>
+          </div>
           <div className="flex shrink-0 items-center gap-2">
             {synced ? (
-              <Badge className="bg-brand-moss-soft text-brand-moss">Synced</Badge>
+              <Badge className="gap-1 bg-brand-moss-soft text-brand-moss">
+                <CheckCircle2Icon className="size-3" /> Synced
+              </Badge>
             ) : (
               <Badge variant="outline">Not synced</Badge>
             )}
             {manageable && <RemoveRepoButton projectId={projectId} repoId={repo.repoId} />}
           </div>
         </div>
+
+        {/* Sync state, made actionable — the whole point of linking a repo is getting it synced. */}
+        {synced ? (
+          <Link
+            href={appPath("repos", repo.repoId)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            Commit history imported — feeding skills &amp; Ask.{" "}
+            <span className="font-medium">Manage sync</span>
+            <ArrowRightIcon className="size-3" />
+          </Link>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-brand-honey/40 bg-brand-honey-soft/40 px-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              {manageable
+                ? "Needs a one-time GitHub Action setup to import commit history."
+                : "Not synced yet — no commit history imported."}
+            </p>
+            {manageable && (
+              <Button asChild size="sm" variant="outline">
+                <Link href={appPath("repos", repo.repoId)}>
+                  <PlugZapIcon className="size-4" /> Set up sync
+                </Link>
+              </Button>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
           {repo.assignees.length === 0 ? (
             <span className="text-xs text-muted-foreground">No one assigned yet</span>
@@ -256,6 +286,10 @@ function LinkRepoControl({ project }: { project: ProjectDetail }) {
                 <SelectItem value={ADD_URL}>+ New repo by URL…</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Pick a repo already connected to your org, or add a new one by its URL. You'll set up
+              sync after linking.
+            </p>
           </div>
           {choice !== ADD_URL && (
             <Button onClick={handleAdd} disabled={!choice || addRepo.isPending}>

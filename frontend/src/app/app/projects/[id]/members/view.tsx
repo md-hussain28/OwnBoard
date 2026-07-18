@@ -15,7 +15,7 @@ export function ProjectMembersView({ id }: { id: string }) {
   if (!project.canManage) redirect(projectSectionPath(project.id, ""));
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-2xl space-y-4">
       <ProjectSectionHeader
         icon={UsersIcon}
         title="Members"

@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from functools import lru_cache
 from typing import TypeVar
 
@@ -33,6 +34,23 @@ class LLMClient:
     async def chat(self, messages: list[dict[str, str]]) -> str:
         response = await self._client.chat.completions.create(model=self.chat_model, messages=messages)
         return response.choices[0].message.content or ""
+
+    async def stream_chat(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        model: str | None = None,
+        temperature: float = 0.2,
+    ) -> AsyncIterator[str]:
+        """Stream a chat completion token-by-token, yielding each non-None content delta."""
+        stream = await self._client.chat.completions.create(
+            model=model or self.chat_model,
+            messages=messages,
+            temperature=temperature,
+            stream=True,
+        )
+        async for chunk in stream:
+            yield chunk.choices[0].delta.content or ""
 
     async def parse(self, messages: list[dict[str, str]], response_model: type[TModel]) -> TModel | None:
         """Structured output via the SDK's native JSON-schema parsing.

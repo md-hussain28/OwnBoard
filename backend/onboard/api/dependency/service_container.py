@@ -12,6 +12,7 @@ from onboard.services.notification.notification_service import NotificationServi
 from onboard.services.org_domain.org_domain_service import OrgDomainService
 from onboard.services.pack_assignment.pack_assignment_service import PackAssignmentService
 from onboard.services.project.project_service import ProjectService
+from onboard.services.project_chat.project_chat_service import ProjectChatService
 from onboard.services.quiz.quiz_service import QuizService
 from onboard.services.quiz_domain.quiz_domain_service import QuizDomainService
 from onboard.services.rag.rag_service import RAGService
@@ -39,6 +40,7 @@ class ServiceContainer:
         self._pack_assignment: PackAssignmentService | None = None
         self._notification: NotificationService | None = None
         self._project: ProjectService | None = None
+        self._project_chat: ProjectChatService | None = None
 
     @property
     def repo_ingestion(self) -> RepoIngestionService:
@@ -129,6 +131,12 @@ class ServiceContainer:
         if self._project is None:
             self._project = ProjectService(self.session)
         return self._project
+
+    @property
+    def project_chat(self) -> ProjectChatService:
+        if self._project_chat is None:
+            self._project_chat = ProjectChatService(self.session)
+        return self._project_chat
 
 
 def get_service_container(session: AsyncSession = Depends(get_db)) -> ServiceContainer:

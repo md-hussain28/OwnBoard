@@ -30,6 +30,8 @@ export const API_ENDPOINTS = {
   projectModule: (id: string, moduleId: string) => `/projects/${id}/modules/${moduleId}`,
   projectModuleProgress: (id: string, moduleId: string) =>
     `/projects/${id}/modules/${moduleId}/progress`,
+  /** Streaming (SSE) project Q&A — consumed by `askProjectStream`, not axios. */
+  projectAsk: (id: string) => `/projects/${id}/ask`,
 
   quizDomains: "/quiz-domains",
   quizDomain: (id: string) => `/quiz-domains/${id}`,
@@ -70,10 +72,12 @@ export const API_ENDPOINTS = {
   dashboardBusFactor: (repoId: string) => `/dashboard/bus-factor?repoId=${repoId}`,
   dashboardQuizAnalytics: (repoId: string) => `/dashboard/quiz-analytics?repoId=${repoId}`,
 
-  // GitHub knowledge base — ingest keys + skill graph + experts (repo-scoped).
+  // GitHub knowledge base — push-model ingestion + skill graph + experts + archaeology (repo-scoped).
   ingestKeys: (repoId: string) => `/repos/${repoId}/ingest-keys`,
   ingestKey: (repoId: string, keyId: string) => `/repos/${repoId}/ingest-keys/${keyId}`,
   skillGraphExpertise: (repoId: string) => `/repos/${repoId}/skill-graph/expertise`,
   skillGraphBusFactor: (repoId: string) => `/repos/${repoId}/skill-graph/bus-factor`,
   repoExperts: (repoId: string) => `/repos/${repoId}/experts`,
+  repoChatAsk: (repoId: string) => `/repos/${repoId}/chat/ask`,
+  repoChunkAndEmbed: (repoId: string) => `/repos/${repoId}/rag/chunk-and-embed`,
 } as const;

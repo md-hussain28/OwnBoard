@@ -2,6 +2,7 @@
 
 export * from "./admin.schema";
 export * from "./ask.schema";
+export * from "./ask-extra.schema";
 export * from "./chat.schema";
 export * from "./cohort.schema";
 export * from "./dashboard.schema";
@@ -19,3 +20,4 @@ export * from "./quiz.schema";
 export * from "./quiz-domain.schema";
 export * from "./repo.schema";
 export * from "./skill-graph.schema";
+export * from "./upload.schema";

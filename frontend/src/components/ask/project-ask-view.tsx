@@ -34,6 +34,7 @@ import {
   Suggestions,
 } from "@/ui/ai-elements";
 import { AskDocProvider } from "./ask-doc-viewer";
+import { AskFollowupProvider } from "./ask-followup";
 import { AskMessage } from "./ask-message";
 import { AskThinking } from "./ask-thinking";
 import { AskThreadHistory } from "./ask-thread-history";
@@ -198,65 +199,67 @@ function AskChat({
     waitingForAnswer && last?.role === "assistant" ? messages.slice(0, -1) : messages;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <Conversation className="min-h-0 flex-1">
-        <ConversationContent
-          className={
-            messages.length === 0
-              ? "mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center"
-              : "mx-auto w-full max-w-3xl"
-          }
-        >
-          {messages.length === 0 ? (
-            <EmptyState onPick={submit} />
-          ) : (
-            visibleMessages.map((m) => <AskMessage key={m.id} message={m} />)
-          )}
+    <AskFollowupProvider value={{ ask: submit, busy }}>
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <Conversation className="min-h-0 flex-1">
+          <ConversationContent
+            className={
+              messages.length === 0
+                ? "mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center"
+                : "mx-auto w-full max-w-3xl"
+            }
+          >
+            {messages.length === 0 ? (
+              <EmptyState onPick={submit} />
+            ) : (
+              visibleMessages.map((m) => <AskMessage key={m.id} message={m} />)
+            )}
 
-          {waitingForAnswer && <AskThinking className="w-full py-1" />}
+            {waitingForAnswer && <AskThinking className="w-full py-1" />}
 
-          {error && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive">
-              <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />
-              <span>{error.message || "The assistant hit an error. Please try again."}</span>
-            </div>
-          )}
-        </ConversationContent>
-        <ConversationScrollButton />
-      </Conversation>
+            {error && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive">
+                <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />
+                <span>{error.message || "The assistant hit an error. Please try again."}</span>
+              </div>
+            )}
+          </ConversationContent>
+          <ConversationScrollButton />
+        </Conversation>
 
-      <div className="mx-auto w-full max-w-3xl">
-        <PromptInput
-          onSubmit={(e) => {
-            e.preventDefault();
-            submit(input);
-          }}
-        >
-          <PromptInputTextarea
-            name="message"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask anything about this project — docs, decisions, code, who to ask…"
-          />
-          <PromptInputToolbar>
-            <span className="hidden text-xs text-muted-foreground sm:inline">
-              <kbd className="rounded border border-border bg-muted px-1 font-sans">Enter</kbd> to
-              send ·{" "}
-              <kbd className="rounded border border-border bg-muted px-1 font-sans">
-                Shift+Enter
-              </kbd>{" "}
-              for a new line
-            </span>
-            <PromptInputSubmit
-              status={status}
-              onStop={stop}
-              disabled={!input.trim()}
-              className="ml-auto"
+        <div className="mx-auto w-full max-w-3xl">
+          <PromptInput
+            onSubmit={(e) => {
+              e.preventDefault();
+              submit(input);
+            }}
+          >
+            <PromptInputTextarea
+              name="message"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask anything about this project — docs, decisions, code, who to ask…"
             />
-          </PromptInputToolbar>
-        </PromptInput>
+            <PromptInputToolbar>
+              <span className="hidden text-xs text-muted-foreground sm:inline">
+                <kbd className="rounded border border-border bg-muted px-1 font-sans">Enter</kbd> to
+                send ·{" "}
+                <kbd className="rounded border border-border bg-muted px-1 font-sans">
+                  Shift+Enter
+                </kbd>{" "}
+                for a new line
+              </span>
+              <PromptInputSubmit
+                status={status}
+                onStop={stop}
+                disabled={!input.trim()}
+                className="ml-auto"
+              />
+            </PromptInputToolbar>
+          </PromptInput>
+        </div>
       </div>
-    </div>
+    </AskFollowupProvider>
   );
 }
 

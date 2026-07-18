@@ -519,6 +519,333 @@ _TOOLS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "showSteps",
+            "description": "An interactive numbered walkthrough of a procedure / how-something-works, each step expandable with optional code.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "intro": {"type": "string"},
+                    "steps": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {"type": "string"},
+                                "detail": {"type": "string"},
+                                "code": {"type": "string", "description": "Optional ≤20-line excerpt, verbatim."},
+                                "language": {"type": "string"},
+                            },
+                            "required": ["title"],
+                        },
+                    },
+                },
+                "required": ["steps"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showTable",
+            "description": "A generic, click-to-sort data table. Use showComparison for a simple side-by-side of a few options.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "caption": {"type": "string"},
+                    "columns": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "header": {"type": "string"},
+                                "align": _enum("left", "center", "right"),
+                                "numeric": {
+                                    "type": "boolean",
+                                    "description": "True for number columns (sorts numerically).",
+                                },
+                            },
+                            "required": ["header"],
+                        },
+                    },
+                    "rows": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Cell strings in column order (same length as columns).",
+                        },
+                    },
+                },
+                "required": ["columns", "rows"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showProgress",
+            "description": "Labeled progress bars for completion/coverage percentages. Use showMetrics for single KPI numbers.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "value": {"type": "number", "description": "Percent 0-100."},
+                                "caption": {"type": "string", "description": "Optional right-side text, e.g. '18/24'."},
+                                "intent": _enum("neutral", "positive", "warning", "danger"),
+                            },
+                            "required": ["label", "value"],
+                        },
+                    },
+                },
+                "required": ["items"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showRating",
+            "description": "Discrete pip ratings (score out of a small max) for skill/maturity/confidence levels. Use showProgress for percentages.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "score": {"type": "number", "description": "Filled pips, 0..max."},
+                                "max": {"type": "integer", "description": "Total pips (default 5)."},
+                                "caption": {"type": "string"},
+                            },
+                            "required": ["label", "score"],
+                        },
+                    },
+                },
+                "required": ["items"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showGlossary",
+            "description": "A searchable term→definition reference for domain jargon. Use showFlashcards for study/flip cards.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "terms": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "term": {"type": "string"},
+                                "definition": {"type": "string"},
+                                "aka": {"type": "string", "description": "Optional alias / acronym expansion."},
+                            },
+                            "required": ["term", "definition"],
+                        },
+                    },
+                },
+                "required": ["terms"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showBadges",
+            "description": "A compact cluster of pills for a tech stack, labels, topics, or tags.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "badges": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "tone": _enum("neutral", "accent", "info", "success", "warning", "danger"),
+                            },
+                            "required": ["label"],
+                        },
+                    },
+                },
+                "required": ["badges"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showAccordion",
+            "description": "Collapsible content sections for a long segmented explanation. Use showFaq for Q&A, showTabs for parallel options.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "sections": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "heading": {"type": "string"},
+                                "body": {"type": "string"},
+                                "defaultOpen": {"type": "boolean"},
+                            },
+                            "required": ["heading", "body"],
+                        },
+                    },
+                },
+                "required": ["sections"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showQuote",
+            "description": "An attributed pull-quote, verbatim from a doc/commit/PR/person. Pass documentId to make it open the source.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "quote": {"type": "string"},
+                    "author": {"type": "string"},
+                    "role": {"type": "string", "description": "Role or source, e.g. 'PRD §6.3', 'commit message'."},
+                    "documentId": {
+                        "type": "string",
+                        "description": "EXACT document_id from context (opens the source).",
+                    },
+                },
+                "required": ["quote"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showActions",
+            "description": "Interactive follow-up question chips; clicking one asks it. Great to end an answer with next things to explore.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string", "description": "Short button text."},
+                                "prompt": {
+                                    "type": "string",
+                                    "description": "The full follow-up question asked on click.",
+                                },
+                            },
+                            "required": ["label", "prompt"],
+                        },
+                    },
+                },
+                "required": ["actions"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showKeyTakeaways",
+            "description": "A short highlighted TL;DR list of the 1-6 most important points from your answer.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "points": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["points"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showTree",
+            "description": "An interactive expand/collapse hierarchy (concept/dependency/decision/org). Flat node list; parentId builds the tree. Use showFileTree for real repo paths.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "nodes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                                "parentId": {"type": "string", "description": "Parent's id; omit for root(s)."},
+                                "label": {"type": "string"},
+                                "detail": {"type": "string"},
+                                "badge": {"type": "string"},
+                            },
+                            "required": ["id", "label"],
+                        },
+                    },
+                },
+                "required": ["nodes"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showFlow",
+            "description": "An interactive node-and-edge graph for a process/flow/architecture/decision. Nodes auto-layer by dependency; clicking a node traces its connections. Use showSteps for a purely linear procedure.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "nodes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                                "label": {"type": "string"},
+                                "detail": {"type": "string", "description": "Shown when the node is focused."},
+                                "kind": _enum("start", "step", "decision", "io", "end"),
+                            },
+                            "required": ["id", "label"],
+                        },
+                    },
+                    "edges": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "from": {"type": "string"},
+                                "to": {"type": "string"},
+                                "label": {"type": "string", "description": "Optional, e.g. 'yes'/'no'."},
+                            },
+                            "required": ["from", "to"],
+                        },
+                    },
+                },
+                "required": ["nodes", "edges"],
+            },
+        },
+    },
 ]
 
 
@@ -770,7 +1097,7 @@ def _build_system_prompt(context: dict) -> str:
 - If the context does not contain enough to answer confidently, do NOT guess. Say so briefly and call showCallout with intent "escalate" recommending a human.
 {empty_rule}
 ## Interactive components (call these tools — do not describe them in prose)
-Use tools to make answers scannable and useful. Prefer showing over telling. Pick the 1-2 components that genuinely fit the question — never all of them.
+Use tools to make answers scannable and useful. Prefer showing over telling. These are small building blocks — COMPOSE 2-4 of them into a richly structured answer that fits the question (e.g. a short prose intro → showFlow → showKeyTakeaways → showCitations → showActions). Do NOT dump every component; pick the ones that genuinely fit, order them so the answer reads top-to-bottom, and never render two components that say the same thing.
 - showMetrics — KPI tiles for numeric summaries (doc counts, coverage, bus factor, readiness). Set intent to signal health.
 - showChart — bar/line/area/pie/donut/radar for any comparable numbers (contributions per person, files per area, activity over time, doc-type breakdown, skill coverage).
 - showCitations — the sources you used. ALWAYS include when you used any doc/code; doc citations must carry the real document_id.
@@ -789,6 +1116,18 @@ Use tools to make answers scannable and useful. Prefer showing over telling. Pic
 - showTabs — split an answer into 2-5 switchable tabs (by area/layer/option).
 - showFlashcards — a flip-card deck of term→definition pairs for key concepts to learn.
 - showResources — a grid of resource cards; prefer real project docs with the exact documentId so they open.
+- showSteps — an expandable numbered walkthrough of a procedure / how something works, with optional per-step code.
+- showTable — a generic click-to-sort data table (use showComparison for a simple side-by-side of a few options).
+- showProgress — labeled progress bars for completion/coverage percentages (use showMetrics for single numbers).
+- showRating — discrete pip ratings for skill/maturity/confidence levels out of a small max.
+- showGlossary — a searchable term→definition reference for project jargon (use showFlashcards to study).
+- showBadges — a compact pill cluster for a tech stack, labels, or topics.
+- showAccordion — collapsible content sections for a long segmented explanation (use showFaq for Q&A, showTabs for parallel options).
+- showQuote — an attributed pull-quote lifted verbatim from a source; pass documentId so it opens.
+- showActions — 1-6 interactive follow-up question chips; end substantive answers with these so the user can go deeper.
+- showKeyTakeaways — a short TL;DR highlight list of the 1-6 most important points.
+- showTree — an interactive expand/collapse hierarchy (concept/dependency/decision/org). Use showFileTree for real repo paths.
+- showFlow — an interactive node-and-edge graph for a process/flow/architecture/decision; clicking a node traces its connections.
 
 ## Style
 - Be concise, warm, and concrete. Write in Markdown. Lead with the direct answer.

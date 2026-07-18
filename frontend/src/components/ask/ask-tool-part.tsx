@@ -2,7 +2,9 @@
 
 import {
   BarChart3Icon,
+  BarChartHorizontalIcon,
   BookMarkedIcon,
+  BookTextIcon,
   CheckSquareIcon,
   ClockIcon,
   CodeIcon,
@@ -12,13 +14,22 @@ import {
   GraduationCapIcon,
   HelpCircleIcon,
   LayersIcon,
+  LightbulbIcon,
   LinkIcon,
   ListIcon,
+  ListOrderedIcon,
+  ListTreeIcon,
   type LucideIcon,
   MessageCircleQuestionIcon,
   QuoteIcon,
+  Rows3Icon,
+  StarIcon,
+  Table2Icon,
+  TagsIcon,
   TerminalIcon,
   UsersRoundIcon,
+  WandSparklesIcon,
+  WorkflowIcon,
 } from "lucide-react";
 import { ASK_TOOL_SCHEMAS, type AskToolName } from "@/schemas";
 import {
@@ -35,6 +46,20 @@ import {
 } from "./ask-blocks";
 import { AskChart } from "./ask-chart";
 import { AskCitationsBlock } from "./ask-citations";
+import {
+  AskAccordionBlock,
+  AskActionsBlock,
+  AskBadgesBlock,
+  AskFlowBlock,
+  AskGlossaryBlock,
+  AskKeyTakeawaysBlock,
+  AskProgressBlock,
+  AskQuoteBlock,
+  AskRatingBlock,
+  AskStepsBlock,
+  AskTableBlock,
+  AskTreeBlock,
+} from "./ask-extras";
 import {
   AskCalloutBlock,
   AskChecklistBlock,
@@ -63,6 +88,18 @@ const LABEL: Record<AskToolName, string> = {
   showTabs: "Organizing the sections…",
   showFlashcards: "Making flashcards…",
   showResources: "Collecting resources…",
+  showSteps: "Laying out the steps…",
+  showTable: "Building the table…",
+  showProgress: "Measuring progress…",
+  showRating: "Rating the levels…",
+  showGlossary: "Compiling the glossary…",
+  showBadges: "Tagging it up…",
+  showAccordion: "Organizing the sections…",
+  showQuote: "Pulling the quote…",
+  showActions: "Suggesting next steps…",
+  showKeyTakeaways: "Distilling the key points…",
+  showTree: "Growing the tree…",
+  showFlow: "Mapping the flow…",
 };
 
 /** Per-tool icon so the "building…" placeholder previews the shape of the component landing next. */
@@ -85,6 +122,18 @@ const ICON: Record<AskToolName, LucideIcon> = {
   showTabs: LayersIcon,
   showFlashcards: BookMarkedIcon,
   showResources: LinkIcon,
+  showSteps: ListOrderedIcon,
+  showTable: Table2Icon,
+  showProgress: BarChartHorizontalIcon,
+  showRating: StarIcon,
+  showGlossary: BookTextIcon,
+  showBadges: TagsIcon,
+  showAccordion: Rows3Icon,
+  showQuote: QuoteIcon,
+  showActions: WandSparklesIcon,
+  showKeyTakeaways: LightbulbIcon,
+  showTree: ListTreeIcon,
+  showFlow: WorkflowIcon,
 };
 
 /**
@@ -170,6 +219,30 @@ export function AskToolPart({
       return <AskFlashcardsBlock data={data as never} />;
     case "showResources":
       return <AskResourcesBlock data={data as never} />;
+    case "showSteps":
+      return <AskStepsBlock data={data as never} />;
+    case "showTable":
+      return <AskTableBlock data={data as never} />;
+    case "showProgress":
+      return <AskProgressBlock data={data as never} />;
+    case "showRating":
+      return <AskRatingBlock data={data as never} />;
+    case "showGlossary":
+      return <AskGlossaryBlock data={data as never} />;
+    case "showBadges":
+      return <AskBadgesBlock data={data as never} />;
+    case "showAccordion":
+      return <AskAccordionBlock data={data as never} />;
+    case "showQuote":
+      return <AskQuoteBlock data={data as never} />;
+    case "showActions":
+      return <AskActionsBlock data={data as never} />;
+    case "showKeyTakeaways":
+      return <AskKeyTakeawaysBlock data={data as never} />;
+    case "showTree":
+      return <AskTreeBlock data={data as never} />;
+    case "showFlow":
+      return <AskFlowBlock data={data as never} />;
     default:
       return null;
   }

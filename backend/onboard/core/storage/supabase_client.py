@@ -31,6 +31,17 @@ class SupabaseStorageClient:
         response = await self._client.storage.from_(self._bucket).create_signed_url(path, expires_in_seconds)
         return response["signedURL"]
 
+    async def create_signed_upload_url(self, path: str) -> tuple[str, str]:
+        """Mint a short-lived, single-use URL the *browser* can PUT a file to directly.
+
+        This is the escape hatch for the Vercel serverless request-body cap (~4.5MB): the file
+        bytes go browser → Supabase Storage and never transit our Next.js proxy, so the 20MB
+        limit is real. Returns `(upload_url, token)` — the url is absolute and already carries the
+        token as a query param, but we also hand back the raw token for clients that prefer it.
+        """
+        response = await self._client.storage.from_(self._bucket).create_signed_upload_url(path)
+        return response["signed_url"], response["token"]
+
 
 _client: SupabaseStorageClient | None = None
 

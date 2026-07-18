@@ -1,4 +1,4 @@
-import { API_ENDPOINTS, getApiClient, isNotFoundError } from "@/lib/api";
+import { API_ENDPOINTS, getApiClient, isNotFoundError, performSignedUpload } from "@/lib/api";
 import {
   type AdminQuizTemplate,
   type AudiencePreview,
@@ -68,20 +68,21 @@ export const docPackService = {
     return audiencePreviewSchema.parse(data);
   },
 
+  /**
+   * Upload PDFs straight to Supabase Storage via signed URLs, then register them. The bytes never
+   * transit the Next.js/Vercel proxy, so uploads up to the 20MB limit work (a proxied multipart POST
+   * would 413 at Vercel's ~4.5MB serverless body cap).
+   */
   async uploadDocuments(
     id: string,
     files: File[],
     options?: { onUploadProgress?: (percent: number) => void },
   ): Promise<DocPackDocument[]> {
-    const form = new FormData();
-    for (const file of files) form.append("files", file);
-    const { data } = await getApiClient().post(API_ENDPOINTS.docPackDocuments(id), form, {
-      headers: { "Content-Type": "multipart/form-data" },
-      timeout: 120_000,
-      onUploadProgress: (event) => {
-        if (!options?.onUploadProgress || !event.total) return;
-        options.onUploadProgress(Math.round((event.loaded / event.total) * 100));
-      },
+    const data = await performSignedUpload({
+      urlsEndpoint: API_ENDPOINTS.docPackDocumentUploadUrls(id),
+      registerEndpoint: API_ENDPOINTS.docPackDocumentsRegister(id),
+      files,
+      onProgress: options?.onUploadProgress,
     });
     return docPackDocumentListSchema.parse(data);
   },

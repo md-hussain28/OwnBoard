@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquarePlusIcon, MessagesSquareIcon, Trash2Icon } from "lucide-react";
+import { ClockIcon, MessageSquarePlusIcon, MessagesSquareIcon, Trash2Icon } from "lucide-react";
 import { EmptyState } from "@/components/shared";
 import { cn } from "@/lib";
 import { Button, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/ui";
@@ -15,6 +15,17 @@ function relativeTime(ts: number): string {
   if (hr < 24) return `${hr}h ago`;
   const day = Math.round(hr / 24);
   return day < 7 ? `${day}d ago` : new Date(ts).toLocaleDateString();
+}
+
+function absoluteTime(ts: number): string {
+  return new Date(ts).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function countQuestions(messages: AskThread["messages"]): number {
+  return messages.filter((m) => m.role === "user").length;
 }
 
 export function AskThreadHistory({
@@ -36,7 +47,7 @@ export function AskThreadHistory({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-full gap-0 sm:max-w-xs">
+      <SheetContent side="right" className="w-full gap-0 sm:max-w-sm">
         <SheetHeader className="border-b">
           <SheetTitle>Conversation history</SheetTitle>
           <SheetDescription>
@@ -86,8 +97,23 @@ export function AskThreadHistory({
                     <span className="block truncate text-sm font-medium text-foreground">
                       {t.title}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {relativeTime(t.updatedAt)}
+                    <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                      <time
+                        dateTime={new Date(t.updatedAt).toISOString()}
+                        title={absoluteTime(t.updatedAt)}
+                      >
+                        {relativeTime(t.updatedAt)}
+                      </time>
+                      <span aria-hidden>·</span>
+                      <span className="inline-flex items-center gap-1">
+                        <MessagesSquareIcon className="size-3" />
+                        {countQuestions(t.messages)}{" "}
+                        {countQuestions(t.messages) === 1 ? "question" : "questions"}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground/70">
+                      <ClockIcon className="size-3" />
+                      Started {absoluteTime(t.createdAt ?? t.updatedAt)}
                     </span>
                   </button>
                   <button

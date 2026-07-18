@@ -111,3 +111,18 @@ class RetrievedDocChunkResponse(BaseModel):
 
 class DocPackRetrieveResponse(BaseModel):
     chunks: list[RetrievedDocChunkResponse]
+
+
+class SignedUploadTargetResponse(BaseModel):
+    """A single-use target the browser PUTs one file to, plus the ids needed to register it after."""
+
+    document_id: str
+    filename: str
+    storage_path: str
+    upload_url: str
+    token: str
+    content_type: str
+
+
+class SignedUploadUrlsResponse(BaseModel):
+    uploads: list[SignedUploadTargetResponse]

@@ -98,6 +98,38 @@ class ProjectDocsMixin(ProjectServiceBase):
         pack = await self._ensure_kb_pack(org_id, project_id)
         return await DocPackService(self.session).upload_documents(org_id, pack.id, files, created_by=created_by)
 
+    async def create_doc_upload_urls(
+        self,
+        org_id: str,
+        project_id: str,
+        viewer: Employee,
+        files: list[tuple[str, str | None, int]],
+    ) -> list[dict]:
+        """Step 1 of a browser upload into the project KB pack — mint signed upload URLs so the file
+        bytes go straight to Supabase (bypassing the Vercel request-body cap). See
+        `DocPackService.create_upload_urls`."""
+        project = await self._get_project(org_id, project_id)
+        await self._assert_can_manage(project, viewer)
+        pack = await self._ensure_kb_pack(org_id, project_id)
+        return await DocPackService(self.session).create_upload_urls(org_id, pack.id, files)
+
+    async def register_uploaded_docs(
+        self,
+        org_id: str,
+        project_id: str,
+        viewer: Employee,
+        items: list[tuple[str, str, str, int]],
+        created_by: str | None,
+    ) -> list:
+        """Step 2: register the objects the browser uploaded and return the created DocPackDocuments
+        so the router can schedule ingest. See `DocPackService.register_uploaded_documents`."""
+        project = await self._get_project(org_id, project_id)
+        await self._assert_can_manage(project, viewer)
+        pack = await self._ensure_kb_pack(org_id, project_id)
+        return await DocPackService(self.session).register_uploaded_documents(
+            org_id, pack.id, items, created_by=created_by
+        )
+
     async def delete_doc(self, org_id: str, project_id: str, viewer: Employee, document_id: str) -> None:
         project = await self._get_project(org_id, project_id)
         await self._assert_can_manage(project, viewer)

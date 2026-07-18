@@ -10,7 +10,7 @@ import {
   useDeleteDocument,
   useDocPackIngestStatus,
 } from "@/hooks/queries/doc-pack";
-import { notify } from "@/lib";
+import { MAX_UPLOAD_FILE_SIZE_MB, notify } from "@/lib";
 import type { DocPackDocument } from "@/schemas";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/ui";
 
@@ -118,11 +118,12 @@ export function DocPackDocuments({
           className="w-full border-dashed py-8"
           onClick={() => fileInputRef.current?.click()}
         >
-          <UploadIcon className="size-4" /> Upload PDF files (up to 20 MB each)
+          <UploadIcon className="size-4" /> Upload PDF files (up to {MAX_UPLOAD_FILE_SIZE_MB} MB
+          each)
         </Button>
         <p className="text-xs text-muted-foreground">
-          PDF only, max 20 MB per file. Uploads run in the background — you can keep working while
-          documents process.
+          PDF only, max {MAX_UPLOAD_FILE_SIZE_MB} MB per file. Uploads run in the background — you
+          can keep working while documents process.
         </p>
 
         {rows.length === 0 && (

@@ -20,7 +20,7 @@ import {
   useSetDocTypes,
   useUploadProjectDocs,
 } from "@/hooks/queries/project";
-import { cn, notify } from "@/lib";
+import { cn, MAX_UPLOAD_FILE_SIZE_MB, notify, validateFiles } from "@/lib";
 import type { ProjectDoc, ProjectDocType } from "@/schemas";
 import {
   Badge,
@@ -62,6 +62,13 @@ export function ProjectDocsPanel({
         description="Reference files (PRDs, KT notes, system design…). Uploaded docs are indexed and become the knowledge base for Ask project."
         action={manageable ? <UploadButton projectId={projectId} /> : undefined}
       />
+
+      {manageable && (
+        <p className="text-xs text-muted-foreground">
+          PDF only, up to {MAX_UPLOAD_FILE_SIZE_MB} MB per file. Uploads are indexed in the
+          background.
+        </p>
+      )}
 
       {manageable && <TypeManager projectId={projectId} types={types} />}
 
@@ -122,7 +129,13 @@ function UploadButton({ projectId }: { projectId: string }) {
 
   function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
-    upload.mutate(Array.from(files), {
+    const list = Array.from(files);
+    const validationError = validateFiles(list);
+    if (validationError) {
+      notify.error(validationError);
+      return;
+    }
+    upload.mutate(list, {
       onSuccess: () => notify.success("Uploaded", { description: "Indexing in the background…" }),
       onError: (err) => notify.apiError(err, "Could not upload"),
     });

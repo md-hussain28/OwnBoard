@@ -20,7 +20,10 @@ class Settings(BaseSettings):
 
     OPENAI_API_KEY: str = ""
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
-    OPENAI_CHAT_MODEL: str = "gpt-4o-mini"
+    # Default (fast/cheap) chat model for most calls; the complex model is used only when the
+    # "Ask project" question is judged complex (see ProjectChatService._select_model).
+    OPENAI_CHAT_MODEL: str = "gpt-4.1-mini"
+    OPENAI_CHAT_MODEL_COMPLEX: str = "gpt-4.1"
 
     # Clerk (backend token verification). Never expose CLERK_SECRET_KEY to the browser.
     CLERK_SECRET_KEY: str = ""

@@ -284,7 +284,7 @@ function NavItems({
                 item.incoming && "pr-[4.5rem] group-data-[collapsible=icon]:pr-0!",
               )}
             >
-              <Link href={item.href}>
+              <Link href={item.href} data-tour={item.tourId ? `nav-${item.tourId}` : undefined}>
                 <span
                   className={cn(
                     "flex size-7 shrink-0 items-center justify-center rounded-md transition-colors duration-150",
@@ -355,7 +355,7 @@ export function AppSidebar() {
               tooltip={orgName}
               className="h-8 gap-2.5 px-1 hover:bg-sidebar-accent group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
             >
-              <Link href="/app">
+              <Link href="/app" data-tour="workspace">
                 <span
                   className={cn(
                     "flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg text-[0.6875rem] font-bold leading-none tracking-tight text-white shadow-button",

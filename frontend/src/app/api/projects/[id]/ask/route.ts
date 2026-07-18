@@ -2,11 +2,14 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { serverConfig } from "@/lib/api/config";
 
+// Backend generation (OpenAI tool-calling) can run past the default serverless budget.
+export const maxDuration = 60;
+
 /**
- * Streaming proxy for "Ask project" Q&A. The shared `proxyRequest` helper buffers
- * the whole response body, which would defeat token-by-token streaming — so this
- * handler forwards the backend SSE stream through untouched, only attaching the
- * caller's Clerk token server-side.
+ * Streaming proxy for "Ask project" Q&A. Generation + retrieval run on the FastAPI backend (so the
+ * OpenAI key stays server-side, backend-only). The shared `proxyRequest` helper buffers the whole
+ * body, which would defeat streaming — so this handler forwards the backend SSE stream through
+ * untouched, only attaching the caller's Clerk token server-side.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -47,6 +50,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
       "X-Accel-Buffering": "no",
+      // Tells the AI SDK client this SSE body is the Vercel UI-message-stream protocol.
+      "x-vercel-ai-ui-message-stream":
+        backendRes.headers.get("x-vercel-ai-ui-message-stream") ?? "v1",
     },
   });
 }

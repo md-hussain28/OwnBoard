@@ -12,7 +12,7 @@ import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Separator } from "@/ui/separator";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/ui/sheet";
 import { ReadinessBar } from "./readiness";
 
 function initials(name: string): string {
@@ -89,13 +89,28 @@ export function MemberDetailSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full gap-0 overflow-y-auto sm:max-w-md">
-        <SheetHeader className="gap-3 pr-10">
+        <SheetHeader className="gap-2 pr-10">
           <div className="flex items-center gap-3">
             <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-mist text-sm font-semibold text-brand-ink">
               {initials(member.name)}
             </div>
-            <div className="min-w-0">
-              <SheetTitle className="truncate">{member.name}</SheetTitle>
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <SheetTitle className="truncate">{member.name}</SheetTitle>
+                {member.functionTypeName && (
+                  <Badge variant="secondary">{member.functionTypeName}</Badge>
+                )}
+                {member.isLead && (
+                  <Badge variant="default">
+                    <CrownIcon className="size-3" /> Lead
+                  </Badge>
+                )}
+                {member.isGoTo && (
+                  <Badge variant="success">
+                    <StarIcon className="size-3" /> Go-to
+                  </Badge>
+                )}
+              </div>
               <p className="truncate text-xs text-muted-foreground">
                 {member.role ?? member.domainName ?? "Member"}
                 {member.githubHandle ? (
@@ -113,21 +128,6 @@ export function MemberDetailSheet({
                 ) : null}
               </p>
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {member.isLead && (
-              <Badge variant="default">
-                <CrownIcon className="size-3" /> Team lead
-              </Badge>
-            )}
-            {member.functionTypeName && (
-              <Badge variant="secondary">{member.functionTypeName}</Badge>
-            )}
-            {member.isGoTo && (
-              <Badge variant="success">
-                <StarIcon className="size-3" /> Go-to
-              </Badge>
-            )}
           </div>
         </SheetHeader>
 
@@ -152,7 +152,7 @@ export function MemberDetailSheet({
                 </span>
               )}
             </div>
-            {!mine || !mine.matched ? (
+            {!mine?.matched ? (
               <div className="flex items-start gap-2 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
                 <GitCommitHorizontalIcon className="mt-0.5 size-4 shrink-0" />
                 <span>
@@ -191,50 +191,46 @@ export function MemberDetailSheet({
               </div>
             )}
           </section>
-
-          {manageable && (
-            <>
-              <Separator />
-              <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Manage
-                </h3>
-                <div className="space-y-1.5">
-                  <span className="text-sm font-medium">Role</span>
-                  <Select value={member.functionTypeId ?? ""} onValueChange={setFunction}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {functionTypes.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={toggleLead}
-                  disabled={update.isPending}
-                >
-                  <CrownIcon className="size-4" />
-                  {member.isLead ? "Remove as team lead" : "Make team lead"}
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full text-destructive hover:text-destructive"
-                  onClick={handleRemove}
-                  disabled={remove.isPending}
-                >
-                  <Trash2Icon className="size-4" /> Remove from project
-                </Button>
-              </section>
-            </>
-          )}
         </div>
+
+        {manageable && (
+          <SheetFooter className="gap-3 border-t bg-muted/30">
+            <div className="space-y-1.5">
+              <span className="text-sm font-medium">Role</span>
+              <Select value={member.functionTypeId ?? ""} onValueChange={setFunction}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {functionTypes.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={toggleLead}
+                disabled={update.isPending}
+              >
+                <CrownIcon className="size-4" />
+                {member.isLead ? "Remove as lead" : "Make team lead"}
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={handleRemove}
+                disabled={remove.isPending}
+              >
+                <Trash2Icon className="size-4" /> Remove
+              </Button>
+            </div>
+          </SheetFooter>
+        )}
       </SheetContent>
     </Sheet>
   );

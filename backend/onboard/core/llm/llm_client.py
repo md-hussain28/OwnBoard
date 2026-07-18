@@ -1,6 +1,7 @@
+import json
 from collections.abc import AsyncIterator
 from functools import lru_cache
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from openai import AsyncOpenAI
 from pydantic import BaseModel
@@ -13,10 +14,12 @@ TModel = TypeVar("TModel", bound=BaseModel)
 class LLMClient:
     """Thin wrapper around the OpenAI SDK for embeddings and chat completions."""
 
-    def __init__(self, api_key: str, embedding_model: str, chat_model: str):
+    def __init__(self, api_key: str, embedding_model: str, chat_model: str, chat_model_complex: str | None = None):
         self._client = AsyncOpenAI(api_key=api_key)
         self.embedding_model = embedding_model
         self.chat_model = chat_model
+        # Stronger model for complex requests; falls back to the default when unset.
+        self.chat_model_complex = chat_model_complex or chat_model
 
     async def embed(self, text: str) -> list[float]:
         response = await self._client.embeddings.create(model=self.embedding_model, input=text)
@@ -55,6 +58,61 @@ class LLMClient:
                 continue
             yield chunk.choices[0].delta.content or ""
 
+    async def stream_chat_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        *,
+        model: str | None = None,
+        temperature: float = 0.3,
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Stream a tool-enabled chat completion for the generative-UI "Ask project" assistant.
+
+        Yields ``{"type": "text", "text": <delta>}`` for content as it arrives, then a single
+        ``{"type": "tool_calls", "tool_calls": [{"id", "name", "arguments"}], "finish_reason": ...}``
+        at the end (``arguments`` parsed to a dict). The caller drives the tool loop — these display
+        tools have no server-side effect, so it just acknowledges them and continues for a wrap-up.
+        """
+        stream = await self._client.chat.completions.create(
+            model=model or self.chat_model,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto",
+            temperature=temperature,
+            stream=True,
+        )
+        acc: dict[int, dict[str, Any]] = {}
+        finish_reason: str | None = None
+        async for chunk in stream:
+            if not chunk.choices:
+                continue
+            choice = chunk.choices[0]
+            delta = choice.delta
+            if delta is not None and delta.content:
+                yield {"type": "text", "text": delta.content}
+            if delta is not None and delta.tool_calls:
+                for tc in delta.tool_calls:
+                    slot = acc.setdefault(tc.index, {"id": None, "name": None, "arguments": ""})
+                    if tc.id:
+                        slot["id"] = tc.id
+                    if tc.function is not None:
+                        if tc.function.name:
+                            slot["name"] = tc.function.name
+                        if tc.function.arguments:
+                            slot["arguments"] += tc.function.arguments
+            if choice.finish_reason:
+                finish_reason = choice.finish_reason
+
+        tool_calls: list[dict[str, Any]] = []
+        for index in sorted(acc):
+            slot = acc[index]
+            try:
+                arguments = json.loads(slot["arguments"] or "{}")
+            except json.JSONDecodeError:
+                arguments = {}
+            tool_calls.append({"id": slot["id"], "name": slot["name"], "arguments": arguments})
+        yield {"type": "tool_calls", "tool_calls": tool_calls, "finish_reason": finish_reason}
+
     async def parse(self, messages: list[dict[str, str]], response_model: type[TModel]) -> TModel | None:
         """Structured output via the SDK's native JSON-schema parsing.
 
@@ -75,4 +133,5 @@ def get_llm_client() -> LLMClient:
         api_key=settings.OPENAI_API_KEY,
         embedding_model=settings.OPENAI_EMBEDDING_MODEL,
         chat_model=settings.OPENAI_CHAT_MODEL,
+        chat_model_complex=settings.OPENAI_CHAT_MODEL_COMPLEX,
     )

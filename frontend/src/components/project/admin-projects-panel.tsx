@@ -51,7 +51,7 @@ export function AdminProjectsPanel() {
   const hasFilters = query.trim() !== "" || statusFilter !== "all";
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
@@ -131,7 +131,7 @@ export function AdminProjectsPanel() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             {visible.map((project) => (
               <Link key={project.id} href={appPath("projects", project.id)} className="group">
                 <Card

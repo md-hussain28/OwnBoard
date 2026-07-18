@@ -11,10 +11,15 @@ export function ProjectOnboardingView({ id }: { id: string }) {
   if (!project) return null;
 
   // Managers author onboarding modules + assign them; members see only their own assigned modules.
-  if (project.canManage) return <ProjectTracksTab projectId={project.id} />;
+  if (project.canManage)
+    return (
+      <div className="mx-auto max-w-2xl">
+        <ProjectTracksTab projectId={project.id} />
+      </div>
+    );
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-2xl space-y-4">
       <ProjectSectionHeader
         icon={ListChecksIcon}
         title="Your modules"

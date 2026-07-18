@@ -1,6 +1,15 @@
 "use client";
 
-import { GitBranchIcon, StarIcon, XIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  CheckCircle2Icon,
+  GitBranchIcon,
+  Link2Icon,
+  PlugZapIcon,
+  StarIcon,
+  UsersIcon,
+  XIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useAddProjectRepo, useRemoveProjectRepo } from "@/hooks/queries/project/project.mutations";
@@ -38,8 +47,10 @@ export function ProjectRepositoriesTab({
       <ProjectSectionHeader
         icon={GitBranchIcon}
         title="Repositories"
-        description="Link the repos this project ships, and assign who works on each. Commit history feeds each person's skills and grounds the project's Ask answers — no source access required."
+        description="Connect the repos this project ships. OwnBoard reads their commit history to build each member's real skills and to ground the project's Ask answers — it never needs access to your source code."
       />
+
+      <HowItWorks />
 
       {project.repos.length === 0 ? (
         <Card>
@@ -49,7 +60,7 @@ export function ProjectRepositoriesTab({
             </span>
             <p className="max-w-sm text-sm text-muted-foreground">
               {manageable
-                ? "No repositories linked yet. Link one below to unlock this project's codebase intelligence."
+                ? "No repositories linked yet — link your first one below to get started."
                 : "No repositories have been linked to this project yet."}
             </p>
           </CardContent>
@@ -73,6 +84,44 @@ export function ProjectRepositoriesTab({
   );
 }
 
+/** The three-step pipeline, spelled out so a manager knows what this page is for and in what order. */
+function HowItWorks() {
+  const steps = [
+    {
+      icon: Link2Icon,
+      title: "Link",
+      body: "Point this project at each repo it ships.",
+    },
+    {
+      icon: PlugZapIcon,
+      title: "Sync",
+      body: "A one-time GitHub Action imports commit history.",
+    },
+    {
+      icon: UsersIcon,
+      title: "Assign",
+      body: "Tag who works on each repo to keep skills accurate.",
+    },
+  ];
+  return (
+    <div className="grid gap-2 rounded-xl border border-border bg-muted/40 p-3 sm:grid-cols-3">
+      {steps.map((s, i) => (
+        <div key={s.title} className="flex items-start gap-2.5">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-honey-soft text-brand-honey">
+            <s.icon className="size-3.5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium">
+              <span className="text-muted-foreground">{i + 1}.</span> {s.title}
+            </p>
+            <p className="text-xs text-muted-foreground">{s.body}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function RepoCard({
   projectId,
   repo,
@@ -88,7 +137,7 @@ function RepoCard({
     <Card className="transition-shadow hover:shadow-soft">
       <CardContent className="space-y-3 py-4">
         <div className="flex items-start justify-between gap-3">
-          <Link href={appPath("repos", repo.repoId)} className="group min-w-0">
+          <div className="min-w-0">
             <p className="flex items-center gap-1.5 truncate font-medium">
               {repo.name ?? repo.url ?? repo.repoId}
               {repo.isPrimary && (
@@ -98,16 +147,46 @@ function RepoCard({
               )}
             </p>
             <p className="truncate text-xs text-muted-foreground">{repo.url ?? repo.repoId}</p>
-          </Link>
+          </div>
           <div className="flex shrink-0 items-center gap-2">
             {synced ? (
-              <Badge className="bg-brand-moss-soft text-brand-moss">Synced</Badge>
+              <Badge className="gap-1 bg-brand-moss-soft text-brand-moss">
+                <CheckCircle2Icon className="size-3" /> Synced
+              </Badge>
             ) : (
               <Badge variant="outline">Not synced</Badge>
             )}
             {manageable && <RemoveRepoButton projectId={projectId} repoId={repo.repoId} />}
           </div>
         </div>
+
+        {/* Sync state, made actionable — the whole point of linking a repo is getting it synced. */}
+        {synced ? (
+          <Link
+            href={appPath("repos", repo.repoId)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            Commit history imported — feeding skills &amp; Ask.{" "}
+            <span className="font-medium">Manage sync</span>
+            <ArrowRightIcon className="size-3" />
+          </Link>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-brand-honey/40 bg-brand-honey-soft/40 px-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              {manageable
+                ? "Needs a one-time GitHub Action setup to import commit history."
+                : "Not synced yet — no commit history imported."}
+            </p>
+            {manageable && (
+              <Button asChild size="sm" variant="outline">
+                <Link href={appPath("repos", repo.repoId)}>
+                  <PlugZapIcon className="size-4" /> Set up sync
+                </Link>
+              </Button>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
           {repo.assignees.length === 0 ? (
             <span className="text-xs text-muted-foreground">No one assigned yet</span>
@@ -207,6 +286,10 @@ function LinkRepoControl({ project }: { project: ProjectDetail }) {
                 <SelectItem value={ADD_URL}>+ New repo by URL…</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Pick a repo already connected to your org, or add a new one by its URL. You'll set up
+              sync after linking.
+            </p>
           </div>
           {choice !== ADD_URL && (
             <Button onClick={handleAdd} disabled={!choice || addRepo.isPending}>

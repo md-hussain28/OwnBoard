@@ -11,5 +11,9 @@ export function ProjectRepositoriesView({ id }: { id: string }) {
   // Connecting/syncing repos is a manager-only surface.
   if (!project.canManage) redirect(projectSectionPath(project.id, ""));
 
-  return <ProjectRepositoriesTab project={project} manageable />;
+  return (
+    <div className="mx-auto max-w-2xl">
+      <ProjectRepositoriesTab project={project} manageable />
+    </div>
+  );
 }

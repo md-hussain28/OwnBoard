@@ -10,7 +10,7 @@ export default function ProjectsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
+      <div className="mx-auto max-w-2xl space-y-3">
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-24 w-full rounded-xl" />
       </div>

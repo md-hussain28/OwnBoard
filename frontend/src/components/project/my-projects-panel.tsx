@@ -36,7 +36,7 @@ export function MyProjectsPanel() {
   const hasFilters = query.trim() !== "" || statusFilter !== "all";
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">My projects</h1>
         <p className="text-muted-foreground">Projects you&apos;ve been added to.</p>

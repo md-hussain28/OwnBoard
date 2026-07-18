@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarIcon, CrownIcon, GitBranchIcon, Trash2Icon } from "lucide-react";
+import { CalendarIcon, CrownIcon, Trash2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useDeleteProject } from "@/hooks/queries/project/project.mutations";
@@ -105,23 +105,6 @@ export function ProjectHubHeader({ project }: { project: ProjectDetail }) {
             <span className="inline-flex items-center gap-1.5">
               <CalendarIcon className="size-3.5" /> Created {formatDate(project.createdAt)}
             </span>
-            {project.repoName && (
-              <span className="inline-flex items-center gap-1.5">
-                <GitBranchIcon className="size-3.5" />
-                {project.repoUrl ? (
-                  <a
-                    href={project.repoUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-foreground"
-                  >
-                    {project.repoName}
-                  </a>
-                ) : (
-                  project.repoName
-                )}
-              </span>
-            )}
           </div>
         </div>
         {project.canManage && (

@@ -21,7 +21,15 @@
       "Bash(git commit -q -m 'feat\\(frontend\\): optimistic cache updates and split docs mutations *)",
       "Bash(git commit -q -m 'feat\\(frontend\\): add team member detail sheet *)",
       "Bash(git commit -q -m 'style\\(frontend\\): constrain project section views to max-w-2xl *)",
-      "Bash(git commit -q -m 'chore: extend local permission allowlist for biome checks *)"
+      "Bash(git commit -q -m 'chore: extend local permission allowlist for biome checks *)",
+      "Bash(git push *)",
+      "Bash(timeout 300 npm run build)",
+      "Bash(break)",
+      "Bash(node -e ' *)",
+      "Bash(xargs kill -9)",
+      "Skill(impeccable)",
+      "Skill(impeccable:*)",
+      "Bash(node /Users/msh/.claude/skills/impeccable/scripts/context.mjs)"
     ]
   },
   "hooks": {

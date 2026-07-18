@@ -1,6 +1,15 @@
 "use client";
 
-import { GitBranchIcon, StarIcon, XIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  CheckCircle2Icon,
+  GitBranchIcon,
+  Link2Icon,
+  PlugZapIcon,
+  StarIcon,
+  UsersIcon,
+  XIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useAddProjectRepo, useRemoveProjectRepo } from "@/hooks/queries/project/project.mutations";
@@ -38,8 +47,10 @@ export function ProjectRepositoriesTab({
       <ProjectSectionHeader
         icon={GitBranchIcon}
         title="Repositories"
-        description="Link the repos this project ships, and assign who works on each. Commit history feeds each person's skills and grounds the project's Ask answers — no source access required."
+        description="Connect the repos this project ships. OwnBoard reads their commit history to build each member's real skills and to ground the project's Ask answers — it never needs access to your source code."
       />
+
+      <HowItWorks />
 
       {project.repos.length === 0 ? (
         <Card>
@@ -49,7 +60,7 @@ export function ProjectRepositoriesTab({
             </span>
             <p className="max-w-sm text-sm text-muted-foreground">
               {manageable
-                ? "No repositories linked yet. Link one below to unlock this project's codebase intelligence."
+                ? "No repositories linked yet — link your first one below to get started."
                 : "No repositories have been linked to this project yet."}
             </p>
           </CardContent>
@@ -69,6 +80,44 @@ export function ProjectRepositoriesTab({
       )}
 
       {manageable && <LinkRepoControl project={project} />}
+    </div>
+  );
+}
+
+/** The three-step pipeline, spelled out so a manager knows what this page is for and in what order. */
+function HowItWorks() {
+  const steps = [
+    {
+      icon: Link2Icon,
+      title: "Link",
+      body: "Point this project at each repo it ships.",
+    },
+    {
+      icon: PlugZapIcon,
+      title: "Sync",
+      body: "A one-time GitHub Action imports commit history.",
+    },
+    {
+      icon: UsersIcon,
+      title: "Assign",
+      body: "Tag who works on each repo to keep skills accurate.",
+    },
+  ];
+  return (
+    <div className="grid gap-2 rounded-xl border border-border bg-muted/40 p-3 sm:grid-cols-3">
+      {steps.map((s, i) => (
+        <div key={s.title} className="flex items-start gap-2.5">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-honey-soft text-brand-honey">
+            <s.icon className="size-3.5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium">
+              <span className="text-muted-foreground">{i + 1}.</span> {s.title}
+            </p>
+            <p className="text-xs text-muted-foreground">{s.body}</p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -4,10 +4,12 @@ import { PencilIcon } from "lucide-react";
 import { useState } from "react";
 import { useUpdateProject } from "@/hooks/queries/project/project.mutations";
 import { notify } from "@/lib/toast";
+import { cn } from "@/lib/utils";
 import type { ProjectDetail, UpdateProjectInput } from "@/schemas/project.schema";
 import { Button } from "@/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -19,7 +21,7 @@ import { Input } from "@/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Spinner } from "@/ui/spinner";
 import { Textarea } from "@/ui/textarea";
-import { PROJECT_STATUSES } from "./project-status";
+import { PROJECT_STATUSES, projectStatusMeta } from "./project-status";
 
 /** Build a patch of only the fields that changed. */
 function buildChanges(
@@ -42,6 +44,7 @@ export function EditProjectDialog({ project }: { project: ProjectDetail }) {
   const [status, setStatus] = useState<string>(project.status);
   const [isArchived, setIsArchived] = useState<boolean>(project.isArchived);
   const update = useUpdateProject(project.id);
+  const statusMeta = projectStatusMeta(status);
 
   // Re-seed the form from the project whenever the dialog opens so it always reflects the latest values.
   function handleOpenChange(next: boolean) {
@@ -79,31 +82,45 @@ export function EditProjectDialog({ project }: { project: ProjectDetail }) {
           <PencilIcon className="size-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Edit project</DialogTitle>
-            <DialogDescription>
-              Rename the project, change its status, or archive it. Repos are managed in the Repos
-              section.
-            </DialogDescription>
+            <div className="flex items-start gap-3">
+              <span
+                aria-hidden
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-honey-soft text-brand-honey ring-1 ring-brand-honey/15"
+              >
+                <PencilIcon className="size-4.5" />
+              </span>
+              <div className="space-y-1">
+                <DialogTitle>Edit project</DialogTitle>
+                <DialogDescription>
+                  Rename the project, change its status, or archive it. Repos are managed in the
+                  Repos section.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+
+          <div className="space-y-5 py-5">
             <div className="space-y-1.5">
               <label className="text-sm font-medium" htmlFor="edit-project-name">
-                Name
+                Name <span className="text-destructive">*</span>
               </label>
               <Input
                 id="edit-project-name"
+                className="h-10 text-base sm:text-sm"
                 placeholder="e.g. Payments Service"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
+                autoComplete="off"
               />
             </div>
+
             <div className="space-y-1.5">
               <label className="text-sm font-medium" htmlFor="edit-project-description">
-                Description <span className="text-muted-foreground">(optional)</span>
+                Description <span className="font-normal text-muted-foreground">(optional)</span>
               </label>
               <Textarea
                 id="edit-project-description"
@@ -112,26 +129,37 @@ export function EditProjectDialog({ project }: { project: ProjectDetail }) {
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
+
             <div className="space-y-1.5">
               <label className="text-sm font-medium" htmlFor="edit-project-status">
                 Status
               </label>
               <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger id="edit-project-status">
+                <SelectTrigger id="edit-project-status" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {PROJECT_STATUSES.map((s) => (
                     <SelectItem key={s.value} value={s.value}>
-                      {s.label}
+                      <span className="flex items-center gap-2">
+                        <span className={cn("size-1.5 rounded-full", s.dot)} aria-hidden />
+                        {s.label}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">{statusMeta.hint}</p>
             </div>
+
             <label
               htmlFor="edit-project-archived"
-              className="flex cursor-pointer items-start justify-between gap-4 rounded-lg border border-border p-3"
+              className={cn(
+                "flex cursor-pointer items-start justify-between gap-4 rounded-lg border p-3 transition-colors",
+                isArchived
+                  ? "border-primary/40 bg-brand-honey-soft/50"
+                  : "border-border hover:bg-muted",
+              )}
             >
               <span className="space-y-0.5">
                 <span className="block text-sm font-medium">Archived</span>
@@ -148,7 +176,13 @@ export function EditProjectDialog({ project }: { project: ProjectDetail }) {
               />
             </label>
           </div>
+
           <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
             <Button type="submit" disabled={update.isPending || !name.trim()}>
               {update.isPending && <Spinner />}
               {update.isPending ? "Saving..." : "Save changes"}

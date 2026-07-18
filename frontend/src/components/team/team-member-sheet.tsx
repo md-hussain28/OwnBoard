@@ -7,7 +7,6 @@ import {
   GitCommitHorizontalIcon,
   LayersIcon,
   PencilIcon,
-  ShieldIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import {
@@ -25,7 +24,7 @@ import type { PackAssignment } from "@/schemas/packAssignment.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Separator } from "@/ui/separator";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/ui/sheet";
 import { Skeleton } from "@/ui/skeleton";
 
 function DetailRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
@@ -164,8 +163,8 @@ export function TeamMemberSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full gap-0 overflow-y-auto sm:max-w-md">
-        <SheetHeader className="gap-3 pr-10">
+      <SheetContent className="w-full gap-0 overflow-hidden sm:max-w-md">
+        <SheetHeader className="pr-10">
           <div className="flex items-center gap-3">
             <span
               aria-hidden
@@ -178,13 +177,26 @@ export function TeamMemberSheet({
             >
               {initials(employee.name)}
             </span>
-            <div className="min-w-0">
-              <SheetTitle className="truncate">
-                {employee.name}
-                {isSelf && (
-                  <span className="ml-1.5 text-sm font-normal text-muted-foreground">(you)</span>
-                )}
-              </SheetTitle>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <SheetTitle className="min-w-0 truncate">
+                  {employee.name}
+                  {isSelf && (
+                    <span className="ml-1.5 text-sm font-normal text-muted-foreground">(you)</span>
+                  )}
+                </SheetTitle>
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    "shrink-0 gap-1",
+                    employee.appRole === "admin" &&
+                      "border-primary/25 bg-primary/10 text-foreground",
+                  )}
+                >
+                  <roleMeta.Icon className="size-2.5" aria-hidden />
+                  {roleMeta.label}
+                </Badge>
+              </div>
               <p className="truncate text-xs text-muted-foreground">
                 {displayJobTitle(employee.role) ?? "No job title yet"}
                 {github ? (
@@ -203,37 +215,14 @@ export function TeamMemberSheet({
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Badge
-              variant="secondary"
-              className={cn(
-                "gap-1",
-                employee.appRole === "admin" && "border-primary/25 bg-primary/10 text-foreground",
-              )}
-            >
-              <roleMeta.Icon className="size-2.5" aria-hidden />
-              {roleMeta.label}
-            </Badge>
-            {employee.domainName && (
-              <Badge variant="outline" className="gap-1 font-normal">
-                <FolderIcon className="size-2.5" aria-hidden />
-                {employee.domainName}
-              </Badge>
-            )}
-          </div>
         </SheetHeader>
 
-        <div className="space-y-5 px-4 pb-4">
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-4">
           <section className="space-y-2">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Profile
             </h3>
             <ul className="grid gap-1 rounded-lg border border-border bg-muted/40 px-2.5 py-2">
-              <DetailRow
-                icon={<ShieldIcon className="size-3.5" aria-hidden />}
-                label="Access"
-                value={`${roleMeta.label} — ${roleMeta.description}`}
-              />
               <DetailRow
                 icon={<BriefcaseIcon className="size-3.5" aria-hidden />}
                 label="Title"
@@ -269,26 +258,26 @@ export function TeamMemberSheet({
               </span>
             </div>
           </section>
+        </div>
 
-          <Separator />
-
-          <section className="space-y-2.5">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Access
-            </h3>
+        <SheetFooter className="mt-auto gap-2 border-t">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Access
+          </h3>
+          <div className="flex items-center gap-2">
             <RoleSelect
               value={employee.appRole}
               onChange={handleRoleChange}
               disabled={updateEmployee.isPending}
               id={`sheet-role-${employee.id}`}
-              className="w-full"
+              className="flex-1"
             />
-            <Button type="button" variant="outline" className="w-full" onClick={onEdit}>
+            <Button type="button" variant="outline" className="shrink-0" onClick={onEdit}>
               <PencilIcon className="size-3.5" aria-hidden />
               Edit profile
             </Button>
-          </section>
-        </div>
+          </div>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

@@ -10,7 +10,7 @@ export function ProjectOverviewView({ id }: { id: string }) {
   // Layout gates access; a cached project resolves instantly here.
   if (!project) return null;
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <ProjectHubHeader project={project} />
       {/* Admins/leads get the project-health view; members get the team/who-works-on-what view. */}
       {project.canManage ? (

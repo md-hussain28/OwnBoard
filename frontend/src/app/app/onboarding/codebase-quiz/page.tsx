@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { IncomingFeature } from "@/components/layout/incoming-feature";
+import { MemberOnlyGate } from "@/components/onboarding/member-only-gate";
 import { QuizQuestionCard } from "@/components/onboarding/quiz-question-card";
 import { useOnboardingStore } from "@/stores/onboarding-store";
 import { Button } from "@/ui/button";
@@ -25,17 +26,19 @@ export default function CodebaseQuizPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Codebase quiz</h1>
-        <p className="text-muted-foreground">
-          Grounded in retrieved code and git history, including a senior engineer&apos;s custom
-          instruction.
-        </p>
+    <MemberOnlyGate>
+      <div className="max-w-2xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Codebase quiz</h1>
+          <p className="text-muted-foreground">
+            Grounded in retrieved code and git history, including a senior engineer&apos;s custom
+            instruction.
+          </p>
+        </div>
+        <IncomingFeature description="Codebase quizzes grounded in your repo's real git history are still being built — this is a sample question, and answering it won't be graded." />
+        <QuizQuestionCard {...MOCK_QUESTION} />
+        <Button onClick={handleContinue}>Continue</Button>
       </div>
-      <IncomingFeature description="Codebase quizzes grounded in your repo's real git history are still being built — this is a sample question, and answering it won't be graded." />
-      <QuizQuestionCard {...MOCK_QUESTION} />
-      <Button onClick={handleContinue}>Continue</Button>
-    </div>
+    </MemberOnlyGate>
   );
 }

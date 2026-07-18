@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { IncomingFeature } from "@/components/layout/incoming-feature";
+import { MemberOnlyGate } from "@/components/onboarding/member-only-gate";
 import { QuizQuestionCard } from "@/components/onboarding/quiz-question-card";
 import { useOnboardingStore } from "@/stores/onboarding-store";
 import { Button } from "@/ui/button";
@@ -29,16 +30,18 @@ export default function PolicyQuizPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Policy quiz</h1>
-        <p className="text-muted-foreground">
-          Scenario-based question, backed by a citation to the policy source.
-        </p>
+    <MemberOnlyGate>
+      <div className="max-w-2xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Policy quiz</h1>
+          <p className="text-muted-foreground">
+            Scenario-based question, backed by a citation to the policy source.
+          </p>
+        </div>
+        <IncomingFeature description="AI-generated policy quizzes are still being built — this is a sample question, and answering it won't be graded." />
+        <QuizQuestionCard {...MOCK_QUESTION} />
+        <Button onClick={handleContinue}>Continue</Button>
       </div>
-      <IncomingFeature description="AI-generated policy quizzes are still being built — this is a sample question, and answering it won't be graded." />
-      <QuizQuestionCard {...MOCK_QUESTION} />
-      <Button onClick={handleContinue}>Continue</Button>
-    </div>
+    </MemberOnlyGate>
   );
 }

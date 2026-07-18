@@ -2,7 +2,11 @@
 
 import { PlusIcon, XIcon } from "lucide-react";
 import { useState } from "react";
-import { useCreateModule, useUpdateModule } from "@/hooks/queries/project/project.mutations";
+import {
+  useCreateFunctionType,
+  useCreateModule,
+  useUpdateModule,
+} from "@/hooks/queries/project/project.mutations";
 import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { ProjectFunctionType, ProjectModule, ResourceLink } from "@/schemas/project.schema";
@@ -36,6 +40,7 @@ export function ModuleFormDialog({
   const [open, setOpen] = useState(false);
   const create = useCreateModule(projectId);
   const update = useUpdateModule(projectId);
+  const createRole = useCreateFunctionType(projectId);
   const isEdit = !!module;
   const pending = create.isPending || update.isPending;
 
@@ -48,6 +53,13 @@ export function ModuleFormDialog({
   const [links, setLinks] = useState<ResourceLink[]>(module?.resourceLinks ?? []);
   const [linkLabel, setLinkLabel] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
+  const [newRole, setNewRole] = useState("");
+  const [localRoles, setLocalRoles] = useState<ProjectFunctionType[]>([]);
+
+  const roles = (() => {
+    const seen = new Set(functionTypes.map((t) => t.id));
+    return [...functionTypes, ...localRoles.filter((r) => !seen.has(r.id))];
+  })();
 
   function reseed() {
     setName(module?.name ?? "");
@@ -59,6 +71,8 @@ export function ModuleFormDialog({
     setLinks(module?.resourceLinks ?? []);
     setLinkLabel("");
     setLinkUrl("");
+    setNewRole("");
+    setLocalRoles([]);
   }
 
   function handleOpenChange(next: boolean) {
@@ -72,6 +86,22 @@ export function ModuleFormDialog({
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
     });
+  }
+
+  function addRole() {
+    const trimmed = newRole.trim();
+    if (!trimmed) return;
+    createRole.mutate(
+      { name: trimmed },
+      {
+        onSuccess: (role) => {
+          setNewRole("");
+          setLocalRoles((prev) => [...prev, role]);
+          setTypeIds((prev) => new Set(prev).add(role.id));
+        },
+        onError: (err) => notify.apiError(err, "Could not add role"),
+      },
+    );
   }
 
   function addLink() {
@@ -112,8 +142,8 @@ export function ModuleFormDialog({
           <DialogHeader>
             <DialogTitle>{isEdit ? "Edit doc" : "New doc"}</DialogTitle>
             <DialogDescription>
-              A doc is dev-facing project context. It auto-assigns to members whose function matches
-              the types below — leave types empty to reach everyone on the project.
+              Project reading for the team. Pick roles below to auto-assign matching members — leave
+              roles empty to share with everyone.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -152,15 +182,14 @@ export function ModuleFormDialog({
               />
             </div>
 
-            <div className="space-y-1.5">
-              <span className="text-sm font-medium">Function types</span>
-              {functionTypes.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  No function types yet — add some to target this doc by role.
-                </p>
-              ) : (
+            <div className="space-y-2">
+              <span className="text-sm font-medium">Show to these roles</span>
+              <p className="text-xs text-muted-foreground">
+                Select existing roles or add a new one. Leave empty for everyone.
+              </p>
+              {roles.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {functionTypes.map((t) => {
+                  {roles.map((t) => {
                     const active = typeIds.has(t.id);
                     return (
                       <button key={t.id} type="button" onClick={() => toggleType(t.id)}>
@@ -175,6 +204,29 @@ export function ModuleFormDialog({
                   })}
                 </div>
               )}
+              <div className="flex gap-2">
+                <Input
+                  aria-label="New role name"
+                  placeholder="e.g. Frontend"
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addRole();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={createRole.isPending || !newRole.trim()}
+                  onClick={addRole}
+                >
+                  {createRole.isPending ? <Spinner /> : <PlusIcon className="size-4" />}
+                  Add
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-1.5">

@@ -18,8 +18,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { ReadinessBadge } from "./readiness";
 
-const NO_FUNCTION = "__none__";
-
 function initials(name: string): string {
   return name
     .split(" ")
@@ -124,9 +122,9 @@ function MemberManagePopover({
     update.mutate(
       {
         employeeId: member.employeeId,
-        input: value === NO_FUNCTION ? { clearFunctionType: true } : { functionTypeId: value },
+        input: { functionTypeId: value },
       },
-      { onError: (err) => notify.apiError(err, "Could not set function") },
+      { onError: (err) => notify.apiError(err, "Could not set role") },
     );
   }
 
@@ -152,13 +150,12 @@ function MemberManagePopover({
       </PopoverTrigger>
       <PopoverContent className="w-64 space-y-3" align="end">
         <div className="space-y-1.5">
-          <span className="text-xs font-medium text-muted-foreground">Function</span>
-          <Select value={member.functionTypeId ?? NO_FUNCTION} onValueChange={setFunction}>
+          <span className="text-xs font-medium text-muted-foreground">Role</span>
+          <Select value={member.functionTypeId ?? ""} onValueChange={setFunction}>
             <SelectTrigger>
-              <SelectValue placeholder="No function" />
+              <SelectValue placeholder="Choose a role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={NO_FUNCTION}>No function</SelectItem>
               {functionTypes.map((t) => (
                 <SelectItem key={t.id} value={t.id}>
                   {t.name}

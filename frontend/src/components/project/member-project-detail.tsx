@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeftIcon,
   ArrowRightIcon,
   CalendarClockIcon,
   CheckCircle2Icon,
@@ -98,13 +97,6 @@ export function MemberProjectDetail({ project }: { project: ProjectDetail }) {
 
   return (
     <div className="space-y-6">
-      <Link
-        href={appPath("projects")}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeftIcon className="size-4" /> My projects
-      </Link>
-
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           {locked ? (

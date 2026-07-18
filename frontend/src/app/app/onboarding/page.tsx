@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { IncomingBadge } from "@/components/layout/incoming-feature";
+import { MemberOnlyGate } from "@/components/onboarding/member-only-gate";
 import {
   ASSIGNMENT_STATUS_LABEL,
   assignmentStatusVariant,
@@ -519,77 +520,79 @@ export default function OnboardingPage() {
   const unlocked = currentStep === "unlocked" && quizzesPassed === 2;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance">Your onboarding</h1>
-        <p className="max-w-prose text-pretty text-muted-foreground">
-          Everything your admin assigned, in the order to work through it. Finish your reading
-          modules and gate quizzes to unlock repo access.
-        </p>
-      </header>
+    <MemberOnlyGate>
+      <div className="mx-auto max-w-2xl space-y-8">
+        <header className="space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-balance">Your onboarding</h1>
+          <p className="max-w-prose text-pretty text-muted-foreground">
+            Everything your admin assigned, in the order to work through it. Finish your reading
+            modules and gate quizzes to unlock repo access.
+          </p>
+        </header>
 
-      <ReadingTracksSection />
+        <ReadingTracksSection />
 
-      <section className="space-y-3" aria-labelledby="gate-heading">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 id="gate-heading" className="text-sm font-medium text-muted-foreground">
-            Access gate — complete in order
-          </h2>
-          <IncomingBadge />
-        </div>
-
-        <ol className="overflow-hidden rounded-xl border bg-card shadow-soft">
-          {QUIZ_ASSIGNMENTS.map((quiz, index) => (
-            <QuizAssignmentRow
-              key={quiz.key}
-              quiz={quiz}
-              index={index}
-              result={results[quiz.key]}
-              isCurrent={quiz.key === currentStep}
-              showConnector={index < QUIZ_ASSIGNMENTS.length - 1}
-            />
-          ))}
-        </ol>
-      </section>
-
-      <section
-        className={cn(
-          "flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between",
-          unlocked ? "border-success/30 bg-success/5" : "border-dashed bg-muted/30",
-        )}
-        aria-labelledby="unlock-heading"
-      >
-        <div className="flex gap-3">
-          <span
-            className={cn(
-              "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full",
-              unlocked ? "bg-success/15 text-success" : "bg-muted text-muted-foreground",
-            )}
-            aria-hidden
-          >
-            {unlocked ? <UnlockIcon className="size-4" /> : <LockIcon className="size-4" />}
-          </span>
-          <div className="space-y-1">
-            <h2 id="unlock-heading" className="font-medium text-foreground">
-              {unlocked ? "Repo access unlocked" : "Repo access locked"}
+        <section className="space-y-3" aria-labelledby="gate-heading">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 id="gate-heading" className="text-sm font-medium text-muted-foreground">
+              Access gate — complete in order
             </h2>
-            <p className="text-pretty text-sm text-muted-foreground">
-              {unlocked
-                ? "Both gate quizzes are complete. You can use the archaeology Q&A and related tools."
-                : "Pass the policy quiz, then the codebase quiz, to unlock access."}
-            </p>
+            <IncomingBadge />
           </div>
-        </div>
-        {unlocked ? (
-          <Button asChild size="sm" className="shrink-0 self-start sm:self-center">
-            <Link href="/app/onboarding/unlocked">Open</Link>
-          </Button>
-        ) : (
-          <Badge variant="secondary" className="shrink-0 self-start sm:self-center">
-            After quizzes
-          </Badge>
-        )}
-      </section>
-    </div>
+
+          <ol className="overflow-hidden rounded-xl border bg-card shadow-soft">
+            {QUIZ_ASSIGNMENTS.map((quiz, index) => (
+              <QuizAssignmentRow
+                key={quiz.key}
+                quiz={quiz}
+                index={index}
+                result={results[quiz.key]}
+                isCurrent={quiz.key === currentStep}
+                showConnector={index < QUIZ_ASSIGNMENTS.length - 1}
+              />
+            ))}
+          </ol>
+        </section>
+
+        <section
+          className={cn(
+            "flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between",
+            unlocked ? "border-success/30 bg-success/5" : "border-dashed bg-muted/30",
+          )}
+          aria-labelledby="unlock-heading"
+        >
+          <div className="flex gap-3">
+            <span
+              className={cn(
+                "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full",
+                unlocked ? "bg-success/15 text-success" : "bg-muted text-muted-foreground",
+              )}
+              aria-hidden
+            >
+              {unlocked ? <UnlockIcon className="size-4" /> : <LockIcon className="size-4" />}
+            </span>
+            <div className="space-y-1">
+              <h2 id="unlock-heading" className="font-medium text-foreground">
+                {unlocked ? "Repo access unlocked" : "Repo access locked"}
+              </h2>
+              <p className="text-pretty text-sm text-muted-foreground">
+                {unlocked
+                  ? "Both gate quizzes are complete. You can use the archaeology Q&A and related tools."
+                  : "Pass the policy quiz, then the codebase quiz, to unlock access."}
+              </p>
+            </div>
+          </div>
+          {unlocked ? (
+            <Button asChild size="sm" className="shrink-0 self-start sm:self-center">
+              <Link href="/app/onboarding/unlocked">Open</Link>
+            </Button>
+          ) : (
+            <Badge variant="secondary" className="shrink-0 self-start sm:self-center">
+              After quizzes
+            </Badge>
+          )}
+        </section>
+      </div>
+    </MemberOnlyGate>
   );
 }

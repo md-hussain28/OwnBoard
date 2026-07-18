@@ -3,10 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, type ReactNode } from "react";
-import { WORKSPACE_NAV } from "@/components/layout/nav-config";
+import {
+  navItemsForRole,
+  PROJECT_SECTIONS,
+  WORKSPACE_NAV,
+} from "@/components/layout/nav-config";
 import { useDocPack } from "@/hooks/queries/doc-pack/doc-pack.queries";
+import { useAppRole } from "@/hooks/queries/me/me.queries";
 import { useAssignmentDetail } from "@/hooks/queries/pack-assignment/pack-assignment.queries";
+import { useProject } from "@/hooks/queries/project/project.queries";
 import { APP_HOME } from "@/lib/routes";
+import type { AppRole } from "@/schemas/employee.schema";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -24,8 +31,8 @@ type Crumb = {
 const SEGMENT_LABELS: Record<string, string> = {
   "doc-packs": "Quizzes",
   new: "Create",
-  onboarding: "Readiness",
-  packs: "My quizzes",
+  onboarding: "Onboarding",
+  packs: "My modules",
   "policy-quiz": "Policy quiz",
   "codebase-quiz": "Codebase quiz",
   unlocked: "Unlocked",
@@ -35,10 +42,17 @@ const SEGMENT_LABELS: Record<string, string> = {
   settings: "Settings",
   organization: "Organization",
   team: "Team",
+  projects: "Projects",
+  // Project sub-nav sections (kept in sync with PROJECT_SECTIONS)
+  ...Object.fromEntries(PROJECT_SECTIONS.filter((s) => s.key).map((s) => [s.key, s.label])),
 };
 
-function navMatchForPath(pathname: string): { label: string; href: string } | null {
-  for (const item of WORKSPACE_NAV.items) {
+function navMatchForPath(
+  pathname: string,
+  role?: AppRole | null,
+): { label: string; href: string } | null {
+  const items = role ? navItemsForRole(role) : WORKSPACE_NAV.items;
+  for (const item of items) {
     if (item.href === APP_HOME) {
       if (pathname === APP_HOME || pathname === `${APP_HOME}/`) {
         return { label: item.label, href: item.href };
@@ -75,9 +89,18 @@ function AssignmentCrumbLabel({ assignmentId }: { assignmentId: string }) {
   return <>{detail?.docPackName ?? "Pack"}</>;
 }
 
+function ProjectCrumbLabel({ projectId }: { projectId: string }) {
+  const { data: project, isLoading } = useProject(projectId);
+  if (isLoading && !project) return <>…</>;
+  return <>{project?.name ?? "Project"}</>;
+}
+
 function labelForSegment(segment: string, opts: { isLast: boolean; section: string }): ReactNode {
   if (opts.isLast && opts.section === "doc-packs" && segment !== "new" && looksLikeId(segment)) {
     return <DocPackCrumbLabel packId={segment} />;
+  }
+  if (opts.section === "projects" && segment !== "new" && looksLikeId(segment)) {
+    return <ProjectCrumbLabel projectId={segment} />;
   }
   return SEGMENT_LABELS[segment] ?? (looksLikeId(segment) ? "Details" : titleCase(segment));
 }
@@ -89,7 +112,30 @@ function assignmentCrumbs(rootLabel: string, rootHref: string, assignmentId: str
   ];
 }
 
-function buildCrumbs(pathname: string): Crumb[] {
+/** Projects → Project name → Section (e.g. Skill graph). */
+function projectCrumbs(
+  rootLabel: string,
+  rootHref: string,
+  projectId: string,
+  sectionKey: string | undefined,
+): Crumb[] {
+  const projectHref = `${rootHref}/${projectId}`;
+  const crumbs: Crumb[] = [
+    { label: rootLabel, href: rootHref },
+    {
+      label: <ProjectCrumbLabel projectId={projectId} />,
+      href: sectionKey ? projectHref : undefined,
+    },
+  ];
+  if (sectionKey) {
+    crumbs.push({
+      label: SEGMENT_LABELS[sectionKey] ?? titleCase(sectionKey),
+    });
+  }
+  return crumbs;
+}
+
+function buildCrumbs(pathname: string, role?: AppRole | null): Crumb[] {
   if (pathname === APP_HOME || pathname === `${APP_HOME}/`) {
     return [{ label: "Codebases" }];
   }
@@ -100,7 +146,7 @@ function buildCrumbs(pathname: string): Crumb[] {
     return [{ label: "Codebases" }];
   }
 
-  const nav = navMatchForPath(pathname);
+  const nav = navMatchForPath(pathname, role);
   const rootHref = nav?.href ?? `${APP_HOME}/${consoleParts[0]}`;
   const rootLabel = nav?.label ?? SEGMENT_LABELS[consoleParts[0]] ?? titleCase(consoleParts[0]);
 
@@ -114,6 +160,17 @@ function buildCrumbs(pathname: string): Crumb[] {
     looksLikeId(assignmentId)
   ) {
     return assignmentCrumbs(rootLabel, rootHref, assignmentId);
+  }
+
+  // Project hub: Projects → name → optional section (skip raw id in the trail).
+  const projectId = consoleParts[1];
+  if (
+    consoleParts[0] === "projects" &&
+    projectId &&
+    projectId !== "new" &&
+    looksLikeId(projectId)
+  ) {
+    return projectCrumbs(rootLabel, rootHref, projectId, consoleParts[2]);
   }
 
   if (consoleParts.length === 1 || pathname === rootHref || pathname === `${rootHref}/`) {
@@ -136,7 +193,8 @@ function buildCrumbs(pathname: string): Crumb[] {
 
 export function AppBreadcrumbs() {
   const pathname = usePathname();
-  const crumbs = buildCrumbs(pathname);
+  const { appRole } = useAppRole();
+  const crumbs = buildCrumbs(pathname, appRole);
 
   return (
     <Breadcrumb>

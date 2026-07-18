@@ -40,7 +40,6 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [order, setOrder] = useState("");
   const [estimatedMinutes, setEstimatedMinutes] = useState("");
   const [dueInDays, setDueInDays] = useState("");
   const create = useCreateProjectTrack(projectId);
@@ -49,12 +48,10 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!name.trim()) return;
-    const sequenceOrder = parseOptionalInt(order);
     create.mutate(
       {
         name: name.trim(),
         description: description.trim() || null,
-        ...(sequenceOrder != null ? { sequenceOrder } : {}),
         estimatedMinutes: parseOptionalInt(estimatedMinutes),
         dueOffsetDays: parseOptionalInt(dueInDays),
       },
@@ -63,16 +60,15 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
           setOpen(false);
           setName("");
           setDescription("");
-          setOrder("");
           setEstimatedMinutes("");
           setDueInDays("");
-          notify.success("Module created", {
-            description: "Upload documents and build its quiz next.",
+          notify.success("Onboarding step created", {
+            description: "Upload source docs and build its quiz next.",
           });
           // Hand off to the existing track authoring surface (docs + quiz builder).
           router.push(appPath("tracks", track.id));
         },
-        onError: (err) => notify.apiError(err, "Could not create module"),
+        onError: (err) => notify.apiError(err, "Could not create onboarding step"),
       },
     );
   }
@@ -80,15 +76,15 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Add module</Button>
+        <Button>Add step</Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>New project module</DialogTitle>
+            <DialogTitle>New onboarding step</DialogTitle>
             <DialogDescription>
-              Create the module, then you&apos;ll be taken to upload its documents and build the
-              grounded quiz. Members must pass it to unlock this project.
+              Create the step, then you&apos;ll upload its source documents and build the grounded
+              quiz. Every member must pass it to unlock this project.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -114,20 +110,7 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium" htmlFor="track-order">
-                  Order
-                </label>
-                <Input
-                  id="track-order"
-                  type="number"
-                  min={0}
-                  placeholder="0"
-                  value={order}
-                  onChange={(e) => setOrder(e.target.value)}
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="track-minutes">
                   Est. minutes
@@ -156,8 +139,8 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Order controls the sequence members see. Due-in-days sets each member&apos;s deadline
-              from when they&apos;re assigned. All optional.
+              Due-in-days sets each member&apos;s deadline from when they&apos;re assigned. Both
+              optional.
             </p>
           </div>
           <DialogFooter>
@@ -177,13 +160,17 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
   const router = useRouter();
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Onboarding steps that gate entry to this project. Members must complete every step.
-        </p>
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold tracking-tight">Onboarding steps</h2>
+          <p className="max-w-2xl text-sm text-pretty text-muted-foreground">
+            Required quizzes that gate entry. Members must pass every step before this project
+            unlocks — separate from role-targeted Docs.
+          </p>
+        </div>
         <CreateTrackDialog projectId={projectId} />
-      </div>
+      </header>
       <QueryState
         isLoading={isLoading}
         isError={isError}
@@ -192,8 +179,9 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
         empty={
           <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border py-10 text-center">
             <FileStackIcon className="size-6 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              No modules yet. Add one so new members have something to pass.
+            <p className="text-sm font-medium">No onboarding steps yet</p>
+            <p className="max-w-md text-sm text-pretty text-muted-foreground">
+              Add a step so new members have a quiz to pass before they unlock this project.
             </p>
           </div>
         }

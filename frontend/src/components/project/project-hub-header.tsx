@@ -4,12 +4,11 @@ import { CalendarIcon, CrownIcon, GitBranchIcon, Trash2Icon } from "lucide-react
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useDeleteProject } from "@/hooks/queries/project/project.mutations";
-import { useProject } from "@/hooks/queries/project/project.queries";
 import { appPath } from "@/lib/routes";
 import { notify } from "@/lib/toast";
+import type { ProjectDetail } from "@/schemas/project.schema";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,17 +18,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/ui/dialog";
-import { Skeleton } from "@/ui/skeleton";
 import { Spinner } from "@/ui/spinner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
-import { AddMembersDialog } from "./add-members-dialog";
 import { EditProjectDialog } from "./edit-project-dialog";
-import { ProjectContextTab } from "./project-context-tab";
-import { ProjectMemberPanel } from "./project-member-panel";
-import { ProjectModulesTab } from "./project-modules-tab";
-import { ProjectOverviewTab } from "./project-overview-tab";
 import { ProjectStatusBadge } from "./project-status";
-import { ProjectTracksTab } from "./project-tracks-tab";
+import { ReadinessBar } from "./readiness";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -84,24 +76,16 @@ function DeleteProjectButton({ projectId, name }: { projectId: string; name: str
   );
 }
 
-export function AdminProjectDetail({ projectId }: { projectId: string }) {
-  const { data: project, isLoading, isError } = useProject(projectId);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-52" />
-        <Skeleton className="h-24 w-full rounded-xl" />
-      </div>
-    );
-  }
-
-  if (isError || !project) {
-    return <p className="text-sm text-muted-foreground">Could not load this project.</p>;
-  }
+/**
+ * Shared hub header for a selected project — rendered once by the project layout
+ * and kept above the sub-nav on every section.
+ */
+export function ProjectHubHeader({ project }: { project: ProjectDetail }) {
+  const readiness = project.myReadiness;
+  const showReadiness = !project.canManage && readiness && readiness.totalTracks > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -140,49 +124,31 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
             )}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <EditProjectDialog project={project} />
-          {/* Deleting a project is admin-only; a team lead manages but can't delete. */}
-          {project.isAdmin && <DeleteProjectButton projectId={project.id} name={project.name} />}
-        </div>
+        {project.canManage && (
+          <div className="flex shrink-0 items-center gap-1">
+            <EditProjectDialog project={project} />
+            {/* Deleting a project is admin-only; a team lead manages but can't delete. */}
+            {project.isAdmin && <DeleteProjectButton projectId={project.id} name={project.name} />}
+          </div>
+        )}
       </div>
 
-      <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="members">Members ({project.memberCount})</TabsTrigger>
-          <TabsTrigger value="tracks">Onboarding ({project.trackCount})</TabsTrigger>
-          <TabsTrigger value="modules">Docs ({project.moduleCount})</TabsTrigger>
-          <TabsTrigger value="context">Context</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview">
-          <ProjectOverviewTab project={project} />
-        </TabsContent>
-        <TabsContent value="members">
-          <Card>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle>Members</CardTitle>
-              <AddMembersDialog projectId={project.id} />
-            </CardHeader>
-            <CardContent>
-              <ProjectMemberPanel projectId={project.id} manageable />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="modules">
-          <ProjectModulesTab project={project} />
-        </TabsContent>
-        <TabsContent value="tracks">
-          <Card>
-            <CardContent className="pt-6">
-              <ProjectTracksTab projectId={project.id} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="context">
-          <ProjectContextTab project={project} />
-        </TabsContent>
-      </Tabs>
+      {showReadiness && readiness && (
+        <div
+          className={
+            readiness.locked
+              ? "rounded-xl border border-brand-amber/40 bg-brand-amber-soft/40 p-4"
+              : "rounded-xl border border-brand-moss/40 bg-brand-moss-soft/40 p-4"
+          }
+        >
+          <p className="mb-2 text-sm font-medium">
+            {readiness.locked
+              ? "Finish your onboarding to unlock full access to this project"
+              : "You're onboarded — you have full access to this project"}
+          </p>
+          <ReadinessBar readiness={readiness} />
+        </div>
+      )}
     </div>
   );
 }

@@ -28,6 +28,8 @@ export const API_ENDPOINTS = {
   projectDoc: (id: string, documentId: string) => `/projects/${id}/docs/${documentId}`,
   projectDocTypesForDoc: (id: string, documentId: string) =>
     `/projects/${id}/docs/${documentId}/types`,
+  projectDocReposForDoc: (id: string, documentId: string) =>
+    `/projects/${id}/docs/${documentId}/repos`,
   projectDocTypes: (id: string) => `/projects/${id}/doc-types`,
   projectDocType: (id: string, typeId: string) => `/projects/${id}/doc-types/${typeId}`,
   projectMember: (id: string, employeeId: string) => `/projects/${id}/members/${employeeId}`,

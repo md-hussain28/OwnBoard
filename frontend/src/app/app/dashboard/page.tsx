@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { ConnectRepoPrompt } from "@/components/repo";
+import { DraftLink } from "@/components/shared";
 import { RiskiestFiles, SubsystemBusFactor, TopContributors } from "@/components/skill-graph";
 import { useRepos } from "@/hooks/queries/repo";
 import { appPath } from "@/lib";
@@ -28,12 +28,13 @@ export default function DashboardPage() {
         <>
           <p className="text-sm text-muted-foreground">
             Showing{" "}
-            <Link
+            <DraftLink
+              entityId={repo.id}
               href={appPath("repos", repo.id)}
               className="font-medium text-foreground underline"
             >
               {repo.name}
-            </Link>
+            </DraftLink>
             .
           </p>
           <div className="grid gap-4 lg:grid-cols-2">

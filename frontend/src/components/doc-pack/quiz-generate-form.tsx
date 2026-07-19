@@ -2,6 +2,7 @@
 
 import { CheckIcon, Loader2Icon, SparklesIcon } from "lucide-react";
 import type { FormEvent } from "react";
+import { LoadingPun } from "@/components/shared";
 import { Button, Input, Textarea } from "@/ui";
 import { FORMAT_LABEL, type GenerateFormat } from "./quiz-builder-types";
 
@@ -96,6 +97,9 @@ export function QuizGenerateForm({
           </>
         )}
       </Button>
+      {isPending && (
+        <LoadingPun className="justify-start rounded-lg bg-brand-mist/60 px-3 py-2 text-xs" />
+      )}
       {!hasProcessedDocuments && (
         <p className="text-xs text-muted-foreground">
           Upload at least one document and wait for processing to finish first.

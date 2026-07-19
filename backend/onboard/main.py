@@ -8,6 +8,7 @@ from onboard.api.dependency.auth import require_org, require_user
 from onboard.api.exception_handlers import register_exception_handlers
 from onboard.api.middleware.logging import RequestLoggingMiddleware
 from onboard.api.routes import (
+    admin_assistant_router,
     auth_router,
     chat_router,
     dashboard_router,
@@ -90,6 +91,7 @@ def create_app() -> FastAPI:
     app.include_router(project_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(project_docs_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(project_chat_router.router, prefix=prefix, dependencies=tenant_scoped)
+    app.include_router(admin_assistant_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(notification_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(skill_graph_router.router, prefix=prefix, dependencies=tenant_scoped)
     app.include_router(rag_router.router, prefix=prefix, dependencies=tenant_scoped)

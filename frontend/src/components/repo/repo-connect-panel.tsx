@@ -1,13 +1,32 @@
 "use client";
 
-import { CheckCircle2Icon, KeyRoundIcon } from "lucide-react";
+import {
+  AlertTriangleIcon,
+  CheckCircle2Icon,
+  ExternalLinkIcon,
+  KeyRoundIcon,
+  RefreshCwIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { CodeSnippet } from "@/components/shared";
 import { useCreateIngestKey, useIngestKeys, useRevokeIngestKey } from "@/hooks/queries/ingest-key";
 import { useExpertiseScores } from "@/hooks/queries/skill-graph";
 import { notify } from "@/lib";
 import type { Repo } from "@/schemas";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Separator, Spinner } from "@/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Separator,
+  Spinner,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/ui";
 
 // The customer's GitHub Action posts directly to the backend (not through the Next proxy), so this
 // must be the public API URL. Set NEXT_PUBLIC_OWNBOARD_INGEST_URL in the frontend env for deploys.
@@ -15,6 +34,24 @@ const INGEST_URL =
   process.env.NEXT_PUBLIC_OWNBOARD_INGEST_URL ?? "http://localhost:8000/api/v1/ingest";
 // Where the composite action lives — update to wherever this repo is hosted.
 const ACTION_REF = "md-hussain28/OwnBoard/.github/actions/ownboard-extract@main";
+// The workflow the connect steps ask the admin to commit (.github/workflows/<file>).
+const WORKFLOW_FILE = "ownboard.yml";
+
+// A GitHub-hosted runner can't reach the developer's localhost, so a workflow that points there
+// silently fails at the POST. Flag it in the UI before the admin copies a broken snippet.
+const ingestUrlIsLocal = /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(INGEST_URL);
+
+/**
+ * Deep-link to the repo's Actions → OwnBoard sync → Run workflow page. Ingestion is push-model
+ * (OwnBoard has no repo access), so a manual sync is the workflow's own `workflow_dispatch`.
+ * Returns null when `url` isn't a recognizable GitHub repo.
+ */
+function githubWorkflowRunUrl(url: string): string | null {
+  const match = url.match(/github\.com[/:]([^/\s]+)\/([^/\s]+?)(?:\.git)?\/?$/i);
+  if (!match) return null;
+  const [, owner, repo] = match;
+  return `https://github.com/${owner}/${repo}/actions/workflows/${WORKFLOW_FILE}`;
+}
 
 function workflowYaml(): string {
   return [
@@ -52,6 +89,53 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   );
 }
 
+/**
+ * Manual "Sync now" affordance. Since ingestion is push-model, this only ever deep-links
+ * to the repo's GitHub Actions → Run workflow page — the actual `workflow_dispatch`. It's
+ * gated until an ingest key exists (the workflow can't authenticate without one) and always
+ * carries a tooltip explaining what clicking it does / why it's disabled. Uses `aria-disabled`
+ * rather than `disabled` so the trigger stays hoverable/focusable and the tip still shows.
+ */
+function SyncNowButton({ href, ready }: { href: string | null; ready: boolean }) {
+  let tip: string;
+  if (!href) tip = "Add a repository URL to enable syncing.";
+  else if (ready) tip = "Opens GitHub → Actions → Run workflow to sync this repo now.";
+  else tip = "Finish setup first: generate an ingest key and commit the workflow below.";
+
+  const enabled = ready && Boolean(href);
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {enabled && href ? (
+            <Button size="sm" variant="outline" asChild>
+              <a href={href} target="_blank" rel="noreferrer">
+                <RefreshCwIcon />
+                Sync now
+                <ExternalLinkIcon className="text-muted-foreground" />
+              </a>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              aria-disabled
+              onClick={(e) => e.preventDefault()}
+              className="cursor-not-allowed opacity-50"
+            >
+              <RefreshCwIcon />
+              Sync now
+            </Button>
+          )}
+        </TooltipTrigger>
+        <TooltipContent side="left">{tip}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export function RepoConnectPanel({ repo }: { repo: Repo }) {
   const { data: keys } = useIngestKeys(repo.id);
   const { data: scores } = useExpertiseScores(repo.id);
@@ -62,6 +146,11 @@ export function RepoConnectPanel({ repo }: { repo: Repo }) {
   const activeKeys = (keys ?? []).filter((k) => !k.revokedAt);
   const contributorCount = new Set((scores ?? []).map((s) => s.contributorId)).size;
   const fileCount = new Set((scores ?? []).map((s) => s.filePath)).size;
+  // Prefer the exact Actions → Run workflow page; fall back to the repo itself so the
+  // button is never dead. Sync only works once an ingest key exists (the workflow needs
+  // it to authenticate), so gate on that.
+  const syncHref = githubWorkflowRunUrl(repo.url) ?? (repo.url || null);
+  const setupReady = activeKeys.length > 0;
 
   function generate() {
     createKey.mutate(undefined, {
@@ -88,24 +177,40 @@ export function RepoConnectPanel({ repo }: { repo: Repo }) {
         <CardTitle>Connect this repository</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Ingestion status */}
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          {repo.ingestedAt ? (
-            <>
-              <Badge className="gap-1 bg-brand-moss-soft text-brand-moss">
-                <CheckCircle2Icon className="size-3.5" /> Synced
-              </Badge>
+        {/* Ingestion status + manual sync */}
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            {repo.ingestedAt ? (
+              <>
+                <Badge className="gap-1 bg-brand-moss-soft text-brand-moss">
+                  <CheckCircle2Icon className="size-3.5" /> Synced
+                </Badge>
+                <span className="text-muted-foreground">
+                  Last sync {new Date(repo.ingestedAt).toLocaleString()} · {contributorCount}{" "}
+                  contributors · {fileCount} files
+                </span>
+              </>
+            ) : (
               <span className="text-muted-foreground">
-                Last sync {new Date(repo.ingestedAt).toLocaleString()} · {contributorCount}{" "}
-                contributors · {fileCount} files
+                Not synced yet — finish the steps below, then run the workflow.
               </span>
-            </>
-          ) : (
-            <span className="text-muted-foreground">
-              Not synced yet — finish the steps below, then run the workflow.
-            </span>
-          )}
+            )}
+          </div>
+
+          <SyncNowButton href={syncHref} ready={setupReady} />
         </div>
+
+        {ingestUrlIsLocal && (
+          <div className="flex gap-2 rounded-lg border border-brand-honey/40 bg-brand-honey-soft/50 px-3 py-2 text-xs text-muted-foreground">
+            <AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-brand-honey" />
+            <p>
+              The workflow below posts to <code className="font-mono">{INGEST_URL}</code>. A GitHub
+              runner can&apos;t reach <code className="font-mono">localhost</code> — set{" "}
+              <code className="font-mono">NEXT_PUBLIC_OWNBOARD_INGEST_URL</code> to your public API
+              URL (or an ngrok tunnel) before copying it, or the sync will fail to connect.
+            </p>
+          </div>
+        )}
 
         <Separator />
 
@@ -168,8 +273,9 @@ export function RepoConnectPanel({ repo }: { repo: Repo }) {
 
         <Step n={3} title="Run it">
           <p className="text-sm text-muted-foreground">
-            In your repo: Actions → OwnBoard sync → Run workflow. The skill graph appears here
-            within a minute; semantic Q&A follows once embeddings finish.
+            Use <span className="font-medium text-foreground">Sync now</span> above (or in your
+            repo: Actions → OwnBoard sync → Run workflow). The skill graph appears here within a
+            minute; semantic Q&amp;A follows once embeddings finish.
           </p>
         </Step>
       </CardContent>

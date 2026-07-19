@@ -180,6 +180,23 @@ export const myProjectSchema = z
 export const myProjectListSchema = z.array(myProjectSchema);
 export type MyProject = z.infer<typeof myProjectSchema>;
 
+/** One repo-scoped targeting rule on an onboarding module: everyone on `repoId`, optionally
+ * narrowed to the members of `domainId` (a project function type). */
+export const trackRepoRuleSchema = z
+  .object({
+    repo_id: z.string(),
+    repo_name: z.string().nullable().default(null),
+    domain_id: z.string().nullable().default(null),
+    domain_name: z.string().nullable().default(null),
+  })
+  .transform((r) => ({
+    repoId: r.repo_id,
+    repoName: r.repo_name,
+    domainId: r.domain_id,
+    domainName: r.domain_name,
+  }));
+export type TrackRepoRule = z.infer<typeof trackRepoRuleSchema>;
+
 export const projectTrackSchema = z
   .object({
     id: z.string(),
@@ -189,6 +206,12 @@ export const projectTrackSchema = z
     sequence_order: z.number(),
     estimated_minutes: z.number().nullable(),
     due_offset_days: z.number().nullable().optional(),
+    // Combinable union targeting (managers only). Audience = union of everyone / domains / repos / manual.
+    target_all_members: z.boolean().default(true),
+    domain_ids: z.array(z.string()).default([]),
+    domain_names: z.array(z.string()).default([]),
+    repo_rules: z.array(trackRepoRuleSchema).default([]),
+    manual_employee_ids: z.array(z.string()).default([]),
     assign_scope: z.string().default("all_members"),
     assigned_count: z.number().default(0),
     assignee_ids: z.array(z.string()).default([]),
@@ -204,6 +227,11 @@ export const projectTrackSchema = z
     sequenceOrder: t.sequence_order,
     estimatedMinutes: t.estimated_minutes,
     dueOffsetDays: t.due_offset_days ?? null,
+    targetAllMembers: t.target_all_members,
+    domainIds: t.domain_ids,
+    domainNames: t.domain_names,
+    repoRules: t.repo_rules,
+    manualEmployeeIds: t.manual_employee_ids,
     assignScope: t.assign_scope,
     assignedCount: t.assigned_count,
     assigneeIds: t.assignee_ids,
@@ -214,15 +242,29 @@ export const projectTrackSchema = z
 export const projectTrackListSchema = z.array(projectTrackSchema);
 export type ProjectTrack = z.infer<typeof projectTrackSchema>;
 
+export type TrackRepoRuleInput = { repoId: string; domainId?: string | null };
+export type SetTrackAssignmentInput = {
+  targetAllMembers: boolean;
+  domainIds: string[];
+  repoRules: TrackRepoRuleInput[];
+  manualEmployeeIds: string[];
+};
+
 export const projectDocTypeSchema = z
   .object({ id: z.string(), name: z.string(), sort_order: z.number().default(0) })
   .transform((t) => ({ id: t.id, name: t.name, sortOrder: t.sort_order }));
 export type ProjectDocType = z.infer<typeof projectDocTypeSchema>;
 
+export const projectDocRepoRefSchema = z
+  .object({ repo_id: z.string(), name: z.string().nullable(), url: z.string().nullable() })
+  .transform((r) => ({ repoId: r.repo_id, name: r.name, url: r.url }));
+export type ProjectDocRepoRef = z.infer<typeof projectDocRepoRefSchema>;
+
 export const projectDocSchema = z
   .object({
     id: z.string(),
     title: z.string(),
+    description: z.string().nullable().default(null),
     file_type: z.string(),
     status: z.string(),
     page_count: z.number().nullable().default(null),
@@ -230,10 +272,13 @@ export const projectDocSchema = z
     created_at: z.string(),
     type_ids: z.array(z.string()).default([]),
     type_names: z.array(z.string()).default([]),
+    repo_ids: z.array(z.string()).default([]),
+    repos: z.array(projectDocRepoRefSchema).default([]),
   })
   .transform((d) => ({
     id: d.id,
     title: d.title,
+    description: d.description,
     fileType: d.file_type,
     status: d.status,
     pageCount: d.page_count,
@@ -241,6 +286,8 @@ export const projectDocSchema = z
     createdAt: d.created_at,
     typeIds: d.type_ids,
     typeNames: d.type_names,
+    repoIds: d.repo_ids,
+    repos: d.repos,
   }));
 export type ProjectDoc = z.infer<typeof projectDocSchema>;
 

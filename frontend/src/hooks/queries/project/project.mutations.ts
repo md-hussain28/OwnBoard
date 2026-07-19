@@ -13,6 +13,7 @@ import type {
   ProjectMember,
   ProjectModule,
   ProjectTrack,
+  SetTrackAssignmentInput,
   UpdateProjectInput,
   UpdateProjectMemberInput,
 } from "@/schemas";
@@ -237,28 +238,21 @@ export function useCreateProjectTrack(id: string) {
 export function useSetTrackAssignment(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (vars: {
-      trackId: string;
-      scope: "all_members" | "manual";
-      employeeIds?: string[];
-    }) =>
-      projectService.setTrackAssignment(id, vars.trackId, {
-        scope: vars.scope,
-        employeeIds: vars.employeeIds,
-      }),
+    // The final assignee set is a server-computed union (everyone/domains/repos/manual), so the
+    // resulting counts aren't predictable client-side — patch the targeting fields the editor set
+    // and let invalidation refresh counts/names.
+    mutationFn: (vars: { trackId: string } & SetTrackAssignmentInput) =>
+      projectService.setTrackAssignment(id, vars.trackId, vars),
     onMutate: (vars) => {
-      const patch = (track: ProjectTrack): ProjectTrack => {
-        if (track.id !== vars.trackId) return track;
-        if (vars.scope === "manual") {
-          return {
-            ...track,
-            assignScope: "manual",
-            assigneeIds: vars.employeeIds ?? track.assigneeIds,
-            assignedCount: vars.employeeIds?.length ?? track.assignedCount,
-          };
-        }
-        return { ...track, assignScope: "all_members" };
-      };
+      const patch = (track: ProjectTrack): ProjectTrack =>
+        track.id === vars.trackId
+          ? {
+              ...track,
+              targetAllMembers: vars.targetAllMembers,
+              domainIds: vars.domainIds,
+              manualEmployeeIds: vars.manualEmployeeIds,
+            }
+          : track;
       return optimisticEdits(queryClient, [
         cacheEdit<ProjectTrack[]>(projectKeys.tracks(id), (prev) => prev?.map(patch)),
         cacheEdit<ProjectDetail>(projectKeys.detail(id), (prev) =>

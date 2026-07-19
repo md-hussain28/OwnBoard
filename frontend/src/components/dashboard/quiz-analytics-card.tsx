@@ -1,6 +1,7 @@
 "use client";
 
 import { IncomingFeature } from "@/components/layout";
+import { LoadingPun } from "@/components/shared";
 import { useQuizAnalytics } from "@/hooks/queries/dashboard";
 import { isNotImplementedError } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, Progress, Skeleton } from "@/ui";
@@ -14,7 +15,12 @@ export function QuizAnalyticsCard({ repoId }: { repoId: string }) {
         <CardTitle>Quiz analytics</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {isLoading && <Skeleton className="h-24 w-full" />}
+        {isLoading && (
+          <div className="space-y-3">
+            <Skeleton className="h-24 w-full" />
+            <LoadingPun className="justify-start text-xs" />
+          </div>
+        )}
         {isError && isNotImplementedError(error) && (
           <IncomingFeature description="Readiness scoring across new hires is still being built." />
         )}

@@ -16,9 +16,30 @@ import {
   DialogTrigger,
 } from "@/ui";
 
-/** Manager control to set which project members work on a given repo. */
-export function RepoMembersDialog({ projectId, repo }: { projectId: string; repo: ProjectRepo }) {
-  const [open, setOpen] = useState(false);
+/**
+ * Manager control to set which project members work on a given repo.
+ *
+ * Renders its own "People" trigger button by default. Pass `open`/`onOpenChange` to drive it
+ * from elsewhere (e.g. a repo row's actions menu) — the built-in trigger is then hidden.
+ */
+export function RepoMembersDialog({
+  projectId,
+  repo,
+  open: openProp,
+  onOpenChange,
+}: {
+  projectId: string;
+  repo: ProjectRepo;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const isControlled = openProp !== undefined;
+  const [openState, setOpenState] = useState(false);
+  const open = isControlled ? openProp : openState;
+  const setOpen = (next: boolean) => {
+    if (isControlled) onOpenChange?.(next);
+    else setOpenState(next);
+  };
   const [selected, setSelected] = useState<Set<string>>(
     new Set(repo.assignees.map((a) => a.employeeId)),
   );
@@ -52,11 +73,13 @@ export function RepoMembersDialog({ projectId, repo }: { projectId: string; repo
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <UsersIcon className="size-4" /> People
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <UsersIcon className="size-4" /> People
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Who works on this repo?</DialogTitle>

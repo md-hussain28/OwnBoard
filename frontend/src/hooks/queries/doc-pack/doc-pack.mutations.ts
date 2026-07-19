@@ -1,14 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries";
-import { ID_PREFIXES, typedId } from "@/lib";
+import { ID_PREFIXES, isDraftId, typedId } from "@/lib";
 import type { DocPack, DocPackListItem, QuizQuestionCurationItem } from "@/schemas";
 import { docPackService } from "@/services";
 import { useUploadStore } from "@/stores";
 import { docPackKeys } from "./doc-pack.queries";
-
-/** True for a client-minted draft id (`new_…`) — the temp row we swap out once the server answers. */
-const isDraftId = (id: string) => id.startsWith(`${ID_PREFIXES.draft}_`);
 
 /** Project a full pack into the leaner list-item shape held in the `all` cache. */
 function toListItem(pack: DocPack): DocPackListItem {

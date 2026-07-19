@@ -20,6 +20,8 @@ ID_PREFIXES = frozenset(
         "ctrb",  # contributor
         "dchk",  # doc_chunk
         "doc",  # doc_pack_document
+        "dptd",  # doc_pack_target_domain (project module → project domain rule)
+        "dptr",  # doc_pack_target_repo (project module → repo(+domain) rule)
         "dom",  # org_domain (Developer, Marketing, …)
         "emp",  # employee
         "exav",  # expertise_availability
@@ -29,6 +31,9 @@ ID_PREFIXES = frozenset(
         "ntf",  # notification
         "pack",  # doc_pack
         "paud",  # doc_pack_audience_domain
+        "pdrp",  # project_document_repo (doc ↔ repo attachment)
+        "pdtl",  # project_document_type (doc ↔ doc-type link)
+        "pdty",  # project_doc_type (per-project doc tag: PRD, KT, …)
         "pfun",  # project_function_type
         "pmasgn",  # project_module_assignment
         "pmem",  # project_member
@@ -36,6 +41,7 @@ ID_PREFIXES = frozenset(
         "pmty",  # project_module_type
         "pol",  # policy_doc
         "prepo",  # project_repo
+        "prm",  # project_repo_member
         "proj",  # project
         "qdom",  # quiz_domain (Policy, Holiday, …)
         "ques",  # quiz_question

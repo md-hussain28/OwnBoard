@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { getApiErrorMessage } from "@/lib/api";
 import { Skeleton } from "@/ui";
+import { LoadingPun } from "./loading-pun";
 
 type QueryStateProps = {
   isLoading: boolean;
@@ -28,10 +29,13 @@ export function QueryState({
   if (isLoading) {
     return (
       loading ?? (
-        <div className="space-y-2">
-          <Skeleton className="h-16 w-full rounded-xl" />
-          <Skeleton className="h-16 w-full rounded-xl" />
-          <Skeleton className="h-16 w-full rounded-xl" />
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+          </div>
+          <LoadingPun className="justify-start pt-1 text-xs" icon={false} />
         </div>
       )
     );

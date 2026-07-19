@@ -1,9 +1,8 @@
 "use client";
 
 import { ArrowRightIcon, GitBranchIcon } from "lucide-react";
-import Link from "next/link";
 import { ConnectRepoDialog } from "@/components/repo";
-import { EmptyState, QueryState } from "@/components/shared";
+import { DraftLink, EmptyState, QueryState } from "@/components/shared";
 import { useAppRole } from "@/hooks/queries/me";
 import { useRepos } from "@/hooks/queries/repo";
 import { appPath } from "@/lib";
@@ -46,7 +45,12 @@ export default function ReposPage() {
       >
         <div className="grid gap-3 sm:grid-cols-2">
           {(repos ?? []).map((repo) => (
-            <Link key={repo.id} href={appPath("repos", repo.id)} className="group">
+            <DraftLink
+              key={repo.id}
+              entityId={repo.id}
+              href={appPath("repos", repo.id)}
+              className="group"
+            >
               <Card className="transition-shadow group-hover:shadow-soft">
                 <CardContent className="flex items-center justify-between gap-3 py-4">
                   <div className="min-w-0">
@@ -63,7 +67,7 @@ export default function ReposPage() {
                   </div>
                 </CardContent>
               </Card>
-            </Link>
+            </DraftLink>
           ))}
         </div>
       </QueryState>

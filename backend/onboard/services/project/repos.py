@@ -3,6 +3,7 @@
 from onboard.api.schema.project.response import ProjectResponse
 from onboard.core.common.exceptions import NotFoundError, ValidationError
 from onboard.dao.models.employee import Employee
+from onboard.services.pack_assignment.auto_assign import recompute_project_pack_audiences
 from onboard.services.project.base import ProjectServiceBase
 
 
@@ -67,7 +68,9 @@ class ProjectRepoMixin(ProjectServiceBase):
             raise NotFoundError(f"Repo {repo_id} is not linked to project {project_id}")
         member_ids = await self.member_dao.list_employee_ids_for_project(project_id)
         target = {e for e in employee_ids if e in member_ids}  # only project members can be assigned
-        current = {m.employee_id for m in link.members}
+        # Query fresh rather than reading link.members — that ORM collection can be stale within a
+        # request, which would make the add/remove diff (and downstream audience recompute) wrong.
+        current = await self.repo_member_dao.list_employee_ids_for_link(link.id)
         for emp_id in target - current:
             await self.repo_member_dao.create(
                 org_id=org_id, project_repo_id=link.id, employee_id=emp_id, added_by=viewer.id
@@ -76,5 +79,7 @@ class ProjectRepoMixin(ProjectServiceBase):
             existing = await self.repo_member_dao.get_for_link_and_employee(link.id, emp_id)
             if existing is not None:
                 await self.repo_member_dao.delete(existing.id)
+        # Repo assignees drive repo-scoped module targeting — reconcile the affected modules' audiences.
+        await recompute_project_pack_audiences(self.session, org_id, project_id)
         project = await self._get_project(org_id, project_id)
         return await self._base_response(project)

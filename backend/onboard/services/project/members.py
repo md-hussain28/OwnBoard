@@ -4,6 +4,7 @@ member-facing project detail/track surfaces (Projects PRD §1)."""
 from collections import defaultdict
 from datetime import UTC, datetime
 
+from onboard.api.schema.project.request import TrackRepoRuleInput
 from onboard.api.schema.project.response import (
     MemberFeature,
     MemberSkill,
@@ -12,16 +13,21 @@ from onboard.api.schema.project.response import (
     ProjectMemberResponse,
     ProjectMemberSkillsResponse,
     ProjectTrackResponse,
+    TrackRepoRule,
 )
 from onboard.config.constants import APP_ROLE_ADMIN
 from onboard.core.common.exceptions import ForbiddenError, NotFoundError, ValidationError
 from onboard.dao.file_expertise_dao import FileExpertiseDAO
-from onboard.dao.models.doc_pack import DocPackAssignScope, PackAssignment, PackAssignmentStatus
+from onboard.dao.models.doc_pack import PackAssignment, PackAssignmentStatus
 from onboard.dao.models.employee import Employee
 from onboard.dao.models.quiz_template import QuizType
 from onboard.dao.quiz_template_dao import QuizTemplateDAO
 from onboard.services.pack_assignment.assign_helpers import compute_due_at
-from onboard.services.pack_assignment.auto_assign import assign_pack_to_audience, assign_project_tracks_to_member
+from onboard.services.pack_assignment.auto_assign import (
+    assign_project_tracks_to_member,
+    recompute_pack_audience,
+    recompute_project_pack_audiences,
+)
 from onboard.services.project.base import ProjectServiceBase, _readiness
 from onboard.services.project.module_assign import assign_modules_to_member
 from onboard.services.skill_graph.skill_graph_service import subsystem_of
@@ -63,6 +69,13 @@ class ProjectMemberMixin(ProjectServiceBase):
 
         tracks = await self.pack_dao.list_for_project(org_id, project_id)
         viewer_assignments = {a.doc_pack_id: a for a in await self.assignment_dao.list_for_employee(org_id, viewer.id)}
+        # Targeting lookups (managers see the full targeting; members only see their own assignment state).
+        ft_by_id = {t.id: t.name for t in await self.function_type_dao.list_for_project(project_id)}
+        repo_link_by_id = {link.id: link for link in project.repos}
+        assignments_by_pack: dict[str, list[PackAssignment]] = defaultdict(list)
+        if can_manage:
+            for a in await self.assignment_dao.list_for_project(org_id, project_id):
+                assignments_by_pack[a.doc_pack_id].append(a)
         track_responses: list[ProjectTrackResponse] = []
         gating_for_viewer: list[PackAssignment] = []
         for pack in tracks:
@@ -73,22 +86,9 @@ class ProjectMemberMixin(ProjectServiceBase):
             # tracks scoped to other people. Managers (admin/lead) author, so they see every track.
             if not can_manage and a is None:
                 continue
-            assignee_ids = await self.assignment_dao.list_assigned_employee_ids(pack.id)
             track_responses.append(
-                ProjectTrackResponse(
-                    id=pack.id,
-                    name=pack.name,
-                    description=pack.description,
-                    status=pack.status.value,
-                    sequence_order=pack.sequence_order,
-                    estimated_minutes=pack.estimated_minutes,
-                    due_offset_days=pack.due_offset_days,
-                    assign_scope=pack.assign_scope.value,
-                    assigned_count=len(assignee_ids),
-                    assignee_ids=list(assignee_ids) if can_manage else [],
-                    assignment_id=a.id if a else None,
-                    my_status=a.status.value if a else "not_assigned",
-                    passed=a is not None and a.status == PackAssignmentStatus.passed,
+                self._track_response(
+                    pack, a, ft_by_id, repo_link_by_id, assignments_by_pack.get(pack.id, []), can_manage
                 )
             )
 
@@ -108,6 +108,48 @@ class ProjectMemberMixin(ProjectServiceBase):
             can_manage=can_manage,
             # Access is no longer gated by onboarding — modules track progress but never block entry.
             locked=False,
+        )
+
+    def _track_response(
+        self, pack, viewer_assignment, ft_by_id, repo_link_by_id, pack_assignments, can_manage
+    ) -> ProjectTrackResponse:
+        """Shape one project module into its response, including its combinable targeting (managers only)."""
+        domain_ids = [td.project_function_type_id for td in pack.target_domains]
+        repo_rules: list[TrackRepoRule] = []
+        for tr in pack.target_repos:
+            link = repo_link_by_id.get(tr.project_repo_id)
+            if link is None:
+                continue  # rule points at a repo that's since been unlinked — skip it
+            repo_rules.append(
+                TrackRepoRule(
+                    repo_id=link.repo_id,
+                    repo_name=link.repo.name if link.repo else None,
+                    domain_id=tr.project_function_type_id,
+                    domain_name=ft_by_id.get(tr.project_function_type_id) if tr.project_function_type_id else None,
+                )
+            )
+        assignee_ids = [x.employee_id for x in pack_assignments]
+        manual_ids = [x.employee_id for x in pack_assignments if not x.auto_assigned]
+        a = viewer_assignment
+        return ProjectTrackResponse(
+            id=pack.id,
+            name=pack.name,
+            description=pack.description,
+            status=pack.status.value,
+            sequence_order=pack.sequence_order,
+            estimated_minutes=pack.estimated_minutes,
+            due_offset_days=pack.due_offset_days,
+            target_all_members=pack.target_all_members,
+            domain_ids=domain_ids if can_manage else [],
+            domain_names=[ft_by_id[d] for d in domain_ids if d in ft_by_id] if can_manage else [],
+            repo_rules=repo_rules if can_manage else [],
+            manual_employee_ids=manual_ids if can_manage else [],
+            assign_scope=pack.assign_scope.value,
+            assigned_count=len(assignee_ids),
+            assignee_ids=assignee_ids if can_manage else [],
+            assignment_id=a.id if a else None,
+            my_status=a.status.value if a else "not_assigned",
+            passed=a is not None and a.status == PackAssignmentStatus.passed,
         )
 
     async def list_project_members(self, org_id: str, project_id: str, viewer: Employee) -> list[ProjectMemberResponse]:
@@ -217,8 +259,11 @@ class ProjectMemberMixin(ProjectServiceBase):
             # Only one team lead per project — promoting this member demotes any previous lead.
             await self._enforce_single_lead(project_id, employee_id)
         if function_changed:
-            # Additive: assign modules for the new function. (Existing assignments are left intact.)
+            # Additive: assign dev modules for the new function. (Existing assignments are left intact.)
             await assign_modules_to_member(self.session, org_id, project_id, employee_id)
+            # Onboarding modules use domain-aware union targeting — reconcile (adds and removes) so the
+            # member gains newly-matching modules and loses ones their old domain matched.
+            await recompute_project_pack_audiences(self.session, org_id, project_id)
         return await self._build_member_panel(org_id, project.id)
 
     async def remove_member(self, org_id: str, project_id: str, employee_id: str, viewer: Employee) -> None:
@@ -306,27 +351,41 @@ class ProjectMemberMixin(ProjectServiceBase):
         track_id: str,
         viewer: Employee,
         *,
-        scope: str,
-        employee_ids: list[str] | None = None,
+        target_all_members: bool,
+        domain_ids: list[str],
+        repo_rules: list[TrackRepoRuleInput],
+        manual_employee_ids: list[str],
     ) -> ProjectTrackResponse:
-        """Set a module's audience: 'all_members' (auto-assign everyone) or 'manual' (exactly employee_ids)."""
+        """Set a module's combinable audience: the union of everyone (target_all_members), the given
+        domains, the repo(+domain) rules, and the hand-picked manual assignees (project members only)."""
         project = await self._get_project(org_id, project_id)
         await self._assert_can_manage(project, viewer)
         pack = await self.pack_dao.get_by_id_for_org(org_id, track_id)
         if pack is None or pack.project_id != project_id:
             raise NotFoundError(f"Module {track_id} not found")
-        try:
-            new_scope = DocPackAssignScope(scope)
-        except ValueError as exc:
-            raise ValidationError(f"Invalid assignment scope: {scope}") from exc
-        await self.pack_dao.update(pack.id, assign_scope=new_scope)
-        pack = await self.pack_dao.get_by_id_for_org(org_id, track_id)
 
-        if new_scope == DocPackAssignScope.all_members:
-            # Additive: give every current project member the module (never revokes anyone).
-            await assign_pack_to_audience(self.session, org_id, pack.id)
-        else:
-            await self._reconcile_manual_assignees(org_id, project_id, pack, viewer, employee_ids or [])
+        # Validate + resolve targeting rules (repo_id → ProjectRepo link id; dedupe repo rules).
+        domain_ids = list(dict.fromkeys(domain_ids))
+        await self._validate_function_type_ids(project_id, domain_ids)
+        resolved_repo_rules: list[tuple[str, str | None]] = []
+        seen: set[tuple[str, str | None]] = set()
+        for rule in repo_rules:
+            link = await self.repo_link_dao.get_for_project_and_repo(project_id, rule.repo_id)
+            if link is None:
+                raise ValidationError(f"Repo {rule.repo_id} is not linked to this project")
+            if rule.domain_id is not None:
+                await self._validate_function_type_ids(project_id, [rule.domain_id])
+            key = (link.id, rule.domain_id)
+            if key not in seen:
+                seen.add(key)
+                resolved_repo_rules.append(key)
+
+        # Persist the rules, then reconcile the auto audience + manual roster.
+        await self.pack_dao.update(pack.id, target_all_members=target_all_members)
+        await self.target_domain_dao.replace_for_pack(org_id, pack.id, domain_ids)
+        await self.target_repo_dao.replace_for_pack(org_id, pack.id, resolved_repo_rules)
+        await recompute_pack_audience(self.session, org_id, pack.id)
+        await self._set_manual_assignees(org_id, project_id, pack, viewer, list(manual_employee_ids))
 
         detail = await self.get_project_detail(org_id, project_id, viewer)
         for t in detail.tracks:
@@ -334,17 +393,22 @@ class ProjectMemberMixin(ProjectServiceBase):
                 return t
         raise NotFoundError(f"Module {track_id} not found")
 
-    async def _reconcile_manual_assignees(
+    async def _set_manual_assignees(
         self, org_id: str, project_id: str, pack, viewer: Employee, employee_ids: list[str]
     ) -> None:
-        """Make the module's assignee set exactly `employee_ids` (restricted to project members)."""
+        """Make the module's *manual* (auto_assigned=False) assignees exactly `employee_ids` (project
+        members only). Auto assignments produced by the targeting rules are left untouched."""
         member_ids = await self.member_dao.list_employee_ids_for_project(project_id)
         target = {e for e in employee_ids if e in member_ids}
-        current = await self.assignment_dao.list_assigned_employee_ids(pack.id)
+        existing = await self.assignment_dao.list_for_pack(org_id, pack.id)
+        by_emp = {a.employee_id: a for a in existing}
+        manual_current = {a.employee_id for a in existing if not a.auto_assigned}
         template_dao = QuizTemplateDAO(self.session)
         published = await template_dao.get_latest_published_for_source(pack.id, QuizType.doc_pack)
         due_at = compute_due_at(pack, datetime.now(UTC))
-        for emp_id in target - current:
+        for emp_id in target:
+            if emp_id in by_emp:
+                continue  # already assigned (auto or manual) — leave it
             await self.assignment_dao.create(
                 org_id=org_id,
                 doc_pack_id=pack.id,
@@ -355,7 +419,7 @@ class ProjectMemberMixin(ProjectServiceBase):
                 quiz_template_id=published.id if published else None,
                 due_at=due_at,
             )
-        for emp_id in current - target:
-            existing = await self.assignment_dao.get_for_pack_and_employee(pack.id, emp_id)
-            if existing is not None:
-                await self.assignment_dao.delete(existing.id)
+        for emp_id in manual_current - target:
+            a = by_emp.get(emp_id)
+            if a is not None:
+                await self.assignment_dao.delete(a.id)  # remove hand-picked assignment

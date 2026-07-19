@@ -2,7 +2,7 @@
 
 import { GitBranchIcon } from "lucide-react";
 import { IncomingFeature } from "@/components/layout";
-import { EmptyState } from "@/components/shared";
+import { EmptyState, LoadingPun } from "@/components/shared";
 import { useBusFactor } from "@/hooks/queries/dashboard";
 import { cn } from "@/lib";
 import { isNotImplementedError } from "@/lib/api";
@@ -23,7 +23,12 @@ export function BusFactorHeatmap({ repoId }: { repoId: string }) {
         <CardTitle>Bus-factor heatmap</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        {isLoading && <Skeleton className="h-24 w-full" />}
+        {isLoading && (
+          <div className="space-y-3">
+            <Skeleton className="h-24 w-full" />
+            <LoadingPun className="justify-start text-xs" />
+          </div>
+        )}
         {isError && isNotImplementedError(error) && (
           <IncomingFeature description="Bus-factor analysis is grounded in real git history — it's still being built." />
         )}

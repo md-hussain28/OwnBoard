@@ -107,7 +107,12 @@ class RAGService:
             if not drafts:
                 raise ValidationError("No chunks produced from document")
 
-            embeddings = await self._embed_drafts(drafts)
+            # Ground every chunk's embedding in the document's uploader-supplied context (title +
+            # description). Stored `content` stays clean for citations; only the embedded text carries
+            # the header, so retrieval for "Ask project" matches on the doc's stated intent, not just
+            # the raw page text.
+            context_header = self._document_context_header(document.title, document.description)
+            embeddings = await self._embed_drafts(drafts, context=context_header)
             rows = [
                 {
                     "org_id": org_id,
@@ -172,9 +177,19 @@ class RAGService:
             for chunk, distance in hits
         ]
 
-    async def _embed_drafts(self, drafts: list[ChunkDraft]) -> list[list[float]]:
+    @staticmethod
+    def _document_context_header(title: str | None, description: str | None) -> str:
+        """A short header prepended to each chunk's embedding input (not its stored content)."""
+        lines: list[str] = []
+        if title:
+            lines.append(f"Document: {title}")
+        if description and description.strip():
+            lines.append(f"Context: {description.strip()}")
+        return ("\n".join(lines) + "\n\n") if lines else ""
+
+    async def _embed_drafts(self, drafts: list[ChunkDraft], context: str = "") -> list[list[float]]:
         embeddings: list[list[float]] = []
-        texts = [draft.content for draft in drafts]
+        texts = [context + draft.content for draft in drafts]
         for start in range(0, len(texts), EMBEDDING_BATCH_SIZE):
             batch = texts[start : start + EMBEDDING_BATCH_SIZE]
             embeddings.extend(await self.llm.embed_batch(batch))

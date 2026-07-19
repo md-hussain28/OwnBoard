@@ -13,7 +13,7 @@ from onboard.api.schema.project.response import (
 )
 from onboard.config.constants import APP_ROLE_ADMIN
 from onboard.core.common.exceptions import ForbiddenError, NotFoundError, ValidationError
-from onboard.dao.doc_pack_dao import DocPackDAO
+from onboard.dao.doc_pack_dao import DocPackDAO, DocPackTargetDomainDAO, DocPackTargetRepoDAO
 from onboard.dao.employee_dao import EmployeeDAO
 from onboard.dao.models.doc_pack import PackAssignment, PackAssignmentStatus
 from onboard.dao.models.employee import Employee
@@ -61,6 +61,8 @@ class ProjectServiceBase:
         self.module_type_dao = ProjectModuleTypeDAO(session)
         self.module_assignment_dao = ProjectModuleAssignmentDAO(session)
         self.pack_dao = DocPackDAO(session)
+        self.target_domain_dao = DocPackTargetDomainDAO(session)
+        self.target_repo_dao = DocPackTargetRepoDAO(session)
         self.assignment_dao = PackAssignmentDAO(session)
         self.employee_dao = EmployeeDAO(session)
         self.repo_dao = RepoDAO(session)

@@ -3,6 +3,7 @@
 export * from "./admin.schema";
 export * from "./ask.schema";
 export * from "./ask-extra.schema";
+export * from "./ask-more.schema";
 export * from "./chat.schema";
 export * from "./cohort.schema";
 export * from "./dashboard.schema";

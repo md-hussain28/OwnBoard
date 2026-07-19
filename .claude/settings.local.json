@@ -53,7 +53,8 @@
       "Bash(echo \"frontend lint exit: $?\")",
       "Bash(rm -f /tmp/test_vercel_stream.py /tmp/test_new_tools.py; echo \"cleaned\")",
       "Bash(make format *)",
-      "Bash(python3 -c \"import json,sys; print\\(json.dumps\\(json.load\\(sys.stdin\\).get\\('scripts',{}\\),indent=2\\)\\)\")"
+      "Bash(python3 -c \"import json,sys; print\\(json.dumps\\(json.load\\(sys.stdin\\).get\\('scripts',{}\\),indent=2\\)\\)\")",
+      "Bash(make migrate *)"
     ],
     "additionalDirectories": [
       "/private/tmp"

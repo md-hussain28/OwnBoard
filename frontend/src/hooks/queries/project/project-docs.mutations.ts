@@ -15,7 +15,19 @@ function useInvalidateDocs(id: string) {
 export function useUploadProjectDocs(id: string) {
   const invalidate = useInvalidateDocs(id);
   return useMutation({
-    mutationFn: (files: File[]) => projectService.uploadDocs(id, files),
+    mutationFn: (vars: {
+      files: File[];
+      name?: string;
+      typeIds?: string[];
+      repoIds?: string[];
+      description?: string;
+    }) =>
+      projectService.uploadDocs(id, vars.files, {
+        title: vars.name,
+        typeIds: vars.typeIds,
+        repoIds: vars.repoIds,
+        description: vars.description,
+      }),
     onSuccess: invalidate,
   });
 }
@@ -54,6 +66,39 @@ export function useSetDocTypes(id: string) {
                 ...prev,
                 documents: prev.documents.map((d) =>
                   d.id === vars.documentId ? { ...d, typeIds: vars.typeIds, typeNames } : d,
+                ),
+              }
+            : prev,
+        ),
+      ]);
+    },
+    onError: (_err, _vars, context) => rollbackEdits(queryClient, context),
+    onSettled: invalidate,
+  });
+}
+
+export function useSetDocRepos(id: string) {
+  const queryClient = useQueryClient();
+  const invalidate = useInvalidateDocs(id);
+  return useMutation({
+    mutationFn: (vars: { documentId: string; repoIds: string[] }) =>
+      projectService.setDocRepos(id, vars.documentId, vars.repoIds),
+    onMutate: (vars) => {
+      const docs = queryClient.getQueryData<ProjectDocs>(projectKeys.docs(id));
+      // Resolve chip metadata (name/url) from any doc that already carries these repos.
+      const knownRepos = new Map(
+        docs?.documents.flatMap((d) => d.repos).map((r) => [r.repoId, r]) ?? [],
+      );
+      const repos = vars.repoIds.map(
+        (rid) => knownRepos.get(rid) ?? { repoId: rid, name: null, url: null },
+      );
+      return optimisticEdits(queryClient, [
+        cacheEdit<ProjectDocs>(projectKeys.docs(id), (prev) =>
+          prev
+            ? {
+                ...prev,
+                documents: prev.documents.map((d) =>
+                  d.id === vars.documentId ? { ...d, repoIds: vars.repoIds, repos } : d,
                 ),
               }
             : prev,

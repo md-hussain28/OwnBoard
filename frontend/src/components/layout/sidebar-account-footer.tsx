@@ -5,6 +5,7 @@ import { dark, shadcn } from "@clerk/ui/themes";
 import { useAppRole } from "@/hooks/queries/me";
 import { cn } from "@/lib";
 import { SidebarFooter, SidebarSeparator, useSidebar } from "@/ui/sidebar";
+import { AssistantNavLink } from "./assistant-nav-link";
 import { ThemeSettings } from "./theme-settings";
 import { WorkspaceSwitcher } from "./workspace-switcher";
 
@@ -57,6 +58,16 @@ export function SidebarAccountFooter() {
     >
       {showTeam && (
         <>
+          {/* Personal co-pilot — pinned directly above Manage Team, always a click away. */}
+          <div
+            className={cn(
+              "relative z-20 flex items-center px-0.5",
+              collapsed && "h-8 w-full justify-center px-0",
+            )}
+          >
+            <AssistantNavLink collapsed={collapsed} />
+          </div>
+
           <div
             className={cn(
               "relative z-20 flex items-center px-0.5",

@@ -1,20 +1,24 @@
 "use client";
 
 import {
-  ArrowRightIcon,
   CalendarClockIcon,
   ClockIcon,
   FileStackIcon,
+  GitBranchIcon,
   ListChecksIcon,
+  PencilIcon,
   SearchIcon,
+  UserPlusIcon,
   UsersIcon,
+  UsersRoundIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { EmptyState, FilteredEmpty, FilterSelect, QueryState } from "@/components/shared";
 import { useCreateProjectTrack, useProjectTracks } from "@/hooks/queries/project";
-import { appPath, notify } from "@/lib";
-import type { ProjectTrack } from "@/schemas";
+import { appPath, cn, isDraftId, notify } from "@/lib";
+import type { ProjectDetail, ProjectTrack } from "@/schemas";
 import {
   Badge,
   Button,
@@ -29,7 +33,7 @@ import {
   Spinner,
   Textarea,
 } from "@/ui";
-import { ModuleAssignDialog } from "./module-assign-dialog";
+import { ModuleDetailSheet } from "./module-detail-sheet";
 import { ProjectSectionHeader } from "./project-section-header";
 
 function statusVariant(status: string): "success" | "secondary" | "warning" {
@@ -38,11 +42,26 @@ function statusVariant(status: string): "success" | "secondary" | "warning" {
   return "secondary";
 }
 
+function statusLabel(status: string): string {
+  return status === "active" ? "Published" : status.replace("_", " ");
+}
+
 function parseOptionalInt(value: string): number | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
   const n = Number.parseInt(trimmed, 10);
   return Number.isNaN(n) ? null : n;
+}
+
+/** Short human summary of a module's combinable audience, for the row's meta line. */
+function audienceSummary(track: ProjectTrack): string {
+  if (track.targetAllMembers) return "Everyone";
+  const parts: string[] = [];
+  if (track.domainNames.length) parts.push(track.domainNames.join(", "));
+  if (track.repoRules.length)
+    parts.push(`${track.repoRules.length} repo rule${track.repoRules.length === 1 ? "" : "s"}`);
+  if (track.manualEmployeeIds.length) parts.push(`${track.manualEmployeeIds.length} hand-picked`);
+  return parts.length ? parts.join(" · ") : "No one yet";
 }
 
 const STATUS_OPTIONS = [
@@ -81,7 +100,7 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
           notify.success("Module created", {
             description: "Upload source docs and build its quiz next.",
           });
-          router.push(appPath("tracks", track.id));
+          router.push(appPath("projects", projectId, "onboarding", track.id));
         },
         onError: (err) => notify.apiError(err, "Could not create module"),
       },
@@ -98,8 +117,9 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
           <DialogHeader>
             <DialogTitle>New module</DialogTitle>
             <DialogDescription>
-              Create the module, then upload its source documents and build the grounded quiz. You
-              choose who it&apos;s assigned to afterwards.
+              A module lives in this project&apos;s onboarding — separate from company-wide
+              onboarding. Name it to start; next you&apos;ll add its source documents and build a
+              grounded quiz, then choose who on this project it&apos;s for.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -154,8 +174,8 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Due-in-days sets each member&apos;s deadline from when they&apos;re assigned. Both
-              optional.
+              Est. minutes shows members the expected effort. Due in days sets each member&apos;s
+              deadline, counted from when they&apos;re assigned. Both optional.
             </p>
           </div>
           <DialogFooter>
@@ -170,66 +190,107 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
   );
 }
 
-function ModuleRow({ projectId, track }: { projectId: string; track: ProjectTrack }) {
-  const router = useRouter();
-  const isManual = track.assignScope === "manual";
+function MetaChip({ icon: Icon, children }: { icon: typeof ClockIcon; children: React.ReactNode }) {
   return (
-    <li className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/60">
+    <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+      <Icon className="size-3.5" />
+      {children}
+    </span>
+  );
+}
+
+function ModuleRow({
+  track,
+  projectId,
+  manageable,
+  onOpen,
+}: {
+  track: ProjectTrack;
+  projectId: string;
+  manageable: boolean;
+  onOpen: (track: ProjectTrack, edit?: boolean) => void;
+}) {
+  // Optimistic rows carry a `new_…` draft id until the create mutation resolves; opening one
+  // would 404, so the row stays inert and pending until the real id arrives.
+  const isDraft = isDraftId(track.id);
+  return (
+    <li
+      className={cn(
+        "group relative flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-all",
+        isDraft ? "animate-pulse opacity-70" : "hover:border-foreground/15 hover:shadow-sm",
+      )}
+      aria-busy={isDraft || undefined}
+    >
       <button
         type="button"
-        onClick={() => router.push(appPath("tracks", track.id))}
-        className="min-w-0 flex-1 text-left"
+        disabled={isDraft}
+        onClick={() => onOpen(track)}
+        aria-label={`Open ${track.name}`}
+        className="min-w-0 flex-1 space-y-1.5 text-left focus-visible:outline-none"
       >
-        <p className="truncate font-medium">{track.name}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="truncate font-medium group-hover:underline group-hover:decoration-foreground/20 group-hover:underline-offset-4">
+            {track.name}
+          </span>
+          <Badge variant={statusVariant(track.status)} className="shrink-0">
+            {isDraft ? "Creating…" : statusLabel(track.status)}
+          </Badge>
+        </div>
         {track.description && (
           <p className="truncate text-sm text-muted-foreground">{track.description}</p>
         )}
-        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <UsersIcon className="size-3.5" />
-            {isManual ? `${track.assignedCount} assigned` : `Everyone (${track.assignedCount})`}
-          </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <MetaChip icon={track.targetAllMembers ? UsersRoundIcon : GitBranchIcon}>
+            {audienceSummary(track)}
+          </MetaChip>
+          <MetaChip icon={UsersIcon}>{track.assignedCount} assigned</MetaChip>
           {track.estimatedMinutes != null && (
-            <span className="inline-flex items-center gap-1">
-              <ClockIcon className="size-3.5" /> {track.estimatedMinutes} min
-            </span>
+            <MetaChip icon={ClockIcon}>{track.estimatedMinutes} min</MetaChip>
           )}
           {track.dueOffsetDays != null && (
-            <span className="inline-flex items-center gap-1">
-              <CalendarClockIcon className="size-3.5" /> due in {track.dueOffsetDays} day
-              {track.dueOffsetDays === 1 ? "" : "s"}
-            </span>
+            <MetaChip icon={CalendarClockIcon}>
+              due in {track.dueOffsetDays} day{track.dueOffsetDays === 1 ? "" : "s"}
+            </MetaChip>
           )}
         </div>
       </button>
-      <div className="flex shrink-0 items-center gap-2">
-        <Badge variant={statusVariant(track.status)}>
-          {track.status === "active" ? "Published" : track.status.replace("_", " ")}
-        </Badge>
-        <ModuleAssignDialog projectId={projectId} track={track} />
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Author module"
-          onClick={() => router.push(appPath("tracks", track.id))}
-        >
-          <ArrowRightIcon className="size-4 text-muted-foreground" />
-        </Button>
-      </div>
+
+      {manageable && !isDraft && (
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => onOpen(track, true)}>
+            <UserPlusIcon className="size-4" /> Assign
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link href={appPath("projects", projectId, "onboarding", track.id)}>
+              <PencilIcon className="size-4" /> Edit
+            </Link>
+          </Button>
+        </div>
+      )}
     </li>
   );
 }
 
-export function ProjectTracksTab({ projectId }: { projectId: string }) {
+export function ProjectTracksTab({ project }: { project: ProjectDetail }) {
+  const projectId = project.id;
   const { data: tracks, isLoading, isError, error } = useProjectTracks(projectId);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState<ProjectTrack | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [startEditing, setStartEditing] = useState(false);
 
   const hasFilters = query.trim() !== "" || statusFilter !== "all";
 
   function clearFilters() {
     setQuery("");
     setStatusFilter("all");
+  }
+
+  function openTrack(track: ProjectTrack, edit = false) {
+    setSelected(track);
+    setStartEditing(edit);
+    setSheetOpen(true);
   }
 
   const filtered = useMemo(() => {
@@ -241,12 +302,17 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
     });
   }, [tracks, query, statusFilter]);
 
+  // Keep the open sheet's data fresh after an edit/refetch.
+  const activeTrack = selected
+    ? ((tracks ?? []).find((t) => t.id === selected.id) ?? selected)
+    : null;
+
   return (
     <div className="space-y-4">
       <ProjectSectionHeader
         icon={ListChecksIcon}
-        title="Modules"
-        description="Learning units with a grounded quiz. Assign each one to everyone on the project or to specific people — completion is tracked, but nothing blocks project access."
+        title="Project Onboarding"
+        description="Modules for this project, each with a grounded quiz — separate from company-wide onboarding. Open one to see and edit who it's for: everyone, specific domains, people on a repo, or hand-picked members. Completion is tracked, but nothing blocks project access."
         action={<CreateTrackDialog projectId={projectId} />}
       />
 
@@ -281,7 +347,7 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
             icon={FileStackIcon}
             tone="honey"
             title="No modules yet"
-            description="Add a module so members have grounded material and a quiz to work through."
+            description="Add one so members have grounded material and a quiz to work through."
             action={<CreateTrackDialog projectId={projectId} />}
           />
         }
@@ -289,13 +355,30 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
         {filtered.length === 0 ? (
           <FilteredEmpty noun="modules" onClear={hasFilters ? clearFilters : undefined} />
         ) : (
-          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+          <ul className="space-y-2">
             {filtered.map((track) => (
-              <ModuleRow key={track.id} projectId={projectId} track={track} />
+              <ModuleRow
+                key={track.id}
+                track={track}
+                projectId={projectId}
+                manageable={project.canManage}
+                onOpen={openTrack}
+              />
             ))}
           </ul>
         )}
       </QueryState>
+
+      <ModuleDetailSheet
+        projectId={projectId}
+        track={activeTrack}
+        functionTypes={project.functionTypes}
+        repos={project.repos}
+        manageable={project.canManage}
+        open={sheetOpen}
+        startEditing={startEditing}
+        onOpenChange={setSheetOpen}
+      />
     </div>
   );
 }

@@ -66,7 +66,7 @@ export function MemberDetailSheet({
     if (!member) return;
     update.mutate(
       { employeeId: member.employeeId, input: { functionTypeId: value } },
-      { onError: (err) => notify.apiError(err, "Could not set role") },
+      { onError: (err) => notify.apiError(err, "Could not set domain") },
     );
   }
 
@@ -207,10 +207,10 @@ export function MemberDetailSheet({
         {manageable && (
           <SheetFooter className="gap-3 border-t bg-muted/30">
             <div className="space-y-1.5">
-              <span className="text-sm font-medium">Role</span>
+              <span className="text-sm font-medium">Domain</span>
               <Select value={member.functionTypeId ?? ""} onValueChange={setFunction}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose a role" />
+                  <SelectValue placeholder="Choose a domain" />
                 </SelectTrigger>
                 <SelectContent>
                   {functionTypes.map((t) => (

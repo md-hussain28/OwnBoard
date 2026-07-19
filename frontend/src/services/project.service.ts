@@ -29,6 +29,7 @@ import {
   projectSchema,
   projectTrackListSchema,
   projectTrackSchema,
+  type SetTrackAssignmentInput,
   type UpdateProjectInput,
   type UpdateProjectMemberInput,
 } from "@/schemas";
@@ -167,13 +168,26 @@ export const projectService = {
   async uploadDocs(
     id: string,
     files: File[],
-    options?: { onProgress?: (percent: number) => void },
+    options?: {
+      onProgress?: (percent: number) => void;
+      /** Metadata captured in the upload modal, applied to every file in the batch. */
+      title?: string;
+      typeIds?: string[];
+      repoIds?: string[];
+      description?: string;
+    },
   ): Promise<ProjectDocs> {
     const data = await performSignedUpload({
       urlsEndpoint: API_ENDPOINTS.projectDocsUploadUrls(id),
       registerEndpoint: API_ENDPOINTS.projectDocsRegister(id),
       files,
       onProgress: options?.onProgress,
+      registerExtra: {
+        title: options?.title?.trim() || null,
+        type_ids: options?.typeIds ?? [],
+        repo_ids: options?.repoIds ?? [],
+        description: options?.description?.trim() || null,
+      },
     });
     return projectDocsSchema.parse(data);
   },
@@ -185,6 +199,14 @@ export const projectService = {
   async setDocTypes(id: string, documentId: string, typeIds: string[]): Promise<ProjectDocs> {
     const { data } = await getApiClient().put(API_ENDPOINTS.projectDocTypesForDoc(id, documentId), {
       type_ids: typeIds,
+    });
+    return projectDocsSchema.parse(data);
+  },
+
+  /** Attach a document to exactly these project-linked repos. */
+  async setDocRepos(id: string, documentId: string, repoIds: string[]): Promise<ProjectDocs> {
+    const { data } = await getApiClient().put(API_ENDPOINTS.projectDocReposForDoc(id, documentId), {
+      repo_ids: repoIds,
     });
     return projectDocsSchema.parse(data);
   },
@@ -234,15 +256,21 @@ export const projectService = {
     return projectTrackListSchema.parse(data);
   },
 
-  /** Set a module's audience: "all_members" (auto-assign everyone) or "manual" (exactly employeeIds). */
+  /** Set a module's combinable audience: the union of everyone / selected domains / repo(+domain)
+   * rules / hand-picked members. */
   async setTrackAssignment(
     id: string,
     trackId: string,
-    input: { scope: "all_members" | "manual"; employeeIds?: string[] },
+    input: SetTrackAssignmentInput,
   ): Promise<ProjectTrack> {
     const { data } = await getApiClient().put(API_ENDPOINTS.projectTrackAssignment(id, trackId), {
-      scope: input.scope,
-      employee_ids: input.employeeIds ?? null,
+      target_all_members: input.targetAllMembers,
+      domain_ids: input.domainIds,
+      repo_rules: input.repoRules.map((r) => ({
+        repo_id: r.repoId,
+        domain_id: r.domainId ?? null,
+      })),
+      manual_employee_ids: input.manualEmployeeIds,
     });
     return projectTrackSchema.parse(data);
   },

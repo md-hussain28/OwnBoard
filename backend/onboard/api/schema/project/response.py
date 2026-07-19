@@ -81,8 +81,18 @@ class MyProjectResponse(ProjectResponse):
     readiness: ProjectReadiness
 
 
+class TrackRepoRule(BaseModel):
+    """One repo-scoped targeting rule on a project module: everyone on `repo_id`, optionally narrowed
+    to the members of `domain_id` (a project function type)."""
+
+    repo_id: str
+    repo_name: str | None = None
+    domain_id: str | None = None  # project_function_type id, or null for "everyone on the repo"
+    domain_name: str | None = None
+
+
 class ProjectTrackResponse(BaseModel):
-    """A project-specific track, annotated with the current viewer's progress on it."""
+    """A project-specific onboarding module, annotated with the current viewer's progress on it."""
 
     id: str
     name: str
@@ -91,7 +101,14 @@ class ProjectTrackResponse(BaseModel):
     sequence_order: int
     estimated_minutes: int | None
     due_offset_days: int | None  # days after assignment the track is due; null = no deadline
-    # Who the module targets: "all_members" (auto-assigned to everyone) or "manual" (explicit roster).
+    # Combinable union targeting (management view). The audience is the union of: everyone (if
+    # target_all_members), the target domains, the target-repo rules, and the manual assignees.
+    target_all_members: bool = True
+    domain_ids: list[str] = []  # project function-type ids this module is needed for
+    domain_names: list[str] = []
+    repo_rules: list[TrackRepoRule] = []
+    manual_employee_ids: list[str] = []  # hand-picked assignees (populated for managers only)
+    # LEGACY — kept so older clients still parse; superseded by the union fields above.
     assign_scope: str = "all_members"
     assigned_count: int = 0  # how many members currently have it (management view)
     assignee_ids: list[str] = []  # current assignee employee ids — populated for managers only
@@ -175,11 +192,21 @@ class ProjectDocTypeResponse(BaseModel):
     sort_order: int = 0
 
 
+class ProjectDocRepoRef(BaseModel):
+    """A repo a document is attached to — shown as a chip on the doc and drives the repo's doc list."""
+
+    repo_id: str
+    name: str | None
+    url: str | None
+
+
 class ProjectDocResponse(BaseModel):
-    """One uploaded reference document in the project's knowledge base, with its type tags + ingest state."""
+    """One uploaded reference document in the project's knowledge base, with its type tags,
+    the repos it's attached to, and its ingest state."""
 
     id: str
     title: str
+    description: str | None = None
     file_type: str
     status: str  # uploaded | processing | processed | failed
     page_count: int | None = None
@@ -187,6 +214,9 @@ class ProjectDocResponse(BaseModel):
     created_at: datetime
     type_ids: list[str] = []
     type_names: list[str] = []
+    # Repos this document is attached to (subset of the project's linked repos).
+    repo_ids: list[str] = []
+    repos: list[ProjectDocRepoRef] = []
 
 
 class ProjectDocsResponse(BaseModel):

@@ -9,7 +9,7 @@ export * from "./member-modules-list";
 export * from "./member-onboarding-steps";
 export * from "./member-overview";
 export * from "./member-project-detail";
-export * from "./module-assign-dialog";
+export * from "./module-detail-sheet";
 export * from "./module-form-dialog";
 export * from "./my-projects-panel";
 export * from "./project-context-tab";

@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # "Ask project" question is judged complex (see ProjectChatService._select_model).
     OPENAI_CHAT_MODEL: str = "gpt-4.1-mini"
     OPENAI_CHAT_MODEL_COMPLEX: str = "gpt-4.1"
+    # Dedicated model for the agentic admin assistant tool loop (add member, create hire, assign
+    # track, analytics). Empty → falls back to OPENAI_CHAT_MODEL_COMPLEX. Bump to a stronger agentic
+    # model (e.g. gpt-5.1) via env with no code change if the assistant needs more reliability.
+    OPENAI_ASSISTANT_MODEL: str = ""
 
     # Clerk (backend token verification). Never expose CLERK_SECRET_KEY to the browser.
     CLERK_SECRET_KEY: str = ""

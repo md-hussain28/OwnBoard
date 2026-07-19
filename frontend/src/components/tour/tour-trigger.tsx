@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronRightIcon, CompassIcon, PlayIcon, XIcon } from "lucide-react";
+import { ArrowRightIcon, ChevronRightIcon, CompassIcon, PlayIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAppRole } from "@/hooks/queries/me";
 import { cn } from "@/lib";
-import { tourFeaturesForRole } from "@/lib/tour";
+import { markNudgeDismissed, type TourFeature, tourFeaturesForRole } from "@/lib/tour";
 import { useTourStore } from "@/stores";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/ui";
 
 /** Persisted once the user opens the launcher for the first time — stops the beacon. */
 const FAB_ENGAGED_KEY = "ownboard:tour:fab-engaged";
@@ -55,8 +56,27 @@ export function TourTrigger() {
   const menuOpen = useTourStore((s) => s.menuOpen);
   const toggleMenu = useTourStore((s) => s.toggleMenu);
   const closeMenu = useTourStore((s) => s.closeMenu);
+  const pageFeatureId = useTourStore((s) => s.pageFeatureId);
+  const clearPageNudge = useTourStore((s) => s.clearPageNudge);
 
   const features = tourFeaturesForRole(appRole);
+
+  // The current page's contextual nudge, shown as a callout above the FAB. Only when
+  // the menu is closed (the menu supersedes it) and the stop is one this role can see.
+  const pageNudge = pageFeatureId ? features.find((f) => f.id === pageFeatureId) : undefined;
+  const showNudge = Boolean(pageNudge) && !menuOpen;
+
+  const launchNudge = () => {
+    if (!pageNudge) return;
+    markNudgeDismissed(pageNudge.id);
+    clearPageNudge(pageNudge.id);
+    start(pageNudge.id);
+  };
+  const dismissNudge = () => {
+    if (!pageNudge) return;
+    markNudgeDismissed(pageNudge.id);
+    clearPageNudge(pageNudge.id);
+  };
 
   // Draw the eye to the launcher until the user has opened it once, ever.
   const { engaged, engage } = useFabEngaged();
@@ -64,7 +84,8 @@ export function TourTrigger() {
     engage();
     toggleMenu();
   };
-  const showBeacon = !engaged && !menuOpen;
+  // The page callout already draws the eye, so don't double up with the beacon.
+  const showBeacon = !engaged && !menuOpen && !showNudge;
 
   // Esc closes the menu (the running tour has its own Esc handler).
   useEffect(() => {
@@ -201,7 +222,13 @@ export function TourTrigger() {
           </div>
         )}
 
-        {/* The round launcher itself — floats gently until first opened. */}
+        {/* Contextual page nudge — expands out of the FAB as a small callout instead of a
+            separate top-of-page banner. Superseded by the menu when it's open. */}
+        {showNudge && pageNudge && (
+          <PageNudgeCallout feature={pageNudge} onLaunch={launchNudge} onDismiss={dismissNudge} />
+        )}
+
+        {/* The round launcher itself — a compact circle that floats gently until first opened. */}
         <div className={cn("relative self-end", showBeacon && "tour-fab-float")}>
           {/* Pulsing beacon ring behind the button — retires after the first open. */}
           {showBeacon && (
@@ -210,43 +237,129 @@ export function TourTrigger() {
               className="tour-fab-beacon pointer-events-none absolute inset-0 rounded-full"
             />
           )}
-          <button
-            type="button"
-            data-tour="tour-trigger"
-            onClick={handleToggle}
-            aria-expanded={menuOpen}
-            aria-label={menuOpen ? "Close tour menu" : "Take a tour"}
-            className={cn(
-              "group/fab relative flex items-center gap-2 rounded-full font-semibold text-primary-foreground",
-              "bg-brand-gradient shadow-card-hover ring-1 ring-white/15 ring-inset",
-              "transition-[transform,box-shadow,padding] duration-200 ease-out",
-              "hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              menuOpen ? "size-12 justify-center p-0" : "h-12 pr-5 pl-4",
-            )}
-          >
-            <span className="relative flex size-5 items-center justify-center">
-              <CompassIcon
-                className={cn(
-                  "absolute size-5 transition-[opacity,transform] duration-200 ease-out",
-                  menuOpen
-                    ? "scale-50 opacity-0 blur-[2px]"
-                    : "scale-100 opacity-100 group-hover/fab:rotate-45",
-                )}
-                aria-hidden
-              />
-              <XIcon
-                className={cn(
-                  "absolute size-5 transition-[opacity,transform] duration-200 ease-out",
-                  menuOpen ? "scale-100 opacity-100" : "scale-50 opacity-0 blur-[2px]",
-                )}
-                aria-hidden
-              />
-            </span>
-            {!menuOpen && <span className="text-sm">Take a tour</span>}
-          </button>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  data-tour="tour-trigger"
+                  onClick={handleToggle}
+                  aria-expanded={menuOpen}
+                  aria-label={menuOpen ? "Close tour menu" : "Take a tour"}
+                  className={cn(
+                    "group/fab relative flex size-11 items-center justify-center rounded-full text-primary-foreground",
+                    "bg-brand-gradient shadow-card-hover ring-1 ring-white/20 ring-inset",
+                    "transition-[transform,box-shadow] duration-200 ease-out",
+                    "hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-[0.94]",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  )}
+                >
+                  {/* Soft top highlight — gives the circle a lit, glassy read. */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/25 to-transparent"
+                  />
+                  <span className="relative flex size-5 items-center justify-center">
+                    <CompassIcon
+                      className={cn(
+                        "absolute size-5 transition-[opacity,transform] duration-200 ease-out",
+                        menuOpen
+                          ? "scale-50 opacity-0 blur-[2px]"
+                          : "scale-100 opacity-100 group-hover/fab:rotate-45",
+                      )}
+                      aria-hidden
+                    />
+                    <XIcon
+                      className={cn(
+                        "absolute size-5 transition-[opacity,transform] duration-200 ease-out",
+                        menuOpen ? "scale-100 opacity-100" : "scale-50 opacity-0 blur-[2px]",
+                      )}
+                      aria-hidden
+                    />
+                  </span>
+                </button>
+              </TooltipTrigger>
+              {!menuOpen && (
+                <TooltipContent side="left" sideOffset={8}>
+                  Take a tour
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * The contextual page nudge, rendered as a compact callout that expands out of the
+ * launcher FAB (origin bottom-right). Content comes from the page's `TourFeature`;
+ * "Show me around" deep-links the tour to this stop, the ✕ just dismisses.
+ */
+function PageNudgeCallout({
+  feature,
+  onLaunch,
+  onDismiss,
+}: {
+  feature: TourFeature;
+  onLaunch: () => void;
+  onDismiss: () => void;
+}) {
+  const Icon = feature.icon;
+  return (
+    <div
+      role="dialog"
+      aria-label={`${feature.title} tour tip`}
+      className={cn(
+        "w-[min(19rem,calc(100vw-2.5rem))] origin-bottom-right overflow-hidden rounded-2xl border border-border",
+        "bg-popover text-popover-foreground shadow-card-hover ring-1 ring-foreground/10",
+        "duration-200 ease-out animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-3",
+      )}
+    >
+      <div className="flex items-start gap-3 p-3.5">
+        <span
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-xl",
+            feature.iconWell,
+          )}
+        >
+          <Icon className="size-4" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="text-sm font-semibold leading-tight text-foreground">
+            First time on {feature.title}?
+          </p>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{feature.tagline}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label={`Dismiss the ${feature.title} tour tip`}
+          className="-mt-1 -mr-1 flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          <XIcon className="size-4" />
+        </button>
+      </div>
+      <div className="px-3.5 pb-3.5">
+        <button
+          type="button"
+          onClick={onLaunch}
+          className={cn(
+            "group/tour flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold",
+            "bg-primary/10 text-primary ring-1 ring-primary/20 ring-inset",
+            "transition-[background-color,transform] duration-150 ease-out",
+            "hover:bg-primary/15 active:scale-[0.99]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+          )}
+        >
+          Show me around
+          <ArrowRightIcon
+            className="size-4 transition-transform duration-150 group-hover/tour:translate-x-0.5"
+            aria-hidden
+          />
+        </button>
+      </div>
+    </div>
   );
 }

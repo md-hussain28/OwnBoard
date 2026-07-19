@@ -46,3 +46,13 @@ function uuid7Hex(): string {
 export function typedId(prefix: IdPrefix): string {
   return `${prefix}_${uuid7Hex()}`;
 }
+
+/**
+ * True for a client-minted draft id (`new_…`) — the placeholder id on an optimistic row that
+ * exists only in the cache and has no backend record yet. Such rows must never be linked or
+ * navigated to (the id can't resolve on the backend → 404); render them non-interactive with a
+ * "creating…" affordance until the `onSuccess`/invalidate swaps in the real persisted id.
+ */
+export function isDraftId(id: string | null | undefined): boolean {
+  return typeof id === "string" && id.startsWith(`${ID_PREFIXES.draft}_`);
+}

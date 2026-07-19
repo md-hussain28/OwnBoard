@@ -20,8 +20,8 @@ from onboard.core.common.exceptions import NotFoundError
 from onboard.core.llm.llm_client import LLMClient, get_llm_client
 from onboard.dao.commit_record_dao import CommitRecordDAO
 from onboard.dao.doc_chunk_dao import DocChunkDAO
-from onboard.dao.doc_pack_dao import DocPackDocumentDAO
-from onboard.dao.project_dao import ProjectDAO, ProjectRepoDAO
+from onboard.dao.doc_pack_dao import DocPackDAO, DocPackDocumentDAO
+from onboard.dao.project_dao import ProjectDAO, ProjectMemberDAO, ProjectRepoDAO
 from onboard.services.rag.rag_service import RAGService
 
 _DOC_TOP_K = 6
@@ -846,6 +846,230 @@ _TOOLS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "showApiEndpoint",
+            "description": "Document ONE HTTP API endpoint: method + path + params + request/response examples. Ground it in real routes/code from the context.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "method": _enum("GET", "POST", "PUT", "PATCH", "DELETE"),
+                    "path": {"type": "string", "description": "Route path, e.g. '/api/v1/projects/{id}/members'."},
+                    "title": {"type": "string"},
+                    "description": {"type": "string"},
+                    "auth": {"type": "string", "description": "Auth requirement, e.g. 'Admin only'."},
+                    "params": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "type": {"type": "string"},
+                                "required": {"type": "boolean"},
+                                "description": {"type": "string"},
+                            },
+                            "required": ["name"],
+                        },
+                    },
+                    "requestExample": {"type": "string", "description": "Example body/curl, verbatim from context."},
+                    "responseExample": {
+                        "type": "string",
+                        "description": "Example response JSON, verbatim from context.",
+                    },
+                },
+                "required": ["method", "path"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showAnnotatedCode",
+            "description": "A guided code walkthrough: a code excerpt (≤50 lines, verbatim) with line-anchored annotations the reader clicks to highlight. Use showCodeSnippet for code that needs no per-line notes.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "filePath": {"type": "string"},
+                    "language": {"type": "string"},
+                    "code": {"type": "string", "description": "The code, verbatim. Line numbers are 1-based."},
+                    "annotations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "line": {"type": "integer", "description": "1-based start line."},
+                                "endLine": {"type": "integer", "description": "1-based end line for a range."},
+                                "label": {"type": "string"},
+                                "note": {"type": "string"},
+                            },
+                            "required": ["line", "note"],
+                        },
+                    },
+                },
+                "required": ["code", "annotations"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showDiff",
+            "description": "A before→after code diff (added/removed/context lines). Great for 'what changed recently' or explaining a migration. Ground it in real commits/code.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "filePath": {"type": "string"},
+                    "language": {"type": "string"},
+                    "summary": {"type": "string", "description": "One-line summary of the change."},
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "kind": _enum("add", "remove", "context"),
+                                "text": {"type": "string", "description": "Line content WITHOUT a +/-/space marker."},
+                            },
+                            "required": ["kind", "text"],
+                        },
+                    },
+                },
+                "required": ["lines"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showEnvVars",
+            "description": "Environment/config variables for setup: name, required, secret (masked with reveal), example. Ground in the project's env/config docs.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "intro": {"type": "string"},
+                    "vars": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "description": {"type": "string"},
+                                "required": {"type": "boolean"},
+                                "secret": {
+                                    "type": "boolean",
+                                    "description": "True for keys/secrets (masks the example).",
+                                },
+                                "example": {"type": "string"},
+                            },
+                            "required": ["name"],
+                        },
+                    },
+                },
+                "required": ["vars"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showDecisionTree",
+            "description": "An interactive 'choose your path' guide: the user answers questions step by step and lands on a recommendation. Flat node list; options point to the next node id; terminal nodes carry a result. Use showFlow for a non-interactive process graph.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "rootId": {"type": "string", "description": "Id of the starting node."},
+                    "nodes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                                "question": {
+                                    "type": "string",
+                                    "description": "Question at this node (omit on terminal nodes).",
+                                },
+                                "result": {"type": "string", "description": "Recommendation shown at a terminal node."},
+                                "detail": {"type": "string"},
+                                "options": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {"type": "string"},
+                                            "next": {
+                                                "type": "string",
+                                                "description": "Id of the node this choice leads to.",
+                                            },
+                                        },
+                                        "required": ["label", "next"],
+                                    },
+                                },
+                            },
+                            "required": ["id"],
+                        },
+                    },
+                },
+                "required": ["rootId", "nodes"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showConfidenceCheck",
+            "description": "An interactive self-assessment: the user rates their confidence (1-5) on 2-8 areas; the component tallies readiness and points to their weakest area. A reflective onboarding check-in.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "intro": {"type": "string"},
+                    "topics": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "hint": {"type": "string"},
+                            },
+                            "required": ["label"],
+                        },
+                    },
+                },
+                "required": ["topics"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "showProsCons",
+            "description": "Weigh 1-3 options as pros vs cons with an optional verdict. Use showComparison for a feature matrix across many columns.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "options": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "pros": {"type": "array", "items": {"type": "string"}},
+                                "cons": {"type": "array", "items": {"type": "string"}},
+                                "verdict": {"type": "string"},
+                            },
+                            "required": ["label", "pros", "cons"],
+                        },
+                    },
+                },
+                "required": ["options"],
+            },
+        },
+    },
 ]
 
 
@@ -857,7 +1081,9 @@ class ProjectChatService:
         self.llm = llm or get_llm_client()
         self.project_dao = ProjectDAO(session)
         self.project_repo_dao = ProjectRepoDAO(session)
+        self.project_member_dao = ProjectMemberDAO(session)
         self.doc_chunk_dao = DocChunkDAO(session)
+        self.doc_pack_dao = DocPackDAO(session)
         self.document_dao = DocPackDocumentDAO(session)
         self.commit_dao = CommitRecordDAO(session)
         self.rag = RAGService(session, llm=self.llm)
@@ -987,6 +1213,7 @@ class ProjectChatService:
         ]
 
         commits = await self._recent_commits_across_repos(project_repos)
+        overview = await self._project_overview(org_id, project, project_repos)
 
         return {
             "project": {
@@ -994,10 +1221,45 @@ class ProjectChatService:
                 "description": project.description,
                 "tech_stack": self._coerce_tech_stack(project.tech_stack),
             },
+            "overview": overview,
             "doc_chunks": doc_chunks,
             "code_chunks": code_chunks,
             "commits": commits,
         }
+
+    async def _project_overview(self, org_id: str, project, project_repos) -> dict:
+        """Whole-project facts (repos, team size, document catalog) so answers aren't limited to the
+        retrieved chunks — the model always knows what the project IS and what docs exist, even when a
+        question doesn't semantically match any chunk. Kept to a few light queries for the small host."""
+        member_count = await self.project_member_dao.count_for_project(project.id)
+
+        packs = await self.doc_pack_dao.list_for_project(org_id, project.id)
+        doc_catalog: list[dict] = []
+        for pack in packs:
+            titles = [doc.title for doc in await self.document_dao.list_for_pack(pack.id) if doc.title]
+            if titles:
+                doc_catalog.append({"pack": pack.name, "documents": titles})
+
+        return {
+            "status": getattr(project, "status", None),
+            "member_count": member_count,
+            "repo_count": len(project_repos),
+            "resource_links": self._coerce_links(getattr(project, "resource_links", None)),
+            "doc_catalog": doc_catalog,
+        }
+
+    @staticmethod
+    def _coerce_links(raw) -> list[dict]:
+        """`resource_links` is free-form JSONB — normalize to `{label, url}` display rows."""
+        if not isinstance(raw, list):
+            return []
+        links: list[dict] = []
+        for item in raw:
+            if isinstance(item, dict):
+                url = item.get("url") or item.get("href")
+                if url:
+                    links.append({"label": item.get("label") or item.get("name") or url, "url": str(url)})
+        return links
 
     async def get_document_content(self, org_id: str, project_id: str, document_id: str) -> dict:
         """Ordered extracted text for one project document — backs the citation → viewer sheet."""
@@ -1063,6 +1325,31 @@ def _render_context(context: dict) -> str:
     desc = f" — {project['description']}" if project.get("description") else ""
     blocks.append(f"PROJECT: {project['name']}{desc}{stack}")
 
+    overview = context.get("overview") or {}
+    overview_lines: list[str] = []
+    facts: list[str] = []
+    if overview.get("status"):
+        facts.append(f"status {overview['status']}")
+    if overview.get("member_count") is not None:
+        facts.append(f"{overview['member_count']} team member(s)")
+    if overview.get("repo_count"):
+        facts.append(f"{overview['repo_count']} linked repo(s)")
+    if facts:
+        overview_lines.append("At a glance: " + ", ".join(facts) + ".")
+    if overview.get("resource_links"):
+        links = ", ".join(f"{link['label']} ({link['url']})" for link in overview["resource_links"][:8])
+        overview_lines.append(f"Resource links: {links}")
+    if overview.get("doc_catalog"):
+        for entry in overview["doc_catalog"]:
+            titles = ", ".join(entry["documents"][:20])
+            overview_lines.append(f'Track "{entry["pack"]}" documents: {titles}')
+    if overview_lines:
+        blocks.append(
+            "PROJECT OVERVIEW (whole-project facts — use for scope/what-exists questions even without a "
+            "matching excerpt below; cite specific documents only when you quote their content):\n"
+            + "\n".join(f"- {line}" for line in overview_lines)
+        )
+
     if context["doc_chunks"]:
         docs = "\n\n".join(
             f"[document_id: {c['document_id']} | title: {c['document_title']}]\n{_clamp(c['content'])}"
@@ -1081,7 +1368,9 @@ def _render_context(context: dict) -> str:
 
 
 def _build_system_prompt(context: dict) -> str:
-    has_context = bool(context["doc_chunks"] or context["code_chunks"] or context["commits"])
+    overview = context.get("overview") or {}
+    has_chunks = bool(context["doc_chunks"] or context["code_chunks"] or context["commits"])
+    has_context = has_chunks or bool(overview.get("doc_catalog"))
     empty_rule = (
         ""
         if has_context
@@ -1128,6 +1417,13 @@ Use tools to make answers scannable and useful. Prefer showing over telling. The
 - showKeyTakeaways — a short TL;DR highlight list of the 1-6 most important points.
 - showTree — an interactive expand/collapse hierarchy (concept/dependency/decision/org). Use showFileTree for real repo paths.
 - showFlow — an interactive node-and-edge graph for a process/flow/architecture/decision; clicking a node traces its connections.
+- showApiEndpoint — document ONE HTTP endpoint (method, path, params, request/response examples) grounded in real routes.
+- showAnnotatedCode — a guided code walkthrough: a code excerpt with clickable line-anchored notes. Use for "explain how this works" line by line (showCodeSnippet when no per-line notes are needed).
+- showDiff — a before→after code diff; great for "what changed recently" or explaining a migration.
+- showEnvVars — environment/config variables for setup (name, required, secret-with-reveal, example) grounded in env/config docs.
+- showDecisionTree — an interactive "which should I use / what should I do" guide the user walks step by step to a recommendation.
+- showConfidenceCheck — an interactive self-rating (1-5) across a few areas that tallies onboarding readiness; good to end a ramp-up answer.
+- showProsCons — weigh 1-3 options as pros vs cons with a verdict (showComparison for a wide feature matrix).
 
 ## Style
 - Be concise, warm, and concrete. Write in Markdown. Lead with the direct answer.

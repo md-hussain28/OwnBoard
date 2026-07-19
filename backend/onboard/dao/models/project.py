@@ -155,6 +155,24 @@ class ProjectDocumentType(AuditBase):
     )
 
 
+class ProjectDocumentRepo(AuditBase):
+    """Links one uploaded project doc (a DocPackDocument in the project's KB pack) to a linked Repo.
+    Many-to-many: a document may be attached to several of the project's repos, and a repo surfaces
+    every document attached to it. The attachable repos are exactly the project's `ProjectRepo` links."""
+
+    __tablename__ = "project_document_repo"
+    __id_prefix__ = "pdrp"
+    __table_args__ = (UniqueConstraint("document_id", "repo_id", name="uq_project_document_repo_doc_repo"),)
+
+    org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
+    document_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("doc_pack_document.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    repo_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("repo.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+
 class ProjectFunctionType(AuditBase):
     """A per-project, admin/lead-configurable function (e.g. "Frontend", "Backend", "DevOps").
 

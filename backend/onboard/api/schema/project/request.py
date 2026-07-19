@@ -53,12 +53,23 @@ class UpdateProjectMemberRequest(BaseModel):
     is_lead: bool | None = None
 
 
-class TrackAssignmentRequest(BaseModel):
-    """Set a project module's audience. scope='all_members' auto-assigns everyone; 'manual' targets
-    exactly `employee_ids` (project members only)."""
+class TrackRepoRuleInput(BaseModel):
+    """A repo-scoped targeting rule: everyone assigned to `repo_id`, optionally narrowed to `domain_id`
+    (a project function-type id). `repo_id` is a connected-repo id linked to the project."""
 
-    scope: str = Field(pattern="^(all_members|manual)$")
-    employee_ids: list[str] | None = None
+    repo_id: str
+    domain_id: str | None = None
+
+
+class TrackAssignmentRequest(BaseModel):
+    """Set a project module's combinable audience. The final assignee set is the UNION of:
+    every project member (if target_all_members), the members of `domain_ids`, the members matched by
+    `repo_rules`, and the hand-picked `manual_employee_ids` (all restricted to project members)."""
+
+    target_all_members: bool = False
+    domain_ids: list[str] = Field(default_factory=list)  # project function-type ids
+    repo_rules: list[TrackRepoRuleInput] = Field(default_factory=list)
+    manual_employee_ids: list[str] = Field(default_factory=list)
 
 
 class AddProjectRepoRequest(BaseModel):
@@ -84,6 +95,12 @@ class SetDocTypesRequest(BaseModel):
     """Set a document's type tags to exactly these project doc-type ids."""
 
     type_ids: list[str] = Field(default_factory=list)
+
+
+class SetDocReposRequest(BaseModel):
+    """Attach a document to exactly these repos (project-linked repo ids)."""
+
+    repo_ids: list[str] = Field(default_factory=list)
 
 
 class FunctionTypeCreateRequest(BaseModel):

@@ -8,9 +8,14 @@ import {
   UserRoundCogIcon,
   UsersIcon,
 } from "lucide-react";
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import { EmptyState, FilteredEmpty, FilterSelect, QueryState } from "@/components/shared";
+import {
+  DraftLink,
+  EmptyState,
+  FilteredEmpty,
+  FilterSelect,
+  QueryState,
+} from "@/components/shared";
 import { useProjects } from "@/hooks/queries/project";
 import { appPath, cn } from "@/lib";
 import { Button, Card, CardContent, Input } from "@/ui";
@@ -114,7 +119,12 @@ export function AdminProjectsPanel() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {visible.map((project) => (
-              <Link key={project.id} href={appPath("projects", project.id)} className="group">
+              <DraftLink
+                key={project.id}
+                entityId={project.id}
+                href={appPath("projects", project.id)}
+                className="group"
+              >
                 <Card
                   className={cn(
                     "h-full transition-shadow duration-200 group-hover:shadow-soft",
@@ -160,7 +170,7 @@ export function AdminProjectsPanel() {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
+              </DraftLink>
             ))}
           </div>
         )}

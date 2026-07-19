@@ -1,11 +1,11 @@
 "use client";
 
-import { GitBranchIcon } from "lucide-react";
+import { CheckCircle2Icon, ChevronRightIcon, GitBranchIcon } from "lucide-react";
 import { useState } from "react";
-import { EmptyState } from "@/components/shared";
+import { DraftLink, EmptyState, LoadingPun } from "@/components/shared";
 import { useAppRole } from "@/hooks/queries/me";
 import { useCreateRepo, useRepos } from "@/hooks/queries/repo";
-import { notify } from "@/lib";
+import { appPath, notify } from "@/lib";
 import { getApiErrorMessage } from "@/lib/api";
 import {
   Badge,
@@ -18,6 +18,7 @@ import {
   Skeleton,
   Spinner,
 } from "@/ui";
+import { repoSlug } from "./repo-identity";
 
 export function ConnectedReposList() {
   const { isAdmin } = useAppRole();
@@ -65,9 +66,10 @@ export function ConnectedReposList() {
         )}
 
         {isLoading && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
+            <LoadingPun className="justify-start text-xs" />
           </div>
         )}
 
@@ -90,19 +92,32 @@ export function ConnectedReposList() {
         )}
 
         {!isLoading && !isError && repos && repos.length > 0 && (
-          <ul className="space-y-2">
+          <ul className="overflow-hidden rounded-xl border border-border bg-card">
             {repos.map((repo) => (
-              <li
-                key={repo.id}
-                className="flex items-center justify-between rounded-xl border border-border px-4 py-3 transition-shadow duration-200 hover:shadow-soft"
-              >
-                <div>
-                  <p className="font-medium">{repo.name}</p>
-                  <p className="text-sm text-muted-foreground">{repo.url}</p>
-                </div>
-                <Badge variant={repo.ingestedAt ? "default" : "secondary"}>
-                  {repo.ingestedAt ? "Ingested" : "Pending"}
-                </Badge>
+              <li key={repo.id} className="border-b border-border last:border-0">
+                <DraftLink
+                  entityId={repo.id}
+                  href={appPath("repos", repo.id)}
+                  className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-teal-soft text-brand-teal">
+                    <GitBranchIcon className="size-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{repo.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {repoSlug(repo.url) ?? repo.url}
+                    </p>
+                  </div>
+                  {repo.ingestedAt ? (
+                    <Badge className="gap-1 bg-brand-moss-soft text-brand-moss">
+                      <CheckCircle2Icon className="size-3" /> Synced
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Not synced</Badge>
+                  )}
+                  <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                </DraftLink>
               </li>
             ))}
           </ul>

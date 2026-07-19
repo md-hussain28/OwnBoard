@@ -89,6 +89,21 @@ export const WORKSPACE_NAV: NavGroup = {
 };
 
 /**
+ * Admin AI Assistant — deliberately NOT in the main nav list. It's pinned in the sidebar footer,
+ * directly above "Manage Team", so it reads as an always-on personal co-pilot rather than one more
+ * page. Rendered by `SidebarAccountFooter` (admin-only, same gate as Manage Team).
+ */
+export const ASSISTANT_NAV_ITEM: NavItem = {
+  href: appPath("assistant"),
+  label: "AI Assistant",
+  description: "Your onboarding co-pilot",
+  icon: SparklesIcon,
+  matchPrefix: true,
+  roles: ["admin"],
+  tourId: "assistant",
+};
+
+/**
  * Platform tenant admin — `/app/admin`, platform superadmins only.
  * Reached by URL (not org settings); create-org is hidden in the switcher.
  */
@@ -135,7 +150,7 @@ export const PROJECT_SECTIONS: ProjectSection[] = [
   { key: "", label: "Overview", icon: LayoutDashboardIcon },
   // Members leads the working sub-nav — it's the primary surface for admins & leads.
   { key: "members", label: "Members", icon: UsersIcon, access: "manage" },
-  { key: "onboarding", label: "Modules", icon: ListChecksIcon },
+  { key: "onboarding", label: "Project Onboarding", icon: ListChecksIcon },
   { key: "docs", label: "Docs", icon: ScrollTextIcon },
   { key: "repositories", label: "Repos", icon: GitBranchIcon, access: "manage" },
   { key: "ask", label: "Ask project", icon: SparklesIcon },

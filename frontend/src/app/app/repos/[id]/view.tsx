@@ -2,7 +2,7 @@
 
 import { BrainIcon, MessagesSquareIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
-import { RepoConnectPanel } from "@/components/repo";
+import { RepoAttachedDocs, RepoConnectPanel } from "@/components/repo";
 import { useAppRole } from "@/hooks/queries/me";
 import { useRepo } from "@/hooks/queries/repo";
 import { appPath } from "@/lib";
@@ -15,7 +15,7 @@ const EXPLORE = [
   { href: appPath("chat"), label: "Ask the codebase", icon: MessagesSquareIcon },
 ];
 
-export function RepoDetailView({ id }: { id: string }) {
+export function RepoDetailView({ id, projectId }: { id: string; projectId?: string }) {
   const { isAdmin } = useAppRole();
   const { data: repo, isLoading, isError, error } = useRepo(id);
 
@@ -68,6 +68,9 @@ export function RepoDetailView({ id }: { id: string }) {
           </Link>
         ))}
       </div>
+
+      {/* When viewed inside a project, show the reference docs attached to this repo. */}
+      {projectId && <RepoAttachedDocs projectId={projectId} repoId={id} />}
     </div>
   );
 }

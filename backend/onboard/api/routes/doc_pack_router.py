@@ -197,7 +197,7 @@ async def create_document_upload_urls(
 ):
     """Direct-to-storage upload step 1: mint signed URLs so files go browser → Supabase, sidestepping
     the Vercel serverless ~4.5MB request-body cap a proxied multipart POST would hit. Validates the
-    batch (PDF-only, ≤20MB each) before handing out any URL."""
+    batch (PDF-only, per-file size cap) before handing out any URL."""
     targets = await services.doc_pack.create_upload_urls(
         org_id, pack_id, [(f.filename, f.content_type, f.size) for f in payload.files]
     )
@@ -281,6 +281,21 @@ async def get_documents_status(
         is_complete=pending == 0,
         documents=documents,
     )
+
+
+@router.post("/{pack_id}/documents/{document_id}/retry", response_model=DocPackDocumentResponse, status_code=202)
+async def retry_document(
+    pack_id: str,
+    document_id: str,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    background_tasks: BackgroundTasks,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Re-run ingestion for a failed document (e.g. after a transient extraction/embedding error)."""
+    document = await services.doc_pack.retry_document(org_id, pack_id, document_id)
+    background_tasks.add_task(ingest_document_background, org_id, document.id)
+    return document
 
 
 @router.delete("/{pack_id}/documents/{document_id}", status_code=204)

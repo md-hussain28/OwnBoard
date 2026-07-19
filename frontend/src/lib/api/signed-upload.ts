@@ -5,10 +5,10 @@ import { getApiClient } from "./api-client";
 /**
  * Direct-to-storage upload in three steps, shared by every file-upload surface:
  *
- *   1. POST `urlsEndpoint` — backend validates the batch (PDF-only, ≤20MB) and returns a short-lived
- *      Supabase signed upload URL per file.
+ *   1. POST `urlsEndpoint` — backend validates the batch (PDF-only, size cap — see lib/upload.ts)
+ *      and returns a short-lived Supabase signed upload URL per file.
  *   2. PUT each file straight to Supabase Storage. These bytes never transit the Next.js/Vercel proxy,
- *      so they dodge Vercel's ~4.5MB serverless request-body cap — the 20MB limit is genuinely usable.
+ *      so they dodge Vercel's ~4.5MB serverless request-body cap.
  *   3. POST `registerEndpoint` — backend records the uploaded objects and kicks off background ingest.
  *
  * Returns the raw `register` response body; the caller parses it with its own zod schema (doc-packs

@@ -216,6 +216,14 @@ class ProjectDocsMixin(ProjectServiceBase):
             for repo_id in target_repos:
                 await repo_link_dao.create(org_id=org_id, document_id=document.id, repo_id=repo_id)
 
+    async def retry_doc(self, org_id: str, project_id: str, viewer: Employee, document_id: str):
+        """Re-queue a failed KB document for ingestion. Returns the document so the router can
+        schedule `ingest_document_background`, mirroring the upload flow."""
+        project = await self._get_project(org_id, project_id)
+        await self._assert_can_manage(project, viewer)
+        pack = await self._ensure_kb_pack(org_id, project_id)
+        return await DocPackService(self.session).retry_document(org_id, pack.id, document_id)
+
     async def delete_doc(self, org_id: str, project_id: str, viewer: Employee, document_id: str) -> None:
         project = await self._get_project(org_id, project_id)
         await self._assert_can_manage(project, viewer)

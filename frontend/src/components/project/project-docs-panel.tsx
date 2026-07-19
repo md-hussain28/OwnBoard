@@ -5,6 +5,7 @@ import {
   FileTextIcon,
   GitBranchIcon,
   MoreVerticalIcon,
+  RotateCcwIcon,
   ScrollTextIcon,
   SearchIcon,
   TagIcon,
@@ -21,6 +22,7 @@ import {
 import {
   useDeleteProjectDoc,
   useProjectDocs,
+  useRetryProjectDoc,
   useSetDocRepos,
   useSetDocTypes,
 } from "@/hooks/queries/project";
@@ -222,6 +224,14 @@ function DocRow({
   const [typesOpen, setTypesOpen] = useState(false);
   const [reposOpen, setReposOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const retry = useRetryProjectDoc(projectId);
+
+  function handleRetry() {
+    retry.mutate(doc.id, {
+      onSuccess: () => notify.info("Retrying document", { description: doc.title }),
+      onError: (err) => notify.apiError(err, "Retry failed"),
+    });
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3 last:border-0">
@@ -278,6 +288,14 @@ function DocRow({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+              {doc.status === "failed" && (
+                <>
+                  <DropdownMenuItem onSelect={handleRetry} disabled={retry.isPending}>
+                    <RotateCcwIcon /> Retry processing
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem onSelect={() => setTypesOpen(true)}>
                 <TagIcon /> Edit types
               </DropdownMenuItem>

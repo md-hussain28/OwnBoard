@@ -346,24 +346,33 @@ export function useCreateFunctionType(id: string) {
   const invalidate = useInvalidateProject(id);
   return useMutation({
     mutationFn: (input: FunctionTypeInput) => projectService.createFunctionType(id, input),
-    onMutate: (input) =>
-      optimisticEdits(queryClient, [
+    onMutate: async (input) => {
+      const count =
+        queryClient.getQueryData<ProjectFunctionType[]>(projectKeys.functionTypes(id))?.length ?? 0;
+      const draft = optimisticFunctionType(input, count);
+      const snapshots = await optimisticEdits(queryClient, [
         cacheEdit<ProjectFunctionType[]>(projectKeys.functionTypes(id), (prev) =>
-          prev ? [...prev, optimisticFunctionType(input, prev.length)] : prev,
+          prev ? [...prev, draft] : prev,
         ),
         cacheEdit<ProjectDetail>(projectKeys.detail(id), (prev) =>
-          prev
-            ? {
-                ...prev,
-                functionTypes: [
-                  ...prev.functionTypes,
-                  optimisticFunctionType(input, prev.functionTypes.length),
-                ],
-              }
-            : prev,
+          prev ? { ...prev, functionTypes: [...prev.functionTypes, draft] } : prev,
         ),
-      ]),
-    onError: (_err, _input, context) => rollbackEdits(queryClient, context),
+      ]);
+      return { snapshots, draftId: draft.id };
+    },
+    onSuccess: (created, _input, context) => {
+      // Swap the draft row for the persisted one immediately — role pickers read these
+      // caches, and a lingering `new_…` id submitted to the API is rejected with a 422.
+      const swap = (list: ProjectFunctionType[]) =>
+        list.map((ft) => (ft.id === context?.draftId ? created : ft));
+      queryClient.setQueryData<ProjectFunctionType[]>(projectKeys.functionTypes(id), (prev) =>
+        prev ? swap(prev) : prev,
+      );
+      queryClient.setQueryData<ProjectDetail>(projectKeys.detail(id), (prev) =>
+        prev ? { ...prev, functionTypes: swap(prev.functionTypes) } : prev,
+      );
+    },
+    onError: (_err, _input, context) => rollbackEdits(queryClient, context?.snapshots),
     onSettled: invalidate,
   });
 }

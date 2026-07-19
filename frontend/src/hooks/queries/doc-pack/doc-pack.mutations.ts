@@ -2,7 +2,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries";
 import { ID_PREFIXES, isDraftId, typedId } from "@/lib";
-import type { DocPack, DocPackListItem, QuizQuestionCurationItem } from "@/schemas";
+import type {
+  DocPack,
+  DocPackIngestStatus,
+  DocPackListItem,
+  QuizQuestionCurationItem,
+} from "@/schemas";
 import { docPackService } from "@/services";
 import { useUploadStore } from "@/stores";
 import { docPackKeys } from "./doc-pack.queries";
@@ -196,6 +201,55 @@ export function useDeleteDocument(packId: string) {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
+    },
+  });
+}
+
+export function useRetryDocument(packId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (documentId: string) => docPackService.retryDocument(packId, documentId),
+    // Flip the doc to `processing` in both caches so the ingest-status poll re-arms immediately
+    // (the poll only runs while some document is non-terminal).
+    onMutate: async (documentId) => {
+      const detailSnap = await optimisticUpdate<DocPack>(
+        queryClient,
+        docPackKeys.detail(packId),
+        (prev) =>
+          prev
+            ? {
+                ...prev,
+                documents: prev.documents.map((d) =>
+                  d.id === documentId
+                    ? { ...d, status: "processing" as const, errorMessage: null }
+                    : d,
+                ),
+              }
+            : prev,
+      );
+      const statusSnap = await optimisticUpdate<DocPackIngestStatus>(
+        queryClient,
+        docPackKeys.ingestStatus(packId),
+        (prev) => {
+          if (!prev) return prev;
+          const documents = prev.documents.map((d) =>
+            d.id === documentId ? { ...d, status: "processing" as const, errorMessage: null } : d,
+          );
+          const processed = documents.filter((d) => d.status === "processed").length;
+          const failed = documents.filter((d) => d.status === "failed").length;
+          const pending = documents.length - processed - failed;
+          return { ...prev, documents, processed, failed, pending, isComplete: pending === 0 };
+        },
+      );
+      return { detailSnap, statusSnap };
+    },
+    onError: (_err, _documentId, context) => {
+      rollbackOptimistic(queryClient, docPackKeys.detail(packId), context?.detailSnap);
+      rollbackOptimistic(queryClient, docPackKeys.ingestStatus(packId), context?.statusSnap);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.detail(packId) });
+      void queryClient.invalidateQueries({ queryKey: docPackKeys.ingestStatus(packId) });
     },
   });
 }

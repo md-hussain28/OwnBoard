@@ -190,7 +190,7 @@ class DocPackService:
     def _validate_file_meta(self, filename: str, size: int) -> str:
         """Validate one file's name + byte size against the allow-list and size cap; return its
         normalized extension. Shared by the (legacy) server-side upload and the direct-to-storage
-        flow so the 20MB / PDF-only rules can't drift apart."""
+        flow so the size-cap / PDF-only rules can't drift apart."""
         extension = _extension_for(filename)
         if extension not in ALLOWED_DOC_PACK_EXTENSIONS:
             raise ValidationError(f"Unsupported file type: {filename}")
@@ -382,6 +382,28 @@ class DocPackService:
 
         rows = await self.document_dao.list_status_for_pack(org_id, pack_id)
         return rows, requeue_ids
+
+    async def retry_document(self, org_id: str, pack_id: str, document_id: str) -> DocPackDocument:
+        """Re-queue a failed document for ingestion (extract → chunk → embed).
+
+        Resets the attempt counter so the stale-requeue loop gets a fresh budget, and flips the
+        status to `processing` immediately so a poll between this call and the background task
+        starting doesn't show the document as failed. Caller schedules `ingest_document_background`.
+        """
+        pack = await self.get_pack(org_id, pack_id)
+        document = await self.document_dao.get_by_id_for_pack(pack.id, document_id)
+        if document is None:
+            raise NotFoundError(f"Document {document_id} not found")
+        if document.status != DocumentStatus.failed:
+            raise ValidationError("Only failed documents can be retried")
+        updated = await self.document_dao.update(
+            document.id,
+            status=DocumentStatus.processing,
+            error_message=None,
+            ingest_attempts=0,
+        )
+        assert updated is not None
+        return updated
 
     async def delete_document(self, org_id: str, pack_id: str, document_id: str) -> None:
         pack = await self.get_pack(org_id, pack_id)

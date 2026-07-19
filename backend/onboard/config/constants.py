@@ -18,7 +18,7 @@ MAX_DOC_INGEST_ATTEMPTS = 3
 
 # Uploads are buffered in memory before hitting Supabase Storage — keep this conservative,
 # the API runs on a 512MB instance.
-MAX_DOC_PACK_FILE_SIZE_BYTES = 20 * 1024 * 1024  # 20 MB per file
+MAX_DOC_PACK_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB per file
 MAX_DOC_PACK_FILES_PER_UPLOAD = 10
 
 # Push-model ingest (GitHub Action → POST /ingest). These caps bound how much a single request can

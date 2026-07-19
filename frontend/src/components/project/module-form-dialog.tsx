@@ -3,7 +3,7 @@
 import { PlusIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useCreateFunctionType, useCreateModule, useUpdateModule } from "@/hooks/queries/project";
-import { cn, notify } from "@/lib";
+import { cn, isDraftId, notify } from "@/lib";
 import type { ProjectFunctionType, ProjectModule, ResourceLink } from "@/schemas";
 import {
   Badge,
@@ -118,7 +118,9 @@ export function ModuleFormDialog({
       description: description.trim() || null,
       content: content.trim() || null,
       resourceLinks: links,
-      functionTypeIds: Array.from(typeIds),
+      // Draft (`new_…`) ids are optimistic role rows the backend doesn't know yet — the
+      // real id is re-added by addRole's onSuccess once the create settles.
+      functionTypeIds: Array.from(typeIds).filter((tid) => !isDraftId(tid)),
       estimatedMinutes: minutes ? Number(minutes) : null,
       status,
     };
@@ -190,13 +192,20 @@ export function ModuleFormDialog({
                 <div className="flex flex-wrap gap-2">
                   {roles.map((t) => {
                     const active = typeIds.has(t.id);
+                    const saving = isDraftId(t.id);
                     return (
-                      <button key={t.id} type="button" onClick={() => toggleType(t.id)}>
+                      <button
+                        key={t.id}
+                        type="button"
+                        disabled={saving}
+                        onClick={() => toggleType(t.id)}
+                      >
                         <Badge
                           variant={active ? "default" : "outline"}
-                          className={cn(active && "ring-1 ring-primary")}
+                          className={cn(active && "ring-1 ring-primary", saving && "opacity-60")}
                         >
                           {t.name}
+                          {saving ? "…" : ""}
                         </Badge>
                       </button>
                     );

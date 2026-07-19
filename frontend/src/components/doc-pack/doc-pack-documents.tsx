@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { FileTextIcon, Loader2Icon, Trash2Icon, UploadIcon } from "lucide-react";
+import { FileTextIcon, Loader2Icon, RotateCcwIcon, Trash2Icon, UploadIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { EmptyState } from "@/components/shared";
 import {
@@ -9,6 +9,7 @@ import {
   useBackgroundUpload,
   useDeleteDocument,
   useDocPackIngestStatus,
+  useRetryDocument,
 } from "@/hooks/queries/doc-pack";
 import { MAX_UPLOAD_FILE_SIZE_MB, notify } from "@/lib";
 import type { DocPackDocument } from "@/schemas";
@@ -45,6 +46,7 @@ export function DocPackDocuments({
   const queryClient = useQueryClient();
   const startBackgroundUpload = useBackgroundUpload(packId, packName);
   const deleteDocument = useDeleteDocument(packId);
+  const retryDocument = useRetryDocument(packId);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasPendingDocuments = documents.some(
@@ -82,6 +84,20 @@ export function DocPackDocuments({
       });
     }
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function handleRetry(doc: DocPackDocument) {
+    retryDocument.mutate(doc.id, {
+      onSuccess: () => {
+        notify.info("Retrying document", {
+          description: doc.title,
+          id: `doc-retry:${doc.id}`,
+        });
+      },
+      onError: (err) => {
+        notify.apiError(err, "Retry failed", { id: `doc-retry-error:${doc.id}` });
+      },
+    });
   }
 
   function handleDelete(doc: DocPackDocument) {
@@ -164,6 +180,22 @@ export function DocPackDocuments({
                     )}
                     {STATUS_LABEL[doc.status]}
                   </Badge>
+                  {doc.status === "failed" && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Retry ${doc.title}`}
+                      disabled={retryDocument.isPending}
+                      onClick={() => handleRetry(doc)}
+                    >
+                      {retryDocument.isPending && retryDocument.variables === doc.id ? (
+                        <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+                      ) : (
+                        <RotateCcwIcon className="size-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"

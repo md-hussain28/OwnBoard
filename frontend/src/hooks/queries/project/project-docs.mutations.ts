@@ -48,6 +48,34 @@ export function useDeleteProjectDoc(id: string) {
   });
 }
 
+export function useRetryProjectDoc(id: string) {
+  const queryClient = useQueryClient();
+  const invalidate = useInvalidateDocs(id);
+  return useMutation({
+    mutationFn: (documentId: string) => projectService.retryDoc(id, documentId),
+    // Flip the doc to `processing` right away — the docs query polls while any doc is
+    // non-terminal, so this also re-arms the poll.
+    onMutate: (documentId) =>
+      optimisticEdits(queryClient, [
+        cacheEdit<ProjectDocs>(projectKeys.docs(id), (prev) =>
+          prev
+            ? {
+                ...prev,
+                documents: prev.documents.map((d) =>
+                  d.id === documentId
+                    ? { ...d, status: "processing" as const, errorMessage: null }
+                    : d,
+                ),
+              }
+            : prev,
+        ),
+      ]),
+    onError: (_err, _documentId, context) => rollbackEdits(queryClient, context),
+    onSuccess: (docs) => queryClient.setQueryData(projectKeys.docs(id), docs),
+    onSettled: invalidate,
+  });
+}
+
 export function useSetDocTypes(id: string) {
   const queryClient = useQueryClient();
   const invalidate = useInvalidateDocs(id);

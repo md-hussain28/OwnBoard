@@ -3,7 +3,7 @@
 import { BookTextIcon, PencilIcon, PlusIcon, Trash2Icon, UsersIcon } from "lucide-react";
 import { useMemo } from "react";
 import { useRemoveModule } from "@/hooks/queries/project";
-import { notify } from "@/lib";
+import { cn, isDraftId, notify } from "@/lib";
 import type { ProjectDetail, ProjectModule } from "@/schemas";
 import { Badge, Button } from "@/ui";
 import { ModuleFormDialog } from "./module-form-dialog";
@@ -76,8 +76,13 @@ export function ProjectModulesTab({ project }: { project: ProjectDetail }) {
 }
 
 function DocRow({ project, module: m }: { project: ProjectDetail; module: ProjectModule }) {
+  // Optimistic row: its `new_…` id has no backend record yet, so edit/delete would 404.
+  const isDraft = isDraftId(m.id);
   return (
-    <li className="flex items-start gap-3 px-4 py-3">
+    <li
+      aria-busy={isDraft || undefined}
+      className={cn("flex items-start gap-3 px-4 py-3", isDraft && "animate-pulse opacity-70")}
+    >
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-medium">{m.name}</p>
@@ -96,17 +101,34 @@ function DocRow({ project, module: m }: { project: ProjectDetail; module: Projec
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        <ModuleFormDialog
+        {isDraft ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={`Edit ${m.name}`}
+            disabled
+            title="Creating…"
+          >
+            <PencilIcon className="size-4" />
+          </Button>
+        ) : (
+          <ModuleFormDialog
+            projectId={project.id}
+            functionTypes={project.functionTypes}
+            module={m}
+            trigger={
+              <Button variant="ghost" size="icon" aria-label={`Edit ${m.name}`}>
+                <PencilIcon className="size-4" />
+              </Button>
+            }
+          />
+        )}
+        <DeleteModuleButton
           projectId={project.id}
-          functionTypes={project.functionTypes}
-          module={m}
-          trigger={
-            <Button variant="ghost" size="icon" aria-label={`Edit ${m.name}`}>
-              <PencilIcon className="size-4" />
-            </Button>
-          }
+          moduleId={m.id}
+          name={m.name}
+          disabled={isDraft}
         />
-        <DeleteModuleButton projectId={project.id} moduleId={m.id} name={m.name} />
       </div>
     </li>
   );
@@ -116,10 +138,12 @@ function DeleteModuleButton({
   projectId,
   moduleId,
   name,
+  disabled,
 }: {
   projectId: string;
   moduleId: string;
   name: string;
+  disabled?: boolean;
 }) {
   const remove = useRemoveModule(projectId);
   return (
@@ -127,7 +151,7 @@ function DeleteModuleButton({
       variant="ghost"
       size="icon"
       aria-label={`Delete ${name}`}
-      disabled={remove.isPending}
+      disabled={disabled || remove.isPending}
       onClick={() =>
         remove.mutate(moduleId, {
           onSuccess: () => notify.success("Doc deleted", { description: name }),

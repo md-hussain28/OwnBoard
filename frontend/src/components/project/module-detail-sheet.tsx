@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useProjectMembers, useSetTrackAssignment } from "@/hooks/queries/project";
-import { appPath, cn, notify } from "@/lib";
+import { appPath, cn, isDraftId, notify } from "@/lib";
 import type { ProjectFunctionType, ProjectRepo, ProjectTrack, TrackRepoRuleInput } from "@/schemas";
 import {
   Badge,
@@ -318,10 +318,14 @@ function TargetingEditor({
   }
 
   function handleSave() {
+    // Drop client `new_…` draft ids (a domain/repo still being created) — the backend
+    // can't resolve them and would reject the whole assignment.
     onSave({
       targetAllMembers: targetAll,
-      domainIds: [...domainIds],
-      repoRules: repoRules.map((r) => ({ repoId: r.repoId, domainId: r.domainId })),
+      domainIds: [...domainIds].filter((id) => !isDraftId(id)),
+      repoRules: repoRules
+        .filter((r) => !isDraftId(r.repoId) && !isDraftId(r.domainId ?? ""))
+        .map((r) => ({ repoId: r.repoId, domainId: r.domainId })),
       manualEmployeeIds: [...manualIds],
     });
   }
@@ -362,20 +366,25 @@ function TargetingEditor({
             <div className="flex flex-wrap gap-1.5">
               {functionTypes.map((t) => {
                 const on = domainIds.has(t.id);
+                const saving = isDraftId(t.id);
                 return (
                   <button
                     key={t.id}
                     type="button"
+                    disabled={saving}
+                    title={saving ? "Saving…" : undefined}
                     onClick={() => toggleDomain(t.id)}
                     className={cn(
                       "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors",
                       on
                         ? "border-primary bg-brand-honey-soft text-foreground"
                         : "border-border text-muted-foreground hover:bg-muted",
+                      saving && "animate-pulse opacity-60",
                     )}
                   >
                     {on && <CheckIcon className="size-3" />}
                     {t.name}
+                    {saving && "…"}
                   </button>
                 );
               })}
@@ -426,8 +435,9 @@ function TargetingEditor({
                 </SelectTrigger>
                 <SelectContent>
                   {repos.map((r) => (
-                    <SelectItem key={r.repoId} value={r.repoId}>
+                    <SelectItem key={r.repoId} value={r.repoId} disabled={isDraftId(r.repoId)}>
                       {r.name ?? r.repoId}
+                      {isDraftId(r.repoId) ? " (saving…)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -439,8 +449,9 @@ function TargetingEditor({
                 <SelectContent>
                   <SelectItem value={NO_DOMAIN}>Anyone</SelectItem>
                   {functionTypes.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
+                    <SelectItem key={t.id} value={t.id} disabled={isDraftId(t.id)}>
                       {t.name}
+                      {isDraftId(t.id) ? " (saving…)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

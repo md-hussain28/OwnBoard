@@ -19,7 +19,7 @@ import { repoSlug } from "@/components/repo";
 import { ConfirmDialog, EmptyState, FilteredEmpty, FilterSelect } from "@/components/shared";
 import { useAddProjectRepo, useRemoveProjectRepo } from "@/hooks/queries/project";
 import { useRepos } from "@/hooks/queries/repo";
-import { cn, notify } from "@/lib";
+import { cn, isDraftId, notify } from "@/lib";
 import type { ProjectDetail, ProjectRepo } from "@/schemas";
 import {
   Badge,
@@ -242,6 +242,9 @@ function RepoRow({
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  // A repo linked by URL carries a client `new_…` repoId until the server responds — the
+  // detail sheet, member editor, and remove all resolve by repoId, so keep the row inert.
+  const isDraft = isDraftId(repo.repoId);
   const label = repo.name ?? repoSlug(repo.url) ?? repo.repoId;
 
   function handleRemove() {
@@ -256,16 +259,26 @@ function RepoRow({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
-      className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3 transition-colors last:border-0 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
+      role={isDraft ? undefined : "button"}
+      tabIndex={isDraft ? undefined : 0}
+      aria-busy={isDraft || undefined}
+      onClick={isDraft ? undefined : onOpen}
+      onKeyDown={
+        isDraft
+          ? undefined
+          : (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpen();
+              }
+            }
+      }
+      className={cn(
+        "flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3 transition-colors last:border-0",
+        isDraft
+          ? "animate-pulse opacity-70"
+          : "cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
+      )}
     >
       {/* Identity */}
       <div className="flex min-w-0 flex-[2] items-center gap-3">
@@ -318,6 +331,8 @@ function RepoRow({
               variant="ghost"
               size="icon"
               aria-label={`Actions for ${label}`}
+              disabled={isDraft}
+              title={isDraft ? "Creating…" : undefined}
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVerticalIcon className="size-4" />

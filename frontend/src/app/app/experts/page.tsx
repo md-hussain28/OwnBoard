@@ -5,12 +5,14 @@ import { ExpertReferralCard } from "@/components/expert";
 import { ConnectRepoPrompt } from "@/components/repo";
 import { useExpertForFile } from "@/hooks/queries/expert";
 import { useRepos } from "@/hooks/queries/repo";
+import { isDraftId } from "@/lib";
 import { getApiErrorMessage } from "@/lib/api";
 import { Button, Input, Skeleton, Spinner } from "@/ui";
 
 export default function ExpertsPage() {
   const { data: repos, isLoading: reposLoading } = useRepos();
-  const repo = repos?.[0];
+  // Skip optimistic `new_…` rows — their id has no backend record yet.
+  const repo = repos?.find((r) => !isDraftId(r.id));
 
   const [draft, setDraft] = useState("");
   const [filePath, setFilePath] = useState("");

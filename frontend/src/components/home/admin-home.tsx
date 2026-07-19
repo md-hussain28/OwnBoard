@@ -6,7 +6,7 @@ import { useAssignmentOutcomes, useCohortDashboard } from "@/hooks/queries/pack-
 import { useProjects } from "@/hooks/queries/project";
 import { useRepos } from "@/hooks/queries/repo";
 import { useExpertiseScores } from "@/hooks/queries/skill-graph";
-import { subsystemRisks } from "@/lib";
+import { isDraftId, subsystemRisks } from "@/lib";
 import { Skeleton } from "@/ui";
 import { buildAttention, NeedsAttention } from "./admin/needs-attention";
 import { ProjectsSection } from "./admin/projects-section";
@@ -24,7 +24,8 @@ export function AdminHome() {
   const outcomesQuery = useAssignmentOutcomes();
   const projectsQuery = useProjects();
   const reposQuery = useRepos();
-  const repo = reposQuery.data?.[0];
+  // Skip optimistic `new_…` rows — their id has no backend record yet.
+  const repo = reposQuery.data?.find((r) => !isDraftId(r.id));
   const expertiseQuery = useExpertiseScores(repo?.id ?? "");
 
   const risks = useMemo(() => subsystemRisks(expertiseQuery.data ?? []), [expertiseQuery.data]);

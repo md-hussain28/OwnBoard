@@ -432,28 +432,32 @@ export function useCreateModule(id: string) {
   const invalidate = useInvalidateProject(id);
   return useMutation({
     mutationFn: (input: ModuleInput) => projectService.createModule(id, input),
-    onMutate: (input) => {
+    onMutate: async (input) => {
+      // One shared draft row across both caches so `onSuccess` can swap in the persisted
+      // module — until then the row's `new_…` id keeps its edit/delete actions inert.
       const functionTypes = queryClient.getQueryData<ProjectFunctionType[]>(
         projectKeys.functionTypes(id),
       );
-      return optimisticEdits(queryClient, [
+      const count = queryClient.getQueryData<ProjectModule[]>(projectKeys.modules(id))?.length ?? 0;
+      const draft = optimisticModule(input, count, functionTypes);
+      const snapshots = await optimisticEdits(queryClient, [
         cacheEdit<ProjectModule[]>(projectKeys.modules(id), (prev) =>
-          prev ? [...prev, optimisticModule(input, prev.length, functionTypes)] : prev,
+          prev ? [...prev, draft] : prev,
         ),
         cacheEdit<ProjectDetail>(projectKeys.detail(id), (prev) =>
-          prev
-            ? {
-                ...prev,
-                modules: [
-                  ...prev.modules,
-                  optimisticModule(input, prev.modules.length, functionTypes),
-                ],
-              }
-            : prev,
+          prev ? { ...prev, modules: [...prev.modules, draft] } : prev,
         ),
       ]);
+      return { draftId: draft.id, snapshots };
     },
-    onError: (_err, _input, context) => rollbackEdits(queryClient, context),
+    onSuccess: (created, _input, context) => {
+      const swap = (m: ProjectModule) => (m.id === context?.draftId ? created : m);
+      queryClient.setQueryData<ProjectModule[]>(projectKeys.modules(id), (prev) => prev?.map(swap));
+      queryClient.setQueryData<ProjectDetail>(projectKeys.detail(id), (prev) =>
+        prev ? { ...prev, modules: prev.modules.map(swap) } : prev,
+      );
+    },
+    onError: (_err, _input, context) => rollbackEdits(queryClient, context?.snapshots),
     onSettled: invalidate,
   });
 }

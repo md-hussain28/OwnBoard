@@ -6,7 +6,7 @@ import { ExpertReferralCard } from "@/components/expert";
 import { ConnectRepoPrompt } from "@/components/repo";
 import { useAskCodebase } from "@/hooks/queries/chat";
 import { useRepos } from "@/hooks/queries/repo";
-import { ID_PREFIXES, typedId } from "@/lib";
+import { ID_PREFIXES, isDraftId, typedId } from "@/lib";
 import { isNotImplementedError } from "@/lib/api";
 import type {
   ArchaeologyCitation,
@@ -30,7 +30,8 @@ type LastAnswer = {
 
 export default function ChatPage() {
   const { data: repos, isLoading: reposLoading } = useRepos();
-  const repo = repos?.[0];
+  // Skip optimistic `new_…` rows — asking against one would 404.
+  const repo = repos?.find((r) => !isDraftId(r.id));
 
   const [messages, setMessages] = useState<ChatMessageType[]>([WELCOME_MESSAGE]);
   const [lastAnswer, setLastAnswer] = useState<LastAnswer | null>(null);

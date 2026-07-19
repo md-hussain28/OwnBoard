@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useCreateTenant, useDeleteTenant, useTenants } from "@/hooks/queries/admin";
-import { notify } from "@/lib";
+import { cn, isDraftId, notify } from "@/lib";
 import { getApiErrorMessage } from "@/lib/api";
 import {
   Badge,
@@ -155,34 +155,43 @@ export function TenantAdminPanel() {
 
           {!isLoading && !isError && tenants && tenants.length > 0 && (
             <ul className="space-y-2">
-              {tenants.map((tenant) => (
-                <li
-                  key={tenant.id}
-                  className="flex flex-col gap-3 rounded-md border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium">{tenant.name}</p>
-                    <p className="truncate text-sm text-muted-foreground">
-                      {tenant.slug ?? tenant.id}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{tenant.membersCount} members</Badge>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={deleteTenant.isPending}
-                      onClick={() => handleDelete(tenant.id, tenant.name)}
-                    >
-                      {deleteTenant.isPending && deleteTenant.variables === tenant.id && (
-                        <Spinner className="size-3.5" />
-                      )}
-                      Delete
-                    </Button>
-                  </div>
-                </li>
-              ))}
+              {tenants.map((tenant) => {
+                // Optimistic tenant: `new_…` id has no Clerk org behind it yet — deleting would 404.
+                const isDraft = isDraftId(tenant.id);
+                return (
+                  <li
+                    key={tenant.id}
+                    aria-busy={isDraft || undefined}
+                    className={cn(
+                      "flex flex-col gap-3 rounded-md border px-4 py-3 sm:flex-row sm:items-center sm:justify-between",
+                      isDraft && "animate-pulse opacity-70",
+                    )}
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium">{tenant.name}</p>
+                      <p className="truncate text-sm text-muted-foreground">
+                        {isDraft ? "Creating…" : (tenant.slug ?? tenant.id)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{tenant.membersCount} members</Badge>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isDraft || deleteTenant.isPending}
+                        title={isDraft ? "Creating…" : undefined}
+                        onClick={() => handleDelete(tenant.id, tenant.name)}
+                      >
+                        {deleteTenant.isPending && deleteTenant.variables === tenant.id && (
+                          <Spinner className="size-3.5" />
+                        )}
+                        Delete
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>

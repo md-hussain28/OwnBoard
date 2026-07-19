@@ -26,7 +26,7 @@ import {
   useSetDocRepos,
   useSetDocTypes,
 } from "@/hooks/queries/project";
-import { cn, notify } from "@/lib";
+import { cn, isDraftId, notify } from "@/lib";
 import type { ProjectDoc, ProjectDocType, ProjectRepo } from "@/schemas";
 import {
   Badge,
@@ -377,7 +377,7 @@ function DocTypesDialog({
 
   function handleSave() {
     save.mutate(
-      { documentId: doc.id, typeIds: Array.from(selected) },
+      { documentId: doc.id, typeIds: Array.from(selected).filter((id) => !isDraftId(id)) },
       {
         onSuccess: () => onOpenChange(false),
         onError: (err) => notify.apiError(err, "Could not update types"),
@@ -402,14 +402,18 @@ function DocTypesDialog({
           )}
           {types.map((t) => {
             const isSel = selected.has(t.id);
+            const saving = isDraftId(t.id);
             return (
               <button
                 type="button"
                 key={t.id}
                 onClick={() => toggle(t.id)}
+                disabled={saving}
+                title={saving ? "Saving…" : undefined}
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm transition-colors",
                   isSel ? "border-primary bg-brand-honey-soft" : "border-border hover:bg-muted",
+                  saving && "animate-pulse opacity-60",
                 )}
               >
                 {isSel && <CheckIcon className="size-3.5 text-primary" />}
@@ -459,7 +463,7 @@ function DocReposDialog({
 
   function handleSave() {
     save.mutate(
-      { documentId: doc.id, repoIds: Array.from(selected) },
+      { documentId: doc.id, repoIds: Array.from(selected).filter((id) => !isDraftId(id)) },
       {
         onSuccess: () => onOpenChange(false),
         onError: (err) => notify.apiError(err, "Could not update repos"),
@@ -484,14 +488,18 @@ function DocReposDialog({
           )}
           {repos.map((repo) => {
             const isSel = selected.has(repo.repoId);
+            const saving = isDraftId(repo.repoId);
             return (
               <button
                 type="button"
                 key={repo.repoId}
                 onClick={() => toggle(repo.repoId)}
+                disabled={saving}
+                title={saving ? "Saving…" : undefined}
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm transition-colors",
                   isSel ? "border-primary bg-brand-honey-soft" : "border-border hover:bg-muted",
+                  saving && "animate-pulse opacity-60",
                 )}
               >
                 {isSel ? (

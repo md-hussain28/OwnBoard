@@ -14,6 +14,7 @@ import { type Dispatch, type ReactNode, type SetStateAction, useRef, useState } 
 import { useCreateDocType, useUploadProjectDocs } from "@/hooks/queries/project";
 import {
   cn,
+  isDraftId,
   MAX_UPLOAD_FILE_SIZE_MB,
   MAX_UPLOAD_FILES_PER_BATCH,
   notify,
@@ -44,11 +45,13 @@ function ToggleChip({
   selected,
   onClick,
   icon,
+  disabled,
   children,
 }: {
   selected: boolean;
   onClick: () => void;
   icon?: ReactNode;
+  disabled?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -56,9 +59,12 @@ function ToggleChip({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
+      disabled={disabled}
+      title={disabled ? "Saving…" : undefined}
       className={cn(
         "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm transition-colors",
         selected ? "border-primary bg-brand-honey-soft" : "border-border hover:bg-muted",
+        disabled && "animate-pulse opacity-60",
       )}
     >
       {selected ? <CheckIcon className="size-3.5 text-primary" /> : icon}
@@ -170,12 +176,17 @@ export function UploadDocsDialog({
   function handleAddType() {
     const trimmed = newType.trim();
     if (!trimmed) return;
-    const existing = types.find((t) => t.name.toLowerCase() === trimmed.toLowerCase());
+    // A name-matched draft type (`new_…`) has no backend id yet — skip selecting it; the
+    // real id lands via the create mutation's reconcile.
+    const existing = types.find(
+      (t) => !isDraftId(t.id) && t.name.toLowerCase() === trimmed.toLowerCase(),
+    );
     if (existing) {
       setTypeIds((prev) => new Set(prev).add(existing.id));
       setNewType("");
       return;
     }
+    if (types.some((t) => t.name.toLowerCase() === trimmed.toLowerCase())) return;
     createType.mutate(trimmed, {
       onSuccess: (created) => {
         setTypeIds((prev) => new Set(prev).add(created.id));
@@ -191,8 +202,8 @@ export function UploadDocsDialog({
       {
         files,
         name: name.trim() || undefined,
-        typeIds: Array.from(typeIds),
-        repoIds: Array.from(repoIds),
+        typeIds: Array.from(typeIds).filter((id) => !isDraftId(id)),
+        repoIds: Array.from(repoIds).filter((id) => !isDraftId(id)),
         description: description.trim() || undefined,
       },
       {
@@ -257,6 +268,7 @@ export function UploadDocsDialog({
                   <ToggleChip
                     key={t.id}
                     selected={typeIds.has(t.id)}
+                    disabled={isDraftId(t.id)}
                     onClick={() => toggle(setTypeIds, t.id)}
                   >
                     {t.name}
@@ -308,6 +320,7 @@ export function UploadDocsDialog({
                   <ToggleChip
                     key={repo.repoId}
                     selected={repoIds.has(repo.repoId)}
+                    disabled={isDraftId(repo.repoId)}
                     onClick={() => toggle(setRepoIds, repo.repoId)}
                     icon={<GitBranchIcon className="size-3.5 text-muted-foreground" />}
                   >

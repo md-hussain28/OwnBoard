@@ -76,7 +76,7 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
           setNewRole("");
           setLocalRoles([]);
           notify.success("Members added", {
-            description: "Modules and role-matched docs were assigned.",
+            description: "Matching modules were assigned.",
           });
         },
         onError: (err) => notify.apiError(err, "Could not add members"),
@@ -109,8 +109,8 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
         <DialogHeader>
           <DialogTitle>Add members</DialogTitle>
           <DialogDescription>
-            Added members are auto-assigned this project&apos;s modules (those set to
-            &ldquo;everyone&rdquo;) and role-matched docs. Every member needs a role.
+            Added members are auto-assigned this project&apos;s modules whose targeting matches them
+            (everyone, or their domain). Every member needs a domain.
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-72 space-y-1 overflow-y-auto py-2">
@@ -147,11 +147,11 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            Role <span className="text-destructive">*</span>
+            Domain <span className="text-destructive">*</span>
           </label>
           <Select value={functionTypeId} onValueChange={setFunctionTypeId}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose a role" />
+              <SelectValue placeholder="Choose a domain" />
             </SelectTrigger>
             <SelectContent>
               {roles.map((role) => (
@@ -163,8 +163,8 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
           </Select>
           <div className="flex gap-2">
             <Input
-              aria-label="New role name"
-              placeholder="Add a new role"
+              aria-label="New domain name"
+              placeholder="Add a new domain"
               value={newRole}
               onChange={(event) => setNewRole(event.target.value)}
               onKeyDown={(event) => {
@@ -185,7 +185,7 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Role-matched docs are assigned automatically. A newly added role is selected.
+            Domain-matched modules are assigned automatically. A newly added domain is selected.
           </p>
         </div>
         <DialogFooter>

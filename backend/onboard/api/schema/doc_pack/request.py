@@ -71,3 +71,8 @@ class RegisterUploadItemRequest(BaseModel):
 
 class RegisterUploadsRequest(BaseModel):
     files: list[RegisterUploadItemRequest] = Field(min_length=1)
+    # Batch-level metadata applied to every file in this upload. Used by the project-docs knowledge
+    # base so the uploader can tag type/repo/context up front; ignored by plain doc-pack uploads.
+    type_ids: list[str] = Field(default_factory=list)
+    repo_ids: list[str] = Field(default_factory=list)
+    description: str | None = None

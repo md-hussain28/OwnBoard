@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 
+from onboard.api.schema.project.request import TrackRepoRuleInput
 from onboard.core.common.exceptions import ForbiddenError, ValidationError
 from onboard.dao.models.doc_pack import DocPackStatus, PackAssignmentStatus
 from onboard.dao.models.quiz_template import QuizType
@@ -155,6 +156,97 @@ async def test_modules_function_autoassign_and_team_lead(db_session):
         await service.employee_dao.delete(admin.id)
         await service.employee_dao.delete(fe.id)
         await service.employee_dao.delete(be.id)
+        await OrganizationDAO(db_session).delete(org_id)
+
+
+@pytest.mark.asyncio
+async def test_onboarding_union_targeting_and_reconcile(db_session):
+    """Combinable targeting: audience = union of domains ∪ repo(+domain) ∪ manual, and it reconciles
+    (adds + removes auto assignments, keeps manual ones) when a member's domain or repo assignees change."""
+    org_id = f"org_test_{uuid.uuid4().hex[:8]}"
+    await OrganizationDAO(db_session).get_or_create(org_id)
+    service = ProjectService(db_session)
+
+    admin = await service.employee_dao.create(org_id=org_id, name="Ada Admin", app_role="admin")
+    fe = await service.employee_dao.create(org_id=org_id, name="Fran Frontend", app_role="member")
+    be = await service.employee_dao.create(org_id=org_id, name="Ben Backend", app_role="member")
+    qa = await service.employee_dao.create(org_id=org_id, name="Quinn QA", app_role="member")
+    zoe = await service.employee_dao.create(org_id=org_id, name="Zoe Nobody", app_role="member")
+    project_id: str | None = None
+    created_pack_ids: list[str] = []
+    repo_id: str | None = None
+    try:
+        project = await service.create_project(
+            org_id=org_id, name="Union", description=None, repo_id=None, created_by=admin.id
+        )
+        project_id = project.id
+        frontend = await service.create_function_type(org_id, project_id, admin, name="Frontend", sort_order=0)
+        backend = await service.create_function_type(org_id, project_id, admin, name="Backend", sort_order=1)
+
+        await service.add_members(
+            org_id, project_id, [fe.id], added_by=admin.id, viewer=admin, function_type_id=frontend.id
+        )
+        await service.add_members(
+            org_id, project_id, [be.id], added_by=admin.id, viewer=admin, function_type_id=backend.id
+        )
+        await service.add_members(org_id, project_id, [qa.id], added_by=admin.id, viewer=admin)
+        await service.add_members(org_id, project_id, [zoe.id], added_by=admin.id, viewer=admin)
+
+        # A linked repo with only fe assigned to work on it.
+        await service.add_repo(
+            org_id,
+            project_id,
+            admin,
+            repo_id=None,
+            url="https://github.com/x/union",
+            name="union",
+            is_primary=True,
+            added_by=admin.id,
+        )
+        link = (await service.repo_link_dao.list_for_project(project_id))[0]
+        repo_id = link.repo_id
+        await service.set_repo_members(org_id, project_id, repo_id, admin, [fe.id])
+
+        pack = await _publish_track(service, org_id, project_id, "Onboarding")
+        created_pack_ids.append(pack.id)
+
+        # Union: Backend domain ∪ people-on-repo-who-are-Frontend ∪ manually-picked qa. NOT everyone.
+        track = await service.update_track_assignment(
+            org_id,
+            project_id,
+            pack.id,
+            admin,
+            target_all_members=False,
+            domain_ids=[backend.id],
+            repo_rules=[TrackRepoRuleInput(repo_id=repo_id, domain_id=frontend.id)],
+            manual_employee_ids=[qa.id],
+        )
+        assigned = set(track.assignee_ids)
+        assert assigned == {be.id, fe.id, qa.id}  # zoe matches nothing
+        assert zoe.id not in assigned
+
+        # Change zoe's domain to Backend → recompute adds her (domain rule now matches).
+        await service.update_member(org_id, project_id, zoe.id, admin, function_type_id=backend.id)
+        assigned = set(await service.assignment_dao.list_assigned_employee_ids(pack.id))
+        assert zoe.id in assigned
+        assert qa.id in assigned  # manual assignment survives reconcile
+
+        # Drop fe from the repo → fe no longer matches any rule → auto assignment revoked.
+        await service.set_repo_members(org_id, project_id, repo_id, admin, [])
+        assigned = set(await service.assignment_dao.list_assigned_employee_ids(pack.id))
+        assert fe.id not in assigned
+        assert {be.id, qa.id, zoe.id} <= assigned
+    finally:
+        if project_id is not None:
+            await service.project_dao.delete(project_id)
+        for pack_id in created_pack_ids:
+            for tpl in await QuizTemplateDAO(db_session).list_by_type(QuizType.doc_pack):
+                if tpl.source_ref == pack_id:
+                    await QuizTemplateDAO(db_session).delete(tpl.id)
+        if repo_id is not None:
+            await service.repo_dao.delete(repo_id)
+        for emp in (admin, fe, be, qa, zoe):
+            await service.employee_dao.delete(emp.id)
         await OrganizationDAO(db_session).delete(org_id)
 
 

@@ -2,9 +2,17 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
 from onboard.dao.base_dao import BaseDAO
-from onboard.dao.models.doc_pack import DocPack, DocPackAudienceDomain, DocPackDocument
+from onboard.dao.models.doc_pack import (
+    DocPack,
+    DocPackAudienceDomain,
+    DocPackDocument,
+    DocPackTargetDomain,
+    DocPackTargetRepo,
+)
 
 _AUDIENCE_LOAD = selectinload(DocPack.audience_domains).selectinload(DocPackAudienceDomain.org_domain)
+# Project-module union targeting rules — loaded wherever a project pack's audience is read/reconciled.
+_TARGET_LOAD = (selectinload(DocPack.target_domains), selectinload(DocPack.target_repos))
 
 
 class DocPackDAO(BaseDAO[DocPack]):
@@ -47,6 +55,7 @@ class DocPackDAO(BaseDAO[DocPack]):
                 selectinload(DocPack.documents),
                 selectinload(DocPack.domain),
                 _AUDIENCE_LOAD,
+                *_TARGET_LOAD,
             )
         )
         return result.scalar_one_or_none()
@@ -60,7 +69,7 @@ class DocPackDAO(BaseDAO[DocPack]):
                 DocPack.project_id == project_id,
                 DocPack.is_knowledge_base.is_(False),
             )
-            .options(selectinload(DocPack.domain), _AUDIENCE_LOAD)
+            .options(selectinload(DocPack.domain), _AUDIENCE_LOAD, *_TARGET_LOAD)
             .order_by(DocPack.sequence_order.asc(), DocPack.created_at.asc())
         )
         return list(result.scalars().all())
@@ -115,6 +124,52 @@ class DocPackAudienceDomainDAO(BaseDAO[DocPackAudienceDomain]):
                 await self.session.delete(row)
         for domain_id in wanted - current.keys():
             self.session.add(DocPackAudienceDomain(org_id=org_id, doc_pack_id=doc_pack_id, org_domain_id=domain_id))
+        await self.session.commit()
+
+
+class DocPackTargetDomainDAO(BaseDAO[DocPackTargetDomain]):
+    model = DocPackTargetDomain
+
+    async def replace_for_pack(self, org_id: str, doc_pack_id: str, function_type_ids: list[str]) -> None:
+        """Set the module's target domains to exactly `function_type_ids` (idempotent full replace)."""
+        existing = await self.session.execute(
+            select(DocPackTargetDomain).where(DocPackTargetDomain.doc_pack_id == doc_pack_id)
+        )
+        current = {row.project_function_type_id: row for row in existing.scalars().all()}
+        wanted = set(function_type_ids)
+        for ft_id, row in current.items():
+            if ft_id not in wanted:
+                await self.session.delete(row)
+        for ft_id in wanted - current.keys():
+            self.session.add(
+                DocPackTargetDomain(org_id=org_id, doc_pack_id=doc_pack_id, project_function_type_id=ft_id)
+            )
+        await self.session.commit()
+
+
+class DocPackTargetRepoDAO(BaseDAO[DocPackTargetRepo]):
+    model = DocPackTargetRepo
+
+    async def replace_for_pack(self, org_id: str, doc_pack_id: str, rules: list[tuple[str, str | None]]) -> None:
+        """Set the module's target-repo rules to exactly `rules` — each a (project_repo_id, domain_id|None)
+        pair (idempotent full replace)."""
+        existing = await self.session.execute(
+            select(DocPackTargetRepo).where(DocPackTargetRepo.doc_pack_id == doc_pack_id)
+        )
+        current = {(row.project_repo_id, row.project_function_type_id): row for row in existing.scalars().all()}
+        wanted = set(rules)
+        for key, row in current.items():
+            if key not in wanted:
+                await self.session.delete(row)
+        for repo_link_id, ft_id in wanted - current.keys():
+            self.session.add(
+                DocPackTargetRepo(
+                    org_id=org_id,
+                    doc_pack_id=doc_pack_id,
+                    project_repo_id=repo_link_id,
+                    project_function_type_id=ft_id,
+                )
+            )
         await self.session.commit()
 
 

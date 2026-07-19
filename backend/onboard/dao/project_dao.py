@@ -6,6 +6,7 @@ from onboard.dao.models.employee import Employee
 from onboard.dao.models.project import (
     Project,
     ProjectDocType,
+    ProjectDocumentRepo,
     ProjectDocumentType,
     ProjectFunctionType,
     ProjectMember,
@@ -171,6 +172,24 @@ class ProjectDocumentTypeDAO(BaseDAO[ProjectDocumentType]):
         return list(result.scalars().all())
 
 
+class ProjectDocumentRepoDAO(BaseDAO[ProjectDocumentRepo]):
+    model = ProjectDocumentRepo
+
+    async def list_for_documents(self, document_ids: list[str]) -> list[ProjectDocumentRepo]:
+        if not document_ids:
+            return []
+        result = await self.session.execute(
+            select(ProjectDocumentRepo).where(ProjectDocumentRepo.document_id.in_(document_ids))
+        )
+        return list(result.scalars().all())
+
+    async def list_for_document(self, document_id: str) -> list[ProjectDocumentRepo]:
+        result = await self.session.execute(
+            select(ProjectDocumentRepo).where(ProjectDocumentRepo.document_id == document_id)
+        )
+        return list(result.scalars().all())
+
+
 class ProjectRepoMemberDAO(BaseDAO[ProjectRepoMember]):
     model = ProjectRepoMember
 
@@ -182,6 +201,13 @@ class ProjectRepoMemberDAO(BaseDAO[ProjectRepoMember]):
             )
         )
         return result.scalar_one_or_none()
+
+    async def list_employee_ids_for_link(self, project_repo_id: str) -> set[str]:
+        """Employee ids assigned to work on one linked repo (by ProjectRepo link id)."""
+        result = await self.session.execute(
+            select(ProjectRepoMember.employee_id).where(ProjectRepoMember.project_repo_id == project_repo_id)
+        )
+        return set(result.scalars().all())
 
     async def list_repo_ids_for_employee(self, project_id: str, employee_id: str) -> list[str]:
         """The repo ids (within a project) a given employee is assigned to work on."""

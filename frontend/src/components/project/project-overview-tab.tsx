@@ -70,7 +70,7 @@ export function ProjectOverviewTab({ project }: { project: ProjectDetail }) {
           <Stat
             icon={<GraduationCapIcon className="size-4" />}
             value={project.tracks.length}
-            label="Modules"
+            label="Onboarding"
           />
           <Stat
             icon={<BookTextIcon className="size-4" />}

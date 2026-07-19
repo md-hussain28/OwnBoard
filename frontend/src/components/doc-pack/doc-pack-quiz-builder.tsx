@@ -8,7 +8,7 @@ import {
   useRegenerateQuestions,
   useSaveQuiz,
 } from "@/hooks/queries/doc-pack";
-import { ID_PREFIXES, notify, typedId } from "@/lib";
+import { ID_PREFIXES, notify, randomPun, typedId } from "@/lib";
 import type { AdminQuizTemplate, QuizQuestionCurationItem } from "@/schemas";
 import { Badge, Card, CardContent, CardHeader, CardTitle, Input, Skeleton } from "@/ui";
 import type { EditableQuestion, GenerateFormat } from "./quiz-builder-types";
@@ -154,6 +154,11 @@ export function DocPackQuizBuilder({
   function handleGenerate(event: FormEvent) {
     event.preventDefault();
     if (formats.length === 0) return;
+    // A little free-tier levity while the 0.1-CPU backend does the heavy lifting.
+    notify.info("Generating your quiz…", {
+      description: randomPun(),
+      id: `quiz-gen-start:${packId}`,
+    });
     generate.mutate(
       {
         target_count: targetCount,

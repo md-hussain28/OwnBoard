@@ -1,20 +1,21 @@
 "use client";
 
 import {
-  ArrowRightIcon,
   CalendarClockIcon,
   ClockIcon,
   FileStackIcon,
+  GitBranchIcon,
   ListChecksIcon,
   SearchIcon,
   UsersIcon,
+  UsersRoundIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { EmptyState, FilteredEmpty, FilterSelect, QueryState } from "@/components/shared";
 import { useCreateProjectTrack, useProjectTracks } from "@/hooks/queries/project";
-import { appPath, notify } from "@/lib";
-import type { ProjectTrack } from "@/schemas";
+import { appPath, cn, isDraftId, notify } from "@/lib";
+import type { ProjectDetail, ProjectTrack } from "@/schemas";
 import {
   Badge,
   Button,
@@ -29,7 +30,7 @@ import {
   Spinner,
   Textarea,
 } from "@/ui";
-import { ModuleAssignDialog } from "./module-assign-dialog";
+import { ModuleDetailSheet } from "./module-detail-sheet";
 import { ProjectSectionHeader } from "./project-section-header";
 
 function statusVariant(status: string): "success" | "secondary" | "warning" {
@@ -38,11 +39,26 @@ function statusVariant(status: string): "success" | "secondary" | "warning" {
   return "secondary";
 }
 
+function statusLabel(status: string): string {
+  return status === "active" ? "Published" : status.replace("_", " ");
+}
+
 function parseOptionalInt(value: string): number | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
   const n = Number.parseInt(trimmed, 10);
   return Number.isNaN(n) ? null : n;
+}
+
+/** Short human summary of a module's combinable audience, for the row's meta line. */
+function audienceSummary(track: ProjectTrack): string {
+  if (track.targetAllMembers) return "Everyone";
+  const parts: string[] = [];
+  if (track.domainNames.length) parts.push(track.domainNames.join(", "));
+  if (track.repoRules.length)
+    parts.push(`${track.repoRules.length} repo rule${track.repoRules.length === 1 ? "" : "s"}`);
+  if (track.manualEmployeeIds.length) parts.push(`${track.manualEmployeeIds.length} hand-picked`);
+  return parts.length ? parts.join(" · ") : "No one yet";
 }
 
 const STATUS_OPTIONS = [
@@ -81,7 +97,7 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
           notify.success("Module created", {
             description: "Upload source docs and build its quiz next.",
           });
-          router.push(appPath("tracks", track.id));
+          router.push(appPath("projects", projectId, "onboarding", track.id));
         },
         onError: (err) => notify.apiError(err, "Could not create module"),
       },
@@ -98,8 +114,9 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
           <DialogHeader>
             <DialogTitle>New module</DialogTitle>
             <DialogDescription>
-              Create the module, then upload its source documents and build the grounded quiz. You
-              choose who it&apos;s assigned to afterwards.
+              A module lives in this project&apos;s onboarding — separate from company-wide
+              onboarding. Name it to start; next you&apos;ll add its source documents and build a
+              grounded quiz, then choose who on this project it&apos;s for.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -154,8 +171,8 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Due-in-days sets each member&apos;s deadline from when they&apos;re assigned. Both
-              optional.
+              Est. minutes shows members the expected effort. Due in days sets each member&apos;s
+              deadline, counted from when they&apos;re assigned. Both optional.
             </p>
           </div>
           <DialogFooter>
@@ -170,66 +187,84 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
   );
 }
 
-function ModuleRow({ projectId, track }: { projectId: string; track: ProjectTrack }) {
-  const router = useRouter();
-  const isManual = track.assignScope === "manual";
+function ModuleRow({
+  track,
+  onOpen,
+}: {
+  track: ProjectTrack;
+  onOpen: (track: ProjectTrack) => void;
+}) {
+  // Optimistic rows carry a `new_…` draft id until the create mutation resolves; opening one
+  // would 404, so the row stays inert and pending until the real id arrives.
+  const isDraft = isDraftId(track.id);
   return (
-    <li className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/60">
+    <li>
       <button
         type="button"
-        onClick={() => router.push(appPath("tracks", track.id))}
-        className="min-w-0 flex-1 text-left"
-      >
-        <p className="truncate font-medium">{track.name}</p>
-        {track.description && (
-          <p className="truncate text-sm text-muted-foreground">{track.description}</p>
+        disabled={isDraft}
+        onClick={() => onOpen(track)}
+        className={cn(
+          "flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors",
+          isDraft ? "animate-pulse opacity-70" : "hover:bg-muted/60",
         )}
-        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <UsersIcon className="size-3.5" />
-            {isManual ? `${track.assignedCount} assigned` : `Everyone (${track.assignedCount})`}
-          </span>
-          {track.estimatedMinutes != null && (
-            <span className="inline-flex items-center gap-1">
-              <ClockIcon className="size-3.5" /> {track.estimatedMinutes} min
-            </span>
+        aria-busy={isDraft || undefined}
+      >
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{track.name}</p>
+          {track.description && (
+            <p className="truncate text-sm text-muted-foreground">{track.description}</p>
           )}
-          {track.dueOffsetDays != null && (
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
-              <CalendarClockIcon className="size-3.5" /> due in {track.dueOffsetDays} day
-              {track.dueOffsetDays === 1 ? "" : "s"}
+              {track.targetAllMembers ? (
+                <UsersRoundIcon className="size-3.5" />
+              ) : (
+                <GitBranchIcon className="size-3.5" />
+              )}
+              {audienceSummary(track)}
             </span>
-          )}
+            <span className="inline-flex items-center gap-1">
+              <UsersIcon className="size-3.5" /> {track.assignedCount} assigned
+            </span>
+            {track.estimatedMinutes != null && (
+              <span className="inline-flex items-center gap-1">
+                <ClockIcon className="size-3.5" /> {track.estimatedMinutes} min
+              </span>
+            )}
+            {track.dueOffsetDays != null && (
+              <span className="inline-flex items-center gap-1">
+                <CalendarClockIcon className="size-3.5" /> due in {track.dueOffsetDays} day
+                {track.dueOffsetDays === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
         </div>
-      </button>
-      <div className="flex shrink-0 items-center gap-2">
-        <Badge variant={statusVariant(track.status)}>
-          {track.status === "active" ? "Published" : track.status.replace("_", " ")}
+        <Badge variant={statusVariant(track.status)} className="shrink-0">
+          {isDraft ? "Creating…" : statusLabel(track.status)}
         </Badge>
-        <ModuleAssignDialog projectId={projectId} track={track} />
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Author module"
-          onClick={() => router.push(appPath("tracks", track.id))}
-        >
-          <ArrowRightIcon className="size-4 text-muted-foreground" />
-        </Button>
-      </div>
+      </button>
     </li>
   );
 }
 
-export function ProjectTracksTab({ projectId }: { projectId: string }) {
+export function ProjectTracksTab({ project }: { project: ProjectDetail }) {
+  const projectId = project.id;
   const { data: tracks, isLoading, isError, error } = useProjectTracks(projectId);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState<ProjectTrack | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const hasFilters = query.trim() !== "" || statusFilter !== "all";
 
   function clearFilters() {
     setQuery("");
     setStatusFilter("all");
+  }
+
+  function openTrack(track: ProjectTrack) {
+    setSelected(track);
+    setSheetOpen(true);
   }
 
   const filtered = useMemo(() => {
@@ -241,12 +276,17 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
     });
   }, [tracks, query, statusFilter]);
 
+  // Keep the open sheet's data fresh after an edit/refetch.
+  const activeTrack = selected
+    ? ((tracks ?? []).find((t) => t.id === selected.id) ?? selected)
+    : null;
+
   return (
     <div className="space-y-4">
       <ProjectSectionHeader
         icon={ListChecksIcon}
-        title="Modules"
-        description="Learning units with a grounded quiz. Assign each one to everyone on the project or to specific people — completion is tracked, but nothing blocks project access."
+        title="Project Onboarding"
+        description="Modules for this project, each with a grounded quiz — separate from company-wide onboarding. Open one to see and edit who it's for: everyone, specific domains, people on a repo, or hand-picked members. Completion is tracked, but nothing blocks project access."
         action={<CreateTrackDialog projectId={projectId} />}
       />
 
@@ -281,7 +321,7 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
             icon={FileStackIcon}
             tone="honey"
             title="No modules yet"
-            description="Add a module so members have grounded material and a quiz to work through."
+            description="Add one so members have grounded material and a quiz to work through."
             action={<CreateTrackDialog projectId={projectId} />}
           />
         }
@@ -291,11 +331,21 @@ export function ProjectTracksTab({ projectId }: { projectId: string }) {
         ) : (
           <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
             {filtered.map((track) => (
-              <ModuleRow key={track.id} projectId={projectId} track={track} />
+              <ModuleRow key={track.id} track={track} onOpen={openTrack} />
             ))}
           </ul>
         )}
       </QueryState>
+
+      <ModuleDetailSheet
+        projectId={projectId}
+        track={activeTrack}
+        functionTypes={project.functionTypes}
+        repos={project.repos}
+        manageable={project.canManage}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
     </div>
   );
 }

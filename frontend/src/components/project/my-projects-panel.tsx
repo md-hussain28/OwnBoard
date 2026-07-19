@@ -1,9 +1,14 @@
 "use client";
 
 import { FolderKanbanIcon, GitBranchIcon, SearchIcon } from "lucide-react";
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import { EmptyState, FilteredEmpty, FilterSelect, QueryState } from "@/components/shared";
+import {
+  DraftLink,
+  EmptyState,
+  FilteredEmpty,
+  FilterSelect,
+  QueryState,
+} from "@/components/shared";
 import { useMyProjects } from "@/hooks/queries/project";
 import { appPath } from "@/lib";
 import { Card, CardContent, Input } from "@/ui";
@@ -88,7 +93,12 @@ export function MyProjectsPanel() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {visible.map((project) => (
-              <Link key={project.id} href={appPath("projects", project.id)} className="group">
+              <DraftLink
+                key={project.id}
+                entityId={project.id}
+                href={appPath("projects", project.id)}
+                className="group"
+              >
                 <Card className="h-full transition-shadow duration-200 group-hover:shadow-soft">
                   <CardContent className="space-y-4 py-5">
                     <div className="flex items-start justify-between gap-2">
@@ -109,7 +119,7 @@ export function MyProjectsPanel() {
                     )}
                   </CardContent>
                 </Card>
-              </Link>
+              </DraftLink>
             ))}
           </div>
         )}

@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { QuizDesk } from "@/components/doc-pack";
+import { LoadingPun } from "@/components/shared";
 import { Skeleton } from "@/ui";
 
 function QuizDeskFallback() {
@@ -18,6 +19,7 @@ function QuizDeskFallback() {
         <Skeleton className="h-7 w-48" />
         <Skeleton className="h-4 w-72" />
         <Skeleton className="h-24 w-full rounded-xl" />
+        <LoadingPun className="justify-start pt-2 text-xs" />
       </div>
     </div>
   );

@@ -1,11 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { optimisticUpdate, rollbackOptimistic } from "@/hooks/queries";
-import { ID_PREFIXES, typedId } from "@/lib";
+import { ID_PREFIXES, isDraftId, typedId } from "@/lib";
 import type { CreateTenantInput, Tenant } from "@/schemas";
 import { adminService } from "@/services";
 import { adminKeys } from "./admin.queries";
-
-const isDraftId = (id: string) => id.startsWith(`${ID_PREFIXES.draft}_`);
 
 export function useCreateTenant() {
   const queryClient = useQueryClient();

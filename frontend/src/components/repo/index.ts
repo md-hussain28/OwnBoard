@@ -3,4 +3,6 @@
 export * from "./connect-repo-dialog";
 export * from "./connect-repo-prompt";
 export * from "./connected-repos-list";
+export * from "./repo-attached-docs";
 export * from "./repo-connect-panel";
+export * from "./repo-identity";

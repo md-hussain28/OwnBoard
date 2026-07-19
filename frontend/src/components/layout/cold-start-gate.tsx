@@ -2,7 +2,7 @@
 
 import { CoffeeIcon, Loader2Icon, MoonIcon, ServerIcon } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { cn } from "@/lib";
+import { COLD_START_QUIPS, cn } from "@/lib";
 
 /**
  * Grace window before we assume the backend is cold. A warm backend answers `/api/health`
@@ -14,20 +14,6 @@ const GRACE_MS = 2_000;
 const EXPECTED_WAKE_S = 55;
 /** After this long the wake is unusually slow; offer a manual retry alongside the auto-polling. */
 const SLOW_WAKE_S = 90;
-
-/**
- * Sarcastic status lines that rotate while the free-tier dyno drags itself out of bed.
- * We cycle by elapsed time so the wait feels alive instead of a frozen spinner.
- */
-const QUIPS = [
-  "Poking the server with a stick…",
-  "It naps on a free tier to save money we don't have.",
-  "Bribing the container with exposure and good vibes.",
-  "This is what $0 a month buys you. Worth every penny.",
-  "Somewhere, a very cheap dyno is reluctantly booting.",
-  "The server is stretching, yawning, asking what year it is.",
-  "Reticulating splines… kidding, it's just budget hosting.",
-] as const;
 
 type Phase = "grace" | "waking" | "ready";
 
@@ -109,7 +95,7 @@ export function ColdStartGate({ children }: { children: ReactNode }) {
   const progress = Math.min(95, Math.round((elapsed / EXPECTED_WAKE_S) * 100));
   const slow = elapsed >= SLOW_WAKE_S;
   // Rotate the quip every ~7s so the wait has a pulse instead of a dead spinner.
-  const quip = QUIPS[Math.floor(elapsed / 7) % QUIPS.length];
+  const quip = COLD_START_QUIPS[Math.floor(elapsed / 7) % COLD_START_QUIPS.length];
 
   return (
     <div

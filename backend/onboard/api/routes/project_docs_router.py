@@ -12,7 +12,7 @@ from onboard.api.dependency.service_container import ServiceContainer, get_servi
 from onboard.api.dependency.tenancy import CurrentOrgId
 from onboard.api.schema.doc_pack.request import RegisterUploadsRequest, SignedUploadRequest
 from onboard.api.schema.doc_pack.response import SignedUploadTargetResponse, SignedUploadUrlsResponse
-from onboard.api.schema.project.request import DocTypeCreateRequest, SetDocTypesRequest
+from onboard.api.schema.project.request import DocTypeCreateRequest, SetDocReposRequest, SetDocTypesRequest
 from onboard.api.schema.project.response import ProjectDocsResponse, ProjectDocTypeResponse
 from onboard.services.doc_pack.doc_pack_service import ingest_document_background
 
@@ -84,6 +84,9 @@ async def register_project_docs(
         employee,
         [(f.document_id, f.filename, f.storage_path, f.size) for f in payload.files],
         created_by=user_id,
+        type_ids=payload.type_ids,
+        repo_ids=payload.repo_ids,
+        description=payload.description,
     )
     for document in documents:
         background_tasks.add_task(ingest_document_background, org_id, document.id)
@@ -112,6 +115,19 @@ async def set_project_doc_types(
 ):
     """Set a document's type tags (many-to-many) to exactly the given project doc-type ids."""
     return await services.project.set_document_types(org_id, project_id, employee, document_id, payload.type_ids)
+
+
+@router.put("/{project_id}/docs/{document_id}/repos", response_model=ProjectDocsResponse)
+async def set_project_doc_repos(
+    project_id: str,
+    document_id: str,
+    payload: SetDocReposRequest,
+    org_id: CurrentOrgId,
+    employee: CurrentEmployee,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Attach a document to exactly the given repos (must be repos linked to this project)."""
+    return await services.project.set_document_repos(org_id, project_id, employee, document_id, payload.repo_ids)
 
 
 @router.post("/{project_id}/doc-types", response_model=ProjectDocTypeResponse, status_code=201)

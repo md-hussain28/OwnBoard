@@ -20,8 +20,10 @@ export async function performSignedUpload(opts: {
   registerEndpoint: string;
   files: File[];
   onProgress?: (percent: number) => void;
+  /** Extra batch-level fields merged into the register POST body (e.g. type_ids, repo_ids). */
+  registerExtra?: Record<string, unknown>;
 }): Promise<unknown> {
-  const { urlsEndpoint, registerEndpoint, files, onProgress } = opts;
+  const { urlsEndpoint, registerEndpoint, files, onProgress, registerExtra } = opts;
   const client = getApiClient();
 
   // 1) Validate + mint signed URLs. Backend preserves request order, so targets[i] ↔ files[i].
@@ -79,6 +81,7 @@ export async function performSignedUpload(opts: {
       content_type: t.contentType,
       size: files[i].size,
     })),
+    ...registerExtra,
   });
   return registerData;
 }

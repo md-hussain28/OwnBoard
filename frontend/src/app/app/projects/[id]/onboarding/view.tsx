@@ -6,6 +6,7 @@ import {
   ProjectSectionHeader,
   ProjectTracksTab,
 } from "@/components/project";
+import { PageTourNudge } from "@/components/tour";
 import { useProject } from "@/hooks/queries/project";
 
 export function ProjectOnboardingView({ id }: { id: string }) {
@@ -14,15 +15,16 @@ export function ProjectOnboardingView({ id }: { id: string }) {
 
   // Managers author onboarding modules + assign them; members see only their own assigned modules.
   return (
-    <div data-tour="project-panel-onboarding">
+    <div className="space-y-4" data-tour="project-panel-onboarding">
+      <PageTourNudge featureId="project-modules" />
       {project.canManage ? (
-        <ProjectTracksTab projectId={project.id} />
+        <ProjectTracksTab project={project} />
       ) : (
         <div className="space-y-4">
           <ProjectSectionHeader
             icon={ListChecksIcon}
-            title="Your modules"
-            description="The learning modules assigned to you on this project. Work through each one and pass its quiz."
+            title="Your onboarding"
+            description="The modules assigned to you on this project. Work through each one and pass its quiz."
           />
           <MemberOnboardingSteps tracks={project.tracks} />
         </div>

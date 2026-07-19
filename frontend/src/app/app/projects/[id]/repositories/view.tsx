@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { projectSectionPath } from "@/components/layout";
 import { ProjectRepositoriesTab } from "@/components/project";
+import { PageTourNudge } from "@/components/tour";
 import { useProject } from "@/hooks/queries/project";
 
 export function ProjectRepositoriesView({ id }: { id: string }) {
@@ -12,7 +13,8 @@ export function ProjectRepositoriesView({ id }: { id: string }) {
   if (!project.canManage) redirect(projectSectionPath(project.id, ""));
 
   return (
-    <div data-tour="project-panel-repositories">
+    <div className="space-y-4" data-tour="project-panel-repositories">
+      <PageTourNudge featureId="project-repos" />
       <ProjectRepositoriesTab project={project} manageable />
     </div>
   );

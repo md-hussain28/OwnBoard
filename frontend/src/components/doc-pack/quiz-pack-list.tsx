@@ -18,7 +18,7 @@ import {
   usePackAssignmentProgress,
 } from "@/hooks/queries/pack-assignment";
 import { useQuizDomains } from "@/hooks/queries/quiz-domain";
-import { cn } from "@/lib";
+import { cn, isDraftId } from "@/lib";
 import { getApiErrorMessage } from "@/lib/api";
 import type { DocPackListItem } from "@/schemas";
 import { Badge, Button, Input, Skeleton } from "@/ui";
@@ -214,29 +214,36 @@ function PackRow({
   onAssignPack: (packId: string) => void;
   onViewPack: (packId: string) => void;
 }) {
+  // While the create mutation is in flight the row carries a client `new_…` draft id that can't
+  // resolve on the backend — opening or editing it would 404 — so the row goes inert and pending.
+  const isDraft = isDraftId(pack.id);
   return (
     <li
       className={cn(
         "flex flex-col gap-3 px-4 py-4 transition-colors duration-150 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5",
-        "cursor-pointer hover:bg-muted/40",
+        isDraft ? "animate-pulse opacity-70" : "cursor-pointer hover:bg-muted/40",
       )}
-      onClick={() => onViewPack(pack.id)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onViewPack(pack.id);
-        }
-      }}
-      // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: row opens the view sheet
-      role="button"
-      tabIndex={0}
-      aria-label={`View details for ${pack.name}`}
+      onClick={isDraft ? undefined : () => onViewPack(pack.id)}
+      onKeyDown={
+        isDraft
+          ? undefined
+          : (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onViewPack(pack.id);
+              }
+            }
+      }
+      role={isDraft ? undefined : "button"}
+      tabIndex={isDraft ? undefined : 0}
+      aria-busy={isDraft || undefined}
+      aria-label={isDraft ? `Creating ${pack.name}…` : `View details for ${pack.name}`}
     >
       <div className="min-w-0 flex-1 space-y-1.5">
         <div className="flex items-start justify-between gap-3">
           <p className="min-w-0 flex-1 font-medium leading-snug text-balance">{pack.name}</p>
           <Badge variant={packStatusVariant(pack.status)} className="shrink-0">
-            {STATUS_LABEL[pack.status]}
+            {isDraft ? "Creating…" : STATUS_LABEL[pack.status]}
           </Badge>
         </div>
 
@@ -264,6 +271,7 @@ function PackRow({
             type="button"
             size="sm"
             className="w-full sm:w-auto"
+            disabled={isDraft}
             onClick={(e) => {
               e.stopPropagation();
               onAssignPack(pack.id);
@@ -272,12 +280,19 @@ function PackRow({
             <UserPlusIcon className="size-3.5" />
             Assign
           </Button>
-          <Button variant="outline" size="sm" className="w-full sm:w-auto" asChild>
-            <Link href={`/app/tracks/${pack.id}`} onClick={(e) => e.stopPropagation()}>
+          {isDraft ? (
+            <Button variant="outline" size="sm" className="w-full sm:w-auto" disabled>
               <PencilIcon className="size-3.5" />
               Edit
-            </Link>
-          </Button>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className="w-full sm:w-auto" asChild>
+              <Link href={`/app/tracks/${pack.id}`} onClick={(e) => e.stopPropagation()}>
+                <PencilIcon className="size-3.5" />
+                Edit
+              </Link>
+            </Button>
+          )}
         </div>
       )}
     </li>

@@ -4,6 +4,7 @@ import { UsersIcon } from "lucide-react";
 import { redirect } from "next/navigation";
 import { projectSectionPath } from "@/components/layout";
 import { AddMembersDialog, ProjectMemberPanel, ProjectSectionHeader } from "@/components/project";
+import { PageTourNudge } from "@/components/tour";
 import { useProject } from "@/hooks/queries/project";
 
 export function ProjectMembersView({ id }: { id: string }) {
@@ -14,6 +15,7 @@ export function ProjectMembersView({ id }: { id: string }) {
 
   return (
     <div className="space-y-4" data-tour="project-panel-members">
+      <PageTourNudge featureId="project-members" />
       <ProjectSectionHeader
         icon={UsersIcon}
         title="Members"

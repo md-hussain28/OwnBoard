@@ -135,7 +135,7 @@ export const PROJECT_SECTIONS: ProjectSection[] = [
   { key: "", label: "Overview", icon: LayoutDashboardIcon },
   // Members leads the working sub-nav — it's the primary surface for admins & leads.
   { key: "members", label: "Members", icon: UsersIcon, access: "manage" },
-  { key: "onboarding", label: "Modules", icon: ListChecksIcon },
+  { key: "onboarding", label: "Project Onboarding", icon: ListChecksIcon },
   { key: "docs", label: "Docs", icon: ScrollTextIcon },
   { key: "repositories", label: "Repos", icon: GitBranchIcon, access: "manage" },
   { key: "ask", label: "Ask project", icon: SparklesIcon },

@@ -79,12 +79,18 @@ class DocPack(AuditBase):
     # These are excluded from the project's Modules list; their documents feed the "Ask project" KB.
     is_knowledge_base: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     # Project modules only: whether the module auto-assigns to every project member or is manually targeted.
+    # LEGACY — superseded by the combinable union targeting below (`target_all_members` + target tables).
+    # Kept so company tracks and old data still parse; project logic no longer reads it.
     assign_scope: Mapped[DocPackAssignScope] = mapped_column(
         Enum(DocPackAssignScope, name="doc_pack_assign_scope"),
         nullable=False,
         default=DocPackAssignScope.all_members,
         server_default="all_members",
     )
+    # Project modules only: base rule of the union audience — "needed by every project member".
+    # The full audience is this OR'd with the target-domain and target-repo rules below, plus any
+    # manually-added assignees (pack_assignment rows with auto_assigned=False). See §Projects module targeting.
+    target_all_members: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     # Pass bar as a percentage 1..100 (default 100 = the historical "must get everything right"). Grading
     # compares the attempt score against this threshold instead of a hard-coded 1.0 (Doc Pack PRD §10.6).
     pass_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=100, server_default="100")
@@ -106,6 +112,61 @@ class DocPack(AuditBase):
     audience_domains: Mapped[list["DocPackAudienceDomain"]] = relationship(
         back_populates="doc_pack", cascade="all, delete-orphan"
     )
+    # Project-module union targeting rules (see DocPackTargetDomain / DocPackTargetRepo).
+    target_domains: Mapped[list["DocPackTargetDomain"]] = relationship(
+        back_populates="doc_pack", cascade="all, delete-orphan"
+    )
+    target_repos: Mapped[list["DocPackTargetRepo"]] = relationship(
+        back_populates="doc_pack", cascade="all, delete-orphan"
+    )
+
+
+class DocPackTargetDomain(AuditBase):
+    """Project-module union rule: 'this onboarding doc is needed for members of this project domain'.
+
+    Links a project module (DocPack with project_id set) to a ProjectFunctionType (the per-project
+    "domain"/expertise). A member matches if their `function_type_id` is one of these."""
+
+    __tablename__ = "doc_pack_target_domain"
+    __id_prefix__ = "dptd"
+    __table_args__ = (UniqueConstraint("doc_pack_id", "project_function_type_id", name="uq_pack_target_domain"),)
+
+    org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
+    doc_pack_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("doc_pack.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    project_function_type_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("project_function_type.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    doc_pack: Mapped["DocPack"] = relationship(back_populates="target_domains")
+
+
+class DocPackTargetRepo(AuditBase):
+    """Project-module union rule: 'needed by people working on this repo (optionally only those of a domain)'.
+
+    Links a project module to a ProjectRepo link; a member matches if they're assigned to that repo
+    (ProjectRepoMember) and — when `project_function_type_id` is set — also of that domain."""
+
+    __tablename__ = "doc_pack_target_repo"
+    __id_prefix__ = "dptr"
+    __table_args__ = (
+        UniqueConstraint("doc_pack_id", "project_repo_id", "project_function_type_id", name="uq_pack_target_repo"),
+    )
+
+    org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization.id"), nullable=False, index=True)
+    doc_pack_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("doc_pack.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    project_repo_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("project_repo.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    # Optional domain filter within the repo. Null = everyone on the repo, regardless of domain.
+    project_function_type_id: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("project_function_type.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+
+    doc_pack: Mapped["DocPack"] = relationship(back_populates="target_repos")
 
 
 class DocPackAudienceDomain(AuditBase):
@@ -137,6 +198,9 @@ class DocPackDocument(AuditBase):
         String(64), ForeignKey("doc_pack.id", ondelete="CASCADE"), nullable=False, index=True
     )
     title: Mapped[str] = mapped_column(String(512), nullable=False)
+    # Uploader-supplied context ("what is this / which domain / why it matters"). Prepended to each
+    # chunk's embedding input at ingest so retrieval for "Ask project" is grounded in the doc's intent.
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     storage_path: Mapped[str] = mapped_column(String(1024), nullable=False)
     file_type: Mapped[str] = mapped_column(String(32), nullable=False)
     file_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)

@@ -321,9 +321,16 @@ async def update_track_assignment(
     employee: CurrentEmployee,
     services: ServiceContainer = Depends(get_service_container),
 ):
-    """Set a module's audience: auto-assign every member ('all_members') or a manual subset."""
+    """Set a module's combinable audience (everyone ∪ domains ∪ repo rules ∪ hand-picked members)."""
     return await services.project.update_track_assignment(
-        org_id, project_id, track_id, employee, scope=payload.scope, employee_ids=payload.employee_ids
+        org_id,
+        project_id,
+        track_id,
+        employee,
+        target_all_members=payload.target_all_members,
+        domain_ids=payload.domain_ids,
+        repo_rules=payload.repo_rules,
+        manual_employee_ids=payload.manual_employee_ids,
     )
 
 

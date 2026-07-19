@@ -20,6 +20,7 @@ import {
   UsersRoundIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { PageTourNudge } from "@/components/tour";
 import { Button, Skeleton } from "@/ui";
 import {
   Conversation,
@@ -281,6 +282,7 @@ export function ProjectAskView({ id }: { id: string }) {
       {/* Fill the visible console area (viewport − topbar − main padding) so the composer pins
           to the bottom like a real chat surface instead of floating mid-page. */}
       <div className="flex h-[calc(100svh-7rem)] flex-col" data-tour="project-panel-ask">
+        <PageTourNudge featureId="project-ask" className="mb-3 shrink-0" />
         <div className="mb-3 flex shrink-0 items-center justify-between gap-3 border-b border-border/60 pb-3">
           <div className="flex items-center gap-2.5">
             <span className="flex size-8 items-center justify-center rounded-lg bg-brand-honey-soft text-brand-honey">

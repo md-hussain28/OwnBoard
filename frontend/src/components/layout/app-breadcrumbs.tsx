@@ -125,14 +125,16 @@ function assignmentCrumbs(rootLabel: string, rootHref: string, assignmentId: str
   ];
 }
 
-/** Projects → Project name → Section (e.g. Skill graph). */
+/** Projects → Project name → Section (e.g. Skill graph) → optional nested detail (e.g. a repo). */
 function projectCrumbs(
   rootLabel: string,
   rootHref: string,
   projectId: string,
   sectionKey: string | undefined,
+  subId?: string,
 ): Crumb[] {
   const projectHref = `${rootHref}/${projectId}`;
+  const hasSub = Boolean(subId && looksLikeId(subId));
   const crumbs: Crumb[] = [
     { label: rootLabel, href: rootHref },
     {
@@ -141,9 +143,20 @@ function projectCrumbs(
     },
   ];
   if (sectionKey) {
+    const sectionHref = `${projectHref}/${sectionKey}`;
     crumbs.push({
       label: SEGMENT_LABELS[sectionKey] ?? titleCase(sectionKey),
+      // Keep the section clickable once there's a deeper crumb (e.g. a specific repo) after it.
+      href: hasSub ? sectionHref : undefined,
     });
+  }
+  // A repo opened inside a project: Projects → name → Repos → repo name.
+  if (hasSub && sectionKey === "repositories" && subId) {
+    crumbs.push({ label: <RepoCrumbLabel repoId={subId} /> });
+  }
+  // An onboarding module authored inside a project: … → Project Onboarding → module name.
+  if (hasSub && sectionKey === "onboarding" && subId) {
+    crumbs.push({ label: <DocPackCrumbLabel packId={subId} /> });
   }
   return crumbs;
 }
@@ -183,7 +196,7 @@ function buildCrumbs(pathname: string, role?: AppRole | null): Crumb[] {
     projectId !== "new" &&
     looksLikeId(projectId)
   ) {
-    return projectCrumbs(rootLabel, rootHref, projectId, consoleParts[2]);
+    return projectCrumbs(rootLabel, rootHref, projectId, consoleParts[2], consoleParts[3]);
   }
 
   // Repo detail: Repos → repo name (skip opaque id).

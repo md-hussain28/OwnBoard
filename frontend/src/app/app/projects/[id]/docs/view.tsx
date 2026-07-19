@@ -1,39 +1,23 @@
 "use client";
 
-import { LayersIcon } from "lucide-react";
-import {
-  ProjectContextTab,
-  ProjectContextView,
-  ProjectDocsPanel,
-  ProjectSectionHeader,
-} from "@/components/project";
+import { ProjectDocsPanel } from "@/components/project";
+import { PageTourNudge } from "@/components/tour";
 import { useProject } from "@/hooks/queries/project";
-import { Separator } from "@/ui";
 
 export function ProjectDocsView({ id }: { id: string }) {
   const { data: project } = useProject(id);
   if (!project) return null;
 
+  // Docs is the document knowledge base only: each doc carries a type and is attached to the repos
+  // it documents. Repo/tech-stack context now lives under the Repos section.
   return (
-    <div className="space-y-6" data-tour="project-panel-docs">
-      {/* Context (tech stack / links / glossary) — editable for managers, read-only for members. */}
-      <section className="space-y-4">
-        <ProjectSectionHeader
-          icon={LayersIcon}
-          title="Project context"
-          description="The fast way to understand this project — tech stack, repositories, key links and glossary."
-        />
-        {project.canManage ? (
-          <ProjectContextTab project={project} />
-        ) : (
-          <ProjectContextView project={project} />
-        )}
-      </section>
-
-      <Separator />
-
-      {/* The typed document knowledge base. */}
-      <ProjectDocsPanel projectId={project.id} manageable={project.canManage} />
+    <div className="space-y-4" data-tour="project-panel-docs">
+      <PageTourNudge featureId="project-docs" />
+      <ProjectDocsPanel
+        projectId={project.id}
+        manageable={project.canManage}
+        repos={project.repos}
+      />
     </div>
   );
 }

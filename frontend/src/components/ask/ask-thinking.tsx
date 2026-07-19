@@ -10,7 +10,7 @@ import {
   UsersRoundIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { cn } from "@/lib";
+import { cn, useRotatingPun } from "@/lib";
 
 type Phase = { icon: LucideIcon; label: string };
 
@@ -39,6 +39,7 @@ const PHASE_MS = 1900;
  */
 export function AskThinking({ className }: { className?: string }) {
   const [index, setIndex] = useState(0);
+  const pun = useRotatingPun();
 
   useEffect(() => {
     // Walk forward through the phases, then hold on the last one — never loop back to "Searching…",
@@ -53,6 +54,9 @@ export function AskThinking({ className }: { className?: string }) {
 
   const phase = THINKING_PHASES[index];
   const PhaseIcon = phase.icon;
+  // Once we've reached the final step and are just waiting on the slow free-tier backend,
+  // drop in a rotating pun so a long wait feels charming instead of frozen.
+  const holding = index >= THINKING_PHASES.length - 1;
 
   return (
     <div className={cn("flex items-center gap-3", className)}>
@@ -82,6 +86,15 @@ export function AskThinking({ className }: { className?: string }) {
         >
           <span className="ask-track-bar absolute inset-y-0 w-1/2 rounded-full bg-gradient-to-r from-transparent via-brand-honey to-transparent" />
         </span>
+        {holding ? (
+          <span
+            key={pun}
+            className="ask-phase-in text-xs text-muted-foreground text-pretty"
+            aria-live="polite"
+          >
+            {pun}
+          </span>
+        ) : null}
       </div>
     </div>
   );

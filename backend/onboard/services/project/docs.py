@@ -6,6 +6,7 @@ chunks are already retrievable via `DocChunkDAO.similarity_search_for_project`. 
 (PRD, KT, …) tag documents many-to-many via `ProjectDocumentType`."""
 
 from onboard.api.schema.project.response import (
+    ProjectDocRepoRef,
     ProjectDocResponse,
     ProjectDocsResponse,
     ProjectDocTypeResponse,
@@ -15,7 +16,7 @@ from onboard.core.common.exceptions import ForbiddenError, NotFoundError, Valida
 from onboard.dao.doc_pack_dao import DocPackDocumentDAO
 from onboard.dao.models.doc_pack import DocPack, DocPackStatus
 from onboard.dao.models.employee import Employee
-from onboard.dao.project_dao import ProjectDocTypeDAO, ProjectDocumentTypeDAO
+from onboard.dao.project_dao import ProjectDocTypeDAO, ProjectDocumentRepoDAO, ProjectDocumentTypeDAO
 from onboard.services.doc_pack.doc_pack_service import DocPackService
 from onboard.services.project.base import ProjectServiceBase
 
@@ -52,6 +53,7 @@ class ProjectDocsMixin(ProjectServiceBase):
         document_dao = DocPackDocumentDAO(self.session)
         type_dao = ProjectDocTypeDAO(self.session)
         link_dao = ProjectDocumentTypeDAO(self.session)
+        repo_link_dao = ProjectDocumentRepoDAO(self.session)
 
         documents = await document_dao.list_for_pack(pack.id)
         types = await type_dao.list_for_project(project_id)
@@ -61,17 +63,45 @@ class ProjectDocsMixin(ProjectServiceBase):
         for link in links:
             type_ids_by_doc.setdefault(link.document_id, []).append(link.doc_type_id)
 
+        # Doc → repo attachments, resolved against the project's currently-linked repos (for name/url).
+        repo_ref_by_id = {
+            pr.repo_id: ProjectDocRepoRef(
+                repo_id=pr.repo_id,
+                name=pr.repo.name if pr.repo else None,
+                url=pr.repo.url if pr.repo else None,
+            )
+            for pr in await self.repo_link_dao.list_for_project(project_id)
+        }
+        repo_links = await repo_link_dao.list_for_documents([d.id for d in documents])
+        repo_ids_by_doc: dict[str, list[str]] = {}
+        for link in repo_links:
+            repo_ids_by_doc.setdefault(link.document_id, []).append(link.repo_id)
+
         return ProjectDocsResponse(
             pack_id=pack.id,
-            documents=[self._doc_response(d, type_ids_by_doc.get(d.id, []), type_name_by_id) for d in documents],
+            documents=[
+                self._doc_response(
+                    d, type_ids_by_doc.get(d.id, []), type_name_by_id, repo_ids_by_doc.get(d.id, []), repo_ref_by_id
+                )
+                for d in documents
+            ],
             types=[ProjectDocTypeResponse(id=t.id, name=t.name, sort_order=t.sort_order) for t in types],
         )
 
     @staticmethod
-    def _doc_response(document, type_ids: list[str], type_name_by_id: dict[str, str]) -> ProjectDocResponse:
+    def _doc_response(
+        document,
+        type_ids: list[str],
+        type_name_by_id: dict[str, str],
+        repo_ids: list[str],
+        repo_ref_by_id: dict[str, ProjectDocRepoRef],
+    ) -> ProjectDocResponse:
+        # Only surface attachments to repos still linked to the project (a repo could have been unlinked).
+        valid_repo_ids = [r for r in repo_ids if r in repo_ref_by_id]
         return ProjectDocResponse(
             id=document.id,
             title=document.title,
+            description=document.description,
             file_type=document.file_type,
             status=document.status.value,
             page_count=document.page_count,
@@ -79,6 +109,8 @@ class ProjectDocsMixin(ProjectServiceBase):
             created_at=document.created_at,
             type_ids=type_ids,
             type_names=[type_name_by_id[t] for t in type_ids if t in type_name_by_id],
+            repo_ids=valid_repo_ids,
+            repos=[repo_ref_by_id[r] for r in valid_repo_ids],
         )
 
     # ---- documents ---------------------------------------------------------
@@ -120,15 +152,61 @@ class ProjectDocsMixin(ProjectServiceBase):
         viewer: Employee,
         items: list[tuple[str, str, str, int]],
         created_by: str | None,
+        type_ids: list[str] | None = None,
+        repo_ids: list[str] | None = None,
+        description: str | None = None,
     ) -> list:
         """Step 2: register the objects the browser uploaded and return the created DocPackDocuments
-        so the router can schedule ingest. See `DocPackService.register_uploaded_documents`."""
+        so the router can schedule ingest. See `DocPackService.register_uploaded_documents`.
+
+        The batch-level metadata (`type_ids`, `repo_ids`, `description`) captured in the upload modal
+        is applied to every registered document here — before the router schedules ingest — so the
+        context feeds the embeddings and the doc shows up tagged/attached immediately."""
         project = await self._get_project(org_id, project_id)
         await self._assert_can_manage(project, viewer)
         pack = await self._ensure_kb_pack(org_id, project_id)
-        return await DocPackService(self.session).register_uploaded_documents(
+        documents = await DocPackService(self.session).register_uploaded_documents(
             org_id, pack.id, items, created_by=created_by
         )
+        await self._apply_upload_metadata(org_id, project_id, documents, type_ids, repo_ids, description)
+        return documents
+
+    async def _apply_upload_metadata(
+        self,
+        org_id: str,
+        project_id: str,
+        documents: list,
+        type_ids: list[str] | None,
+        repo_ids: list[str] | None,
+        description: str | None,
+    ) -> None:
+        """Tag/attach/annotate freshly-registered documents from the upload modal's batch metadata.
+
+        Type and repo ids are filtered to those actually belonging to the project (a stale client
+        can't attach a doc to another project's repo). The docs are brand-new, so we only ever create
+        links here — no reconciliation needed."""
+        document_dao = DocPackDocumentDAO(self.session)
+        cleaned_description = (description or "").strip() or None
+
+        valid_type_ids: set[str] = set()
+        if type_ids:
+            valid_type_ids = {t.id for t in await ProjectDocTypeDAO(self.session).list_for_project(project_id)}
+        valid_repo_ids: set[str] = set()
+        if repo_ids:
+            valid_repo_ids = {pr.repo_id for pr in await self.repo_link_dao.list_for_project(project_id)}
+
+        target_types = [t for t in (type_ids or []) if t in valid_type_ids]
+        target_repos = [r for r in (repo_ids or []) if r in valid_repo_ids]
+
+        type_link_dao = ProjectDocumentTypeDAO(self.session)
+        repo_link_dao = ProjectDocumentRepoDAO(self.session)
+        for document in documents:
+            if cleaned_description is not None:
+                await document_dao.update(document.id, description=cleaned_description)
+            for type_id in target_types:
+                await type_link_dao.create(org_id=org_id, document_id=document.id, doc_type_id=type_id)
+            for repo_id in target_repos:
+                await repo_link_dao.create(org_id=org_id, document_id=document.id, repo_id=repo_id)
 
     async def delete_doc(self, org_id: str, project_id: str, viewer: Employee, document_id: str) -> None:
         project = await self._get_project(org_id, project_id)
@@ -158,6 +236,29 @@ class ProjectDocsMixin(ProjectServiceBase):
         for type_id, link in current.items():
             if type_id not in target:
                 await link_dao.delete(link.id)
+        return await self.get_docs(org_id, project_id, viewer)
+
+    async def set_document_repos(
+        self, org_id: str, project_id: str, viewer: Employee, document_id: str, repo_ids: list[str]
+    ) -> ProjectDocsResponse:
+        """Attach a document to exactly `repo_ids` — restricted to repos linked to this project."""
+        project = await self._get_project(org_id, project_id)
+        await self._assert_can_manage(project, viewer)
+        pack = await self._ensure_kb_pack(org_id, project_id)
+
+        document_dao = DocPackDocumentDAO(self.session)
+        if await document_dao.get_by_id_for_pack(pack.id, document_id) is None:
+            raise NotFoundError(f"Document {document_id} not found")
+
+        repo_link_dao = ProjectDocumentRepoDAO(self.session)
+        valid = {pr.repo_id for pr in await self.repo_link_dao.list_for_project(project_id)}
+        target = {r for r in repo_ids if r in valid}
+        current = {link.repo_id: link for link in await repo_link_dao.list_for_document(document_id)}
+        for repo_id in target - set(current):
+            await repo_link_dao.create(org_id=org_id, document_id=document_id, repo_id=repo_id)
+        for repo_id, link in current.items():
+            if repo_id not in target:
+                await repo_link_dao.delete(link.id)
         return await self.get_docs(org_id, project_id, viewer)
 
     # ---- types -------------------------------------------------------------

@@ -189,62 +189,83 @@ function CreateTrackDialog({ projectId }: { projectId: string }) {
   );
 }
 
+function MetaChip({ icon: Icon, children }: { icon: typeof ClockIcon; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+      <Icon className="size-3.5" />
+      {children}
+    </span>
+  );
+}
+
 function ModuleRow({
   track,
+  projectId,
+  manageable,
   onOpen,
 }: {
   track: ProjectTrack;
-  onOpen: (track: ProjectTrack) => void;
+  projectId: string;
+  manageable: boolean;
+  onOpen: (track: ProjectTrack, edit?: boolean) => void;
 }) {
   // Optimistic rows carry a `new_…` draft id until the create mutation resolves; opening one
   // would 404, so the row stays inert and pending until the real id arrives.
   const isDraft = isDraftId(track.id);
   return (
-    <li>
+    <li
+      className={cn(
+        "group relative flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-all",
+        isDraft ? "animate-pulse opacity-70" : "hover:border-foreground/15 hover:shadow-sm",
+      )}
+      aria-busy={isDraft || undefined}
+    >
       <button
         type="button"
         disabled={isDraft}
         onClick={() => onOpen(track)}
-        className={cn(
-          "flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors",
-          isDraft ? "animate-pulse opacity-70" : "hover:bg-muted/60",
-        )}
-        aria-busy={isDraft || undefined}
+        aria-label={`Open ${track.name}`}
+        className="min-w-0 flex-1 space-y-1.5 text-left focus-visible:outline-none"
       >
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-medium">{track.name}</p>
-          {track.description && (
-            <p className="truncate text-sm text-muted-foreground">{track.description}</p>
-          )}
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              {track.targetAllMembers ? (
-                <UsersRoundIcon className="size-3.5" />
-              ) : (
-                <GitBranchIcon className="size-3.5" />
-              )}
-              {audienceSummary(track)}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <UsersIcon className="size-3.5" /> {track.assignedCount} assigned
-            </span>
-            {track.estimatedMinutes != null && (
-              <span className="inline-flex items-center gap-1">
-                <ClockIcon className="size-3.5" /> {track.estimatedMinutes} min
-              </span>
-            )}
-            {track.dueOffsetDays != null && (
-              <span className="inline-flex items-center gap-1">
-                <CalendarClockIcon className="size-3.5" /> due in {track.dueOffsetDays} day
-                {track.dueOffsetDays === 1 ? "" : "s"}
-              </span>
-            )}
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="truncate font-medium group-hover:underline group-hover:decoration-foreground/20 group-hover:underline-offset-4">
+            {track.name}
+          </span>
+          <Badge variant={statusVariant(track.status)} className="shrink-0">
+            {isDraft ? "Creating…" : statusLabel(track.status)}
+          </Badge>
         </div>
-        <Badge variant={statusVariant(track.status)} className="shrink-0">
-          {isDraft ? "Creating…" : statusLabel(track.status)}
-        </Badge>
+        {track.description && (
+          <p className="truncate text-sm text-muted-foreground">{track.description}</p>
+        )}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <MetaChip icon={track.targetAllMembers ? UsersRoundIcon : GitBranchIcon}>
+            {audienceSummary(track)}
+          </MetaChip>
+          <MetaChip icon={UsersIcon}>{track.assignedCount} assigned</MetaChip>
+          {track.estimatedMinutes != null && (
+            <MetaChip icon={ClockIcon}>{track.estimatedMinutes} min</MetaChip>
+          )}
+          {track.dueOffsetDays != null && (
+            <MetaChip icon={CalendarClockIcon}>
+              due in {track.dueOffsetDays} day{track.dueOffsetDays === 1 ? "" : "s"}
+            </MetaChip>
+          )}
+        </div>
       </button>
+
+      {manageable && !isDraft && (
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => onOpen(track, true)}>
+            <UserPlusIcon className="size-4" /> Assign
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <a href={appPath("projects", projectId, "onboarding", track.id)}>
+              <PencilIcon className="size-4" /> Edit
+            </a>
+          </Button>
+        </div>
+      )}
     </li>
   );
 }

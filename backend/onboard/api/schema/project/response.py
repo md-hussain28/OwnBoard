@@ -210,8 +210,11 @@ class ProjectDocResponse(BaseModel):
     file_type: str
     status: str  # uploaded | processing | processed | failed
     page_count: int | None = None
+    file_size_bytes: int | None = None
+    ingest_attempts: int = 0
     error_message: str | None = None
     created_at: datetime
+    updated_at: datetime | None = None
     type_ids: list[str] = []
     type_names: list[str] = []
     # Repos this document is attached to (subset of the project's linked repos).

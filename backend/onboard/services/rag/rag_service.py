@@ -8,7 +8,7 @@ from onboard.config.constants import EMBEDDING_BATCH_SIZE
 from onboard.core.common.exceptions import NotFoundError, ValidationError
 from onboard.core.llm.llm_client import LLMClient, get_llm_client
 from onboard.core.rag.chunking import ChunkDraft, chunk_extracted_document
-from onboard.core.rag.extract import extract_document
+from onboard.core.rag.extract import ExtractedDocument, ExtractedPage, ScannedPDFError, extract_document
 from onboard.core.storage.supabase_client import SupabaseStorageClient, get_storage_client
 from onboard.dao.code_chunk_dao import CodeChunkDAO
 from onboard.dao.doc_chunk_dao import DocChunkDAO
@@ -110,7 +110,13 @@ class RAGService:
             # PDF/DOCX parsing and token-counting are CPU-bound; run them off the event loop so
             # the (single-worker, 0.1-CPU) host keeps answering health checks during ingestion —
             # a blocked loop gets the instance restarted, killing the ingest task mid-flight.
-            extracted = await asyncio.to_thread(extract_document, raw, document.file_type)
+            try:
+                extracted = await asyncio.to_thread(extract_document, raw, document.file_type)
+            except ScannedPDFError:
+                # No text layer in the PDF — read it with a vision model (server-side OCR) before
+                # giving up, so scanned/image-only uploads still get indexed. Runs on the same
+                # semaphore-guarded ingest task, so it can't stampede the 512MB host.
+                extracted = await self._ocr_pdf_document(raw)
             del raw  # 512MB host: don't hold the file bytes through chunking + embedding
             drafts = await asyncio.to_thread(chunk_extracted_document, extracted)
             page_count = extracted.page_count
@@ -159,6 +165,20 @@ class RAGService:
                 error_message=str(exc)[:2000],
             )
             raise
+
+    async def _ocr_pdf_document(self, content: bytes) -> ExtractedDocument:
+        """OCR fallback for a PDF with no text layer (scanned / image-only).
+
+        Delegates the actual OCR to a vision model (see ``LLMClient.ocr_pdf``); we keep the return
+        shape identical to ``extract_document`` so the rest of the ingest pipeline is unchanged.
+        """
+        text = (await self.llm.ocr_pdf(content)).strip()
+        if not text:
+            raise ValidationError(
+                "PDF has no selectable text and OCR could not read it — it may be blank, corrupt, "
+                "or an unsupported scan. Re-export it as a text-based PDF and retry."
+            )
+        return ExtractedDocument(pages=[ExtractedPage(page_number=1, text=text)], page_count=1)
 
     async def retrieve_doc_pack(
         self,

@@ -22,14 +22,18 @@ export function AskMessage({ message }: { message: UIMessage }) {
 
   // Sources always close out an answer: hoist any `showCitations` tool parts to the end, regardless of
   // where the model emitted them, so the evidence panel reliably lands at the bottom of the turn.
+  // Key each part by its ORIGINAL index in `message.parts` (stable, append-only) rather than the
+  // filtered-list index — hoisting citations shifts the filtered index, and an unstable key remounts
+  // the streaming `<Response>`, producing the mid-stream flash/jump between text and components.
   const isCitation = (part: UIMessage["parts"][number]) =>
     isToolUIPart(part) && getToolName(part) === "showCitations";
-  const bodyParts = message.parts.filter((p) => !isCitation(p));
-  const citationParts = message.parts.filter(isCitation);
+  const indexed = message.parts.map((part, index) => ({ part, index }));
+  const bodyParts = indexed.filter(({ part }) => !isCitation(part));
+  const citationParts = indexed.filter(({ part }) => isCitation(part));
 
-  const renderPart = (part: UIMessage["parts"][number], i: number) => {
+  const renderPart = ({ part, index }: { part: UIMessage["parts"][number]; index: number }) => {
     if (part.type === "text") {
-      return part.text ? <Response key={`text-${i}`}>{part.text}</Response> : null;
+      return part.text ? <Response key={`text-${index}`}>{part.text}</Response> : null;
     }
     if (isToolUIPart(part)) {
       return (

@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
   Input,
 } from "@/ui";
+import { DocDetailSheet } from "./doc-detail-sheet";
 import { EditDocDialog } from "./edit-doc-dialog";
 import { ProjectSectionHeader } from "./project-section-header";
 import { UploadDocsDialog } from "./upload-docs-dialog";
@@ -211,6 +212,7 @@ function DocRow({
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const retry = useRetryProjectDoc(projectId);
 
   function handleRetry() {
@@ -221,7 +223,19 @@ function DocRow({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3 last:border-0">
+    // Clicking anywhere on the row (except the actions menu) opens the detail sheet.
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => setDetailOpen(true)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setDetailOpen(true);
+        }
+      }}
+      className="flex w-full cursor-pointer flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3 text-left transition-colors last:border-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
+    >
       {/* Identity */}
       <div className="flex min-w-0 flex-[2] items-center gap-3">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-coral-soft text-brand-coral">
@@ -258,8 +272,12 @@ function DocRow({
         )}
       </div>
 
-      {/* Status + actions */}
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      {/* Status + actions — its own clicks must not bubble up and open the detail sheet. */}
+      <div
+        className="ml-auto flex shrink-0 items-center gap-2"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         {doc.status === "failed" && doc.errorMessage && (
           <span
             title={doc.errorMessage}
@@ -304,6 +322,15 @@ function DocRow({
           </DropdownMenu>
         )}
       </div>
+
+      {/* Detail sheet is available to everyone (viewers included); management actions stay gated. */}
+      <DocDetailSheet
+        projectId={projectId}
+        doc={doc}
+        manageable={manageable}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
 
       {manageable && (
         <>

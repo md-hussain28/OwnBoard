@@ -1,4 +1,14 @@
+import type { NextRequest } from "next/server";
 import { proxyRequest } from "@/lib/api/proxy";
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; documentId: string }> },
+) {
+  const { id, documentId } = await params;
+  const body = await request.json();
+  return proxyRequest("patch", `/projects/${id}/docs/${documentId}`, { data: body });
+}
 
 export async function DELETE(
   _request: Request,

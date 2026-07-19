@@ -12,7 +12,12 @@ from onboard.api.dependency.service_container import ServiceContainer, get_servi
 from onboard.api.dependency.tenancy import CurrentOrgId
 from onboard.api.schema.doc_pack.request import RegisterUploadsRequest, SignedUploadRequest
 from onboard.api.schema.doc_pack.response import SignedUploadTargetResponse, SignedUploadUrlsResponse
-from onboard.api.schema.project.request import DocTypeCreateRequest, SetDocReposRequest, SetDocTypesRequest
+from onboard.api.schema.project.request import (
+    DocTypeCreateRequest,
+    DocUpdateRequest,
+    SetDocReposRequest,
+    SetDocTypesRequest,
+)
 from onboard.api.schema.project.response import ProjectDocsResponse, ProjectDocTypeResponse
 from onboard.services.doc_pack.doc_pack_service import ingest_document_background
 
@@ -107,6 +112,28 @@ async def retry_project_doc(
     document = await services.project.retry_doc(org_id, project_id, employee, document_id)
     background_tasks.add_task(ingest_document_background, org_id, document.id)
     return await services.project.get_docs(org_id, project_id, employee)
+
+
+@router.patch("/{project_id}/docs/{document_id}", response_model=ProjectDocsResponse)
+async def update_project_doc(
+    project_id: str,
+    document_id: str,
+    payload: DocUpdateRequest,
+    org_id: CurrentOrgId,
+    employee: CurrentEmployee,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Edit a document's metadata (title, context, type tags, repo attachments) in one request."""
+    return await services.project.update_doc(
+        org_id,
+        project_id,
+        employee,
+        document_id,
+        title=payload.title,
+        description=payload.description,
+        type_ids=payload.type_ids,
+        repo_ids=payload.repo_ids,
+    )
 
 
 @router.delete("/{project_id}/docs/{document_id}", status_code=204)

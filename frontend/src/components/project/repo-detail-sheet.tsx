@@ -62,6 +62,33 @@ function Section({
   );
 }
 
+/** Sync-state pill in the header: skeleton while the repo loads, then synced (+date) or not. */
+function SyncBadge({
+  isLoading,
+  synced,
+  ingestedAt,
+}: {
+  isLoading: boolean;
+  synced: boolean;
+  ingestedAt: string | null | undefined;
+}) {
+  if (isLoading) return <Skeleton className="h-5 w-24 rounded-full" />;
+  if (synced) {
+    return (
+      <Badge variant="success" className="gap-1">
+        <CheckCircle2Icon className="size-3" />
+        Synced
+        {ingestedAt ? ` · ${new Date(ingestedAt).toLocaleDateString()}` : ""}
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="gap-1">
+      <PlugZapIcon className="size-3" /> Not synced yet
+    </Badge>
+  );
+}
+
 /**
  * Right-hand detail sidebar for one linked repo: a quick surface for a repo's facts — sync state,
  * who's assigned, its reference docs, and Explore links. The heavy one-time sync setup (ingest
@@ -140,21 +167,7 @@ function RepoDetailBody({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {isLoading ? (
-            <Skeleton className="h-5 w-24 rounded-full" />
-          ) : synced ? (
-            <Badge variant="success" className="gap-1">
-              <CheckCircle2Icon className="size-3" />
-              Synced
-              {fullRepo?.ingestedAt
-                ? ` · ${new Date(fullRepo.ingestedAt).toLocaleDateString()}`
-                : ""}
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="gap-1">
-              <PlugZapIcon className="size-3" /> Not synced yet
-            </Badge>
-          )}
+          <SyncBadge isLoading={isLoading} synced={synced} ingestedAt={fullRepo?.ingestedAt} />
           <Badge variant="secondary">
             {repo.assignees.length} {repo.assignees.length === 1 ? "person" : "people"}
           </Badge>

@@ -230,6 +230,68 @@ class ProjectDocsMixin(ProjectServiceBase):
         pack = await self._ensure_kb_pack(org_id, project_id)
         await DocPackService(self.session).delete_document(org_id, pack.id, document_id)
 
+    async def _reconcile_doc_types(self, org_id: str, project_id: str, document_id: str, type_ids: list[str]) -> None:
+        """Reconcile a document's type links to exactly `type_ids` (project types only)."""
+        type_dao = ProjectDocTypeDAO(self.session)
+        link_dao = ProjectDocumentTypeDAO(self.session)
+        valid = {t.id for t in await type_dao.list_for_project(project_id)}
+        target = {t for t in type_ids if t in valid}
+        current = {link.doc_type_id: link for link in await link_dao.list_for_document(document_id)}
+        for type_id in target - set(current):
+            await link_dao.create(org_id=org_id, document_id=document_id, doc_type_id=type_id)
+        for type_id, link in current.items():
+            if type_id not in target:
+                await link_dao.delete(link.id)
+
+    async def _reconcile_doc_repos(self, org_id: str, project_id: str, document_id: str, repo_ids: list[str]) -> None:
+        """Reconcile a document's repo attachments to exactly `repo_ids` (project-linked repos only)."""
+        repo_link_dao = ProjectDocumentRepoDAO(self.session)
+        valid = {pr.repo_id for pr in await self.repo_link_dao.list_for_project(project_id)}
+        target = {r for r in repo_ids if r in valid}
+        current = {link.repo_id: link for link in await repo_link_dao.list_for_document(document_id)}
+        for repo_id in target - set(current):
+            await repo_link_dao.create(org_id=org_id, document_id=document_id, repo_id=repo_id)
+        for repo_id, link in current.items():
+            if repo_id not in target:
+                await repo_link_dao.delete(link.id)
+
+    async def update_doc(
+        self,
+        org_id: str,
+        project_id: str,
+        viewer: Employee,
+        document_id: str,
+        title: str | None = None,
+        description: str | None = None,
+        type_ids: list[str] | None = None,
+        repo_ids: list[str] | None = None,
+    ) -> ProjectDocsResponse:
+        """Edit a KB document's metadata in one shot — title/context plus its type tags and repo
+        attachments. `None` means "leave unchanged"; an empty description string clears it."""
+        project = await self._get_project(org_id, project_id)
+        await self._assert_can_manage(project, viewer)
+        pack = await self._ensure_kb_pack(org_id, project_id)
+
+        document_dao = DocPackDocumentDAO(self.session)
+        if await document_dao.get_by_id_for_pack(pack.id, document_id) is None:
+            raise NotFoundError(f"Document {document_id} not found")
+
+        updates: dict = {}
+        if title is not None:
+            cleaned_title = title.strip()
+            if not cleaned_title:
+                raise ValidationError("Title cannot be empty")
+            updates["title"] = cleaned_title
+        if description is not None:
+            updates["description"] = description.strip() or None
+        if updates:
+            await document_dao.update(document_id, **updates)
+        if type_ids is not None:
+            await self._reconcile_doc_types(org_id, project_id, document_id, type_ids)
+        if repo_ids is not None:
+            await self._reconcile_doc_repos(org_id, project_id, document_id, repo_ids)
+        return await self.get_docs(org_id, project_id, viewer)
+
     async def set_document_types(
         self, org_id: str, project_id: str, viewer: Employee, document_id: str, type_ids: list[str]
     ) -> ProjectDocsResponse:
@@ -242,16 +304,7 @@ class ProjectDocsMixin(ProjectServiceBase):
         if await document_dao.get_by_id_for_pack(pack.id, document_id) is None:
             raise NotFoundError(f"Document {document_id} not found")
 
-        type_dao = ProjectDocTypeDAO(self.session)
-        link_dao = ProjectDocumentTypeDAO(self.session)
-        valid = {t.id for t in await type_dao.list_for_project(project_id)}
-        target = {t for t in type_ids if t in valid}
-        current = {link.doc_type_id: link for link in await link_dao.list_for_document(document_id)}
-        for type_id in target - set(current):
-            await link_dao.create(org_id=org_id, document_id=document_id, doc_type_id=type_id)
-        for type_id, link in current.items():
-            if type_id not in target:
-                await link_dao.delete(link.id)
+        await self._reconcile_doc_types(org_id, project_id, document_id, type_ids)
         return await self.get_docs(org_id, project_id, viewer)
 
     async def set_document_repos(
@@ -266,15 +319,7 @@ class ProjectDocsMixin(ProjectServiceBase):
         if await document_dao.get_by_id_for_pack(pack.id, document_id) is None:
             raise NotFoundError(f"Document {document_id} not found")
 
-        repo_link_dao = ProjectDocumentRepoDAO(self.session)
-        valid = {pr.repo_id for pr in await self.repo_link_dao.list_for_project(project_id)}
-        target = {r for r in repo_ids if r in valid}
-        current = {link.repo_id: link for link in await repo_link_dao.list_for_document(document_id)}
-        for repo_id in target - set(current):
-            await repo_link_dao.create(org_id=org_id, document_id=document_id, repo_id=repo_id)
-        for repo_id, link in current.items():
-            if repo_id not in target:
-                await repo_link_dao.delete(link.id)
+        await self._reconcile_doc_repos(org_id, project_id, document_id, repo_ids)
         return await self.get_docs(org_id, project_id, viewer)
 
     # ---- types -------------------------------------------------------------

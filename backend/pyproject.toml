@@ -51,8 +51,10 @@ ignore = ["UP046", "UP042"]
 "onboard/dao/models/*.py" = ["F821"]
 "alembic/versions/*.py" = ["E501", "I001", "UP035", "UP007"]
 # Prompt/spec-definition files: long natural-language tool descriptions + system prompts read best unwrapped.
-"onboard/services/project_chat/project_chat_service.py" = ["E501"]
-"onboard/services/admin_assistant/admin_assistant_service.py" = ["E501"]
+"onboard/services/project_chat/tools.py" = ["E501"]
+"onboard/services/project_chat/prompting.py" = ["E501"]
+"onboard/services/admin_assistant/tools.py" = ["E501"]
+"onboard/services/admin_assistant/prompting.py" = ["E501"]
 
 [build-system]
 requires = ["hatchling"]

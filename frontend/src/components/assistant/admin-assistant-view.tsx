@@ -12,7 +12,7 @@ import {
   UsersRoundIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { AskFollowupProvider, AskMessage, AskThinking } from "@/components/ask";
+import { AskFollowupProvider } from "@/components/ask";
 import { PageTourNudge } from "@/components/tour";
 import { Button } from "@/ui";
 import {
@@ -27,6 +27,8 @@ import {
   Suggestion,
   Suggestions,
 } from "@/ui/ai-elements";
+import { AssistantMessage } from "./assistant-message";
+import { AssistantThinking } from "./assistant-thinking";
 
 /**
  * Admin "AI Assistant" — a generative-UI chat that answers org-wide onboarding analytics AND performs
@@ -167,7 +169,13 @@ function AssistantChat() {
   const last = messages[messages.length - 1];
   const lastAssistantEmpty =
     last?.role === "assistant" &&
-    !last.parts.some((p) => (p.type === "text" && p.text) || p.type.startsWith("tool-"));
+    !last.parts.some(
+      (p) =>
+        (p.type === "text" && p.text) ||
+        p.type.startsWith("tool-") ||
+        // A streamed agent step means work is visibly underway — hand off to the live timeline.
+        p.type === "data-action",
+    );
   const waitingForAnswer = busy && (last?.role !== "assistant" || lastAssistantEmpty);
   const visibleMessages =
     waitingForAnswer && last?.role === "assistant" ? messages.slice(0, -1) : messages;
@@ -212,10 +220,10 @@ function AssistantChat() {
             {messages.length === 0 ? (
               <EmptyState onPick={submit} />
             ) : (
-              visibleMessages.map((m) => <AskMessage key={m.id} message={m} />)
+              visibleMessages.map((m) => <AssistantMessage key={m.id} message={m} />)
             )}
 
-            {waitingForAnswer && <AskThinking className="w-full py-1" />}
+            {waitingForAnswer && <AssistantThinking className="w-full py-1" />}
 
             {error && (
               <div className="flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive">

@@ -192,6 +192,21 @@ export const projectService = {
     return projectDocsSchema.parse(data);
   },
 
+  /** Edit a document's metadata in one request. Omitted fields are left unchanged. */
+  async updateDoc(
+    id: string,
+    documentId: string,
+    changes: { title?: string; description?: string; typeIds?: string[]; repoIds?: string[] },
+  ): Promise<ProjectDocs> {
+    const { data } = await getApiClient().patch(API_ENDPOINTS.projectDoc(id, documentId), {
+      title: changes.title ?? null,
+      description: changes.description ?? null,
+      type_ids: changes.typeIds ?? null,
+      repo_ids: changes.repoIds ?? null,
+    });
+    return projectDocsSchema.parse(data);
+  },
+
   async deleteDoc(id: string, documentId: string): Promise<void> {
     await getApiClient().delete(API_ENDPOINTS.projectDoc(id, documentId));
   },

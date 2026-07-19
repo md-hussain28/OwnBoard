@@ -159,7 +159,8 @@ export function ProjectOverviewTab({ project }: { project: ProjectDetail }) {
   const notStarted = roster.filter((m) => readinessLabel(m.readiness) === "locked");
 
   const rosterByAttention = [...roster].sort(
-    (a, b) => READINESS_RANK[readinessLabel(a.readiness)] - READINESS_RANK[readinessLabel(b.readiness)],
+    (a, b) =>
+      READINESS_RANK[readinessLabel(a.readiness)] - READINESS_RANK[readinessLabel(b.readiness)],
   );
   const tracks = [...project.tracks].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
 
@@ -195,7 +196,11 @@ export function ProjectOverviewTab({ project }: { project: ProjectDetail }) {
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-0.5">
               <LegendCount dot="bg-success" value={ready.length} label="ready" />
               <LegendCount dot="bg-warning" value={inProgress.length} label="in progress" />
-              <LegendCount dot="bg-muted-foreground/50" value={notStarted.length} label="not started" />
+              <LegendCount
+                dot="bg-muted-foreground/50"
+                value={notStarted.length}
+                label="not started"
+              />
             </div>
           )}
         </div>

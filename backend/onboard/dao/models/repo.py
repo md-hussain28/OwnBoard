@@ -25,11 +25,19 @@ class Repo(AuditBase):
     ingested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     organization: Mapped["Organization"] = relationship(back_populates="repos")
-    contributors: Mapped[list["Contributor"]] = relationship(back_populates="repo", cascade="all, delete-orphan")
-    file_expertise_entries: Mapped[list["FileExpertise"]] = relationship(
-        back_populates="repo", cascade="all, delete-orphan"
+    # passive_deletes: child FKs are ON DELETE CASCADE — a fully ingested repo can hold tens of
+    # thousands of commits/chunks (with embeddings); repo delete must not hydrate them all.
+    contributors: Mapped[list["Contributor"]] = relationship(
+        back_populates="repo", cascade="all, delete-orphan", passive_deletes=True
     )
-    commit_records: Mapped[list["CommitRecord"]] = relationship(back_populates="repo", cascade="all, delete-orphan")
-    code_chunks: Mapped[list["CodeChunk"]] = relationship(back_populates="repo", cascade="all, delete-orphan")
+    file_expertise_entries: Mapped[list["FileExpertise"]] = relationship(
+        back_populates="repo", cascade="all, delete-orphan", passive_deletes=True
+    )
+    commit_records: Mapped[list["CommitRecord"]] = relationship(
+        back_populates="repo", cascade="all, delete-orphan", passive_deletes=True
+    )
+    code_chunks: Mapped[list["CodeChunk"]] = relationship(
+        back_populates="repo", cascade="all, delete-orphan", passive_deletes=True
+    )
     # Projects linking to this repo; repo delete sets project.repo_id NULL (SET NULL), it does not delete them.
     projects: Mapped[list["Project"]] = relationship(back_populates="repo")

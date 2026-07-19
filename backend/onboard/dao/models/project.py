@@ -67,14 +67,24 @@ class Project(AuditBase):
 
     organization: Mapped["Organization"] = relationship(back_populates="projects")
     repo: Mapped["Repo | None"] = relationship(back_populates="projects")
-    members: Mapped[list["ProjectMember"]] = relationship(back_populates="project", cascade="all, delete-orphan")
-    # Project-specific onboarding tracks (general/company tracks have project_id = NULL).
-    tracks: Mapped[list["DocPack"]] = relationship(back_populates="project", cascade="all, delete-orphan")
-    repos: Mapped[list["ProjectRepo"]] = relationship(back_populates="project", cascade="all, delete-orphan")
-    function_types: Mapped[list["ProjectFunctionType"]] = relationship(
-        back_populates="project", cascade="all, delete-orphan"
+    # passive_deletes: child FKs are ON DELETE CASCADE — deleting a project must not pull its
+    # whole tree (tracks → documents → chunks + embeddings) into ORM memory on the 512MB host.
+    members: Mapped[list["ProjectMember"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
     )
-    modules: Mapped[list["ProjectModule"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    # Project-specific onboarding tracks (general/company tracks have project_id = NULL).
+    tracks: Mapped[list["DocPack"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    repos: Mapped[list["ProjectRepo"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    function_types: Mapped[list["ProjectFunctionType"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    modules: Mapped[list["ProjectModule"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class ProjectRepo(AuditBase):
@@ -97,7 +107,7 @@ class ProjectRepo(AuditBase):
     project: Mapped["Project"] = relationship(back_populates="repos")
     repo: Mapped["Repo"] = relationship()
     members: Mapped[list["ProjectRepoMember"]] = relationship(
-        back_populates="project_repo", cascade="all, delete-orphan"
+        back_populates="project_repo", cascade="all, delete-orphan", passive_deletes=True
     )
 
 

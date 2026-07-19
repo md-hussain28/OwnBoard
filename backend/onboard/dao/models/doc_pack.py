@@ -106,18 +106,27 @@ class DocPack(AuditBase):
     organization: Mapped["Organization"] = relationship(back_populates="doc_packs")
     project: Mapped["Project | None"] = relationship(back_populates="tracks")
     domain: Mapped["QuizDomain | None"] = relationship(back_populates="doc_packs")
-    documents: Mapped[list["DocPackDocument"]] = relationship(back_populates="doc_pack", cascade="all, delete-orphan")
-    chunks: Mapped[list["DocChunk"]] = relationship(back_populates="doc_pack", cascade="all, delete-orphan")
-    assignments: Mapped[list["PackAssignment"]] = relationship(back_populates="doc_pack", cascade="all, delete-orphan")
+    # passive_deletes: every child FK below is ON DELETE CASCADE, so let Postgres delete them —
+    # without it the ORM loads every child row (incl. all chunks + their 1536-dim embeddings)
+    # into memory on pack delete, which can OOM the 512MB host.
+    documents: Mapped[list["DocPackDocument"]] = relationship(
+        back_populates="doc_pack", cascade="all, delete-orphan", passive_deletes=True
+    )
+    chunks: Mapped[list["DocChunk"]] = relationship(
+        back_populates="doc_pack", cascade="all, delete-orphan", passive_deletes=True
+    )
+    assignments: Mapped[list["PackAssignment"]] = relationship(
+        back_populates="doc_pack", cascade="all, delete-orphan", passive_deletes=True
+    )
     audience_domains: Mapped[list["DocPackAudienceDomain"]] = relationship(
-        back_populates="doc_pack", cascade="all, delete-orphan"
+        back_populates="doc_pack", cascade="all, delete-orphan", passive_deletes=True
     )
     # Project-module union targeting rules (see DocPackTargetDomain / DocPackTargetRepo).
     target_domains: Mapped[list["DocPackTargetDomain"]] = relationship(
-        back_populates="doc_pack", cascade="all, delete-orphan"
+        back_populates="doc_pack", cascade="all, delete-orphan", passive_deletes=True
     )
     target_repos: Mapped[list["DocPackTargetRepo"]] = relationship(
-        back_populates="doc_pack", cascade="all, delete-orphan"
+        back_populates="doc_pack", cascade="all, delete-orphan", passive_deletes=True
     )
 
 
@@ -215,7 +224,9 @@ class DocPackDocument(AuditBase):
     created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     doc_pack: Mapped["DocPack"] = relationship(back_populates="documents")
-    chunks: Mapped[list["DocChunk"]] = relationship(back_populates="document", cascade="all, delete-orphan")
+    chunks: Mapped[list["DocChunk"]] = relationship(
+        back_populates="document", cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class DocChunk(AuditBase):
@@ -275,7 +286,9 @@ class PackAssignment(AuditBase):
 
     doc_pack: Mapped["DocPack"] = relationship(back_populates="assignments")
     employee: Mapped["Employee"] = relationship(back_populates="pack_assignments")
-    acks: Mapped[list["PackAssignmentAck"]] = relationship(back_populates="assignment", cascade="all, delete-orphan")
+    acks: Mapped[list["PackAssignmentAck"]] = relationship(
+        back_populates="assignment", cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class PackAssignmentAck(AuditBase):

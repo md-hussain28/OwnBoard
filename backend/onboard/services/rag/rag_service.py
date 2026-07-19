@@ -207,8 +207,9 @@ class RAGService:
         SQLAlchemy bind processor unchanged, so rows can carry it directly.
         """
         embeddings: list[Vector] = []
-        texts = [context + draft.content for draft in drafts]
-        for start in range(0, len(texts), EMBEDDING_BATCH_SIZE):
-            batch = texts[start : start + EMBEDDING_BATCH_SIZE]
+        # Build each batch's texts just-in-time: materializing context+content for every chunk up
+        # front duplicates the whole document's text on top of the drafts.
+        for start in range(0, len(drafts), EMBEDDING_BATCH_SIZE):
+            batch = [context + draft.content for draft in drafts[start : start + EMBEDDING_BATCH_SIZE]]
             embeddings.extend(Vector(vector) for vector in await self.llm.embed_batch(batch))
         return embeddings

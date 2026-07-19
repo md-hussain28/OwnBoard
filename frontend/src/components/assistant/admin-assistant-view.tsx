@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AskFollowupProvider, AskMessage, AskThinking } from "@/components/ask";
+import { PageTourNudge } from "@/components/tour";
 import { Button } from "@/ui";
 import {
   Conversation,
@@ -265,6 +266,7 @@ function AssistantChat() {
 export function AdminAssistantView() {
   return (
     <div className="flex h-[calc(100svh-7rem)] flex-col">
+      <PageTourNudge featureId="assistant" />
       <AssistantChat />
     </div>
   );

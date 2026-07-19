@@ -11,11 +11,12 @@ const plusJakarta = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-/** Soft optical serif — OwnBoard wordmark only (pairs with Jakarta UI sans). */
+/** Soft optical serif — OwnBoard wordmark + marketing voice moments (pairs with Jakarta UI sans). */
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
 const geistMono = Geist_Mono({
@@ -42,10 +43,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${plusJakarta.variable} ${fraunces.variable} ${geistMono.variable} antialiased`}
-      >
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${plusJakarta.variable} ${fraunces.variable} ${geistMono.variable}`}
+    >
+      <body className="antialiased">
         <ThemeProvider>
           <AppClerkProvider>
             <QueryProvider>{children}</QueryProvider>

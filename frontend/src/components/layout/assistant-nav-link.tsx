@@ -47,8 +47,8 @@ export function AssistantNavLink({ collapsed }: { collapsed: boolean }) {
         "border outline-hidden transition-[color,background-color,border-color] duration-150 ease-out",
         "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         active
-          ? "border-brand-honey/40 bg-brand-honey-soft shadow-soft"
-          : "border-transparent bg-sidebar-accent/40 hover:border-brand-honey/25 hover:bg-brand-honey-soft/60",
+          ? "border-brand-honey/40 bg-brand-honey/15 shadow-soft"
+          : "border-transparent bg-sidebar-accent/40 hover:border-brand-honey/25 hover:bg-brand-honey/10",
       )}
     >
       <span

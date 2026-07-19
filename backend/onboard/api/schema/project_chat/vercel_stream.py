@@ -80,6 +80,28 @@ async def to_ui_message_stream(events: AsyncIterator[dict]) -> AsyncIterator[str
                     }
                 )
 
+            elif kind == "action":
+                # An executed action step (admin assistant). Emitted as a reconcilable AI SDK data
+                # part keyed by the tool-call id: the `running` frame then the `done` frame carry the
+                # same id, so `useChat` updates the step in place instead of appending a second one.
+                closing = close_text()
+                if closing:
+                    yield closing
+                yield _frame(
+                    {
+                        "type": "data-action",
+                        "id": event.get("id") or f"act-{uuid.uuid4().hex}",
+                        "data": {
+                            "name": event.get("name"),
+                            "kind": event.get("kind") or "read",
+                            "phase": event.get("phase") or "running",
+                            "title": event.get("title"),
+                            "ok": event.get("ok"),
+                            "summary": event.get("summary"),
+                        },
+                    }
+                )
+
             elif kind == "error":
                 closing = close_text()
                 if closing:

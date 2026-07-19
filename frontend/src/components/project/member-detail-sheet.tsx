@@ -7,7 +7,7 @@ import {
   useRemoveProjectMember,
   useUpdateProjectMember,
 } from "@/hooks/queries/project";
-import { notify } from "@/lib";
+import { isDraftId, notify } from "@/lib";
 import type { ProjectFunctionType, ProjectMember } from "@/schemas";
 import {
   Badge,
@@ -63,7 +63,8 @@ export function MemberDetailSheet({
   if (!member) return null;
 
   function setFunction(value: string) {
-    if (!member) return;
+    // A draft (`new_…`) id is an optimistic role row not yet persisted — the backend would 422.
+    if (!member || isDraftId(value)) return;
     update.mutate(
       { employeeId: member.employeeId, input: { functionTypeId: value } },
       { onError: (err) => notify.apiError(err, "Could not set domain") },
@@ -214,8 +215,9 @@ export function MemberDetailSheet({
                 </SelectTrigger>
                 <SelectContent>
                   {functionTypes.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
+                    <SelectItem key={t.id} value={t.id} disabled={isDraftId(t.id)}>
                       {t.name}
+                      {isDraftId(t.id) ? " (saving…)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

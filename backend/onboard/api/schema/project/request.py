@@ -91,6 +91,16 @@ class DocTypeCreateRequest(BaseModel):
     sort_order: int = 0
 
 
+class DocUpdateRequest(BaseModel):
+    """Partial edit of a KB document's metadata. `None` means "leave unchanged"; an empty
+    description clears it; `type_ids`/`repo_ids` reconcile the links to exactly the given ids."""
+
+    title: str | None = Field(default=None, max_length=255)
+    description: str | None = None
+    type_ids: list[str] | None = None
+    repo_ids: list[str] | None = None
+
+
 class SetDocTypesRequest(BaseModel):
     """Set a document's type tags to exactly these project doc-type ids."""
 

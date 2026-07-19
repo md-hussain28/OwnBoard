@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import PurePosixPath
@@ -8,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from onboard.config.constants import (
     ALLOWED_DOC_PACK_EXTENSIONS,
     DOC_INGEST_STALE_AFTER_SECONDS,
-    MAX_DOC_INGEST_ATTEMPTS,
     MAX_DOC_PACK_FILE_SIZE_BYTES,
     MAX_DOC_PACK_FILES_PER_UPLOAD,
 )
@@ -190,7 +190,7 @@ class DocPackService:
     def _validate_file_meta(self, filename: str, size: int) -> str:
         """Validate one file's name + byte size against the allow-list and size cap; return its
         normalized extension. Shared by the (legacy) server-side upload and the direct-to-storage
-        flow so the 20MB / PDF-only rules can't drift apart."""
+        flow so the size-cap / PDF-only rules can't drift apart."""
         extension = _extension_for(filename)
         if extension not in ALLOWED_DOC_PACK_EXTENSIONS:
             raise ValidationError(f"Unsupported file type: {filename}")
@@ -198,7 +198,10 @@ class DocPackService:
             raise ValidationError(f"Empty file: {filename}")
         if size > MAX_DOC_PACK_FILE_SIZE_BYTES:
             limit_mb = MAX_DOC_PACK_FILE_SIZE_BYTES // (1024 * 1024)
-            raise ValidationError(f"{filename} is too large — the limit is {limit_mb} MB per file")
+            raise ValidationError(
+                f"{filename} is over {limit_mb} MB — big file, small budget. "
+                f"Our server lifts up to {limit_mb} MB per file; split or compress it and retry."
+            )
         return extension
 
     async def create_upload_urls(
@@ -343,15 +346,15 @@ class DocPackService:
 
         return created
 
-    async def get_ingest_status(self, org_id: str, pack_id: str) -> tuple[Sequence[Any], list[str]]:
-        """Lightweight status rows for polling, plus ids of stale documents to requeue.
+    async def get_ingest_status(self, org_id: str, pack_id: str) -> Sequence[Any]:
+        """Lightweight status rows for polling.
 
         Ingestion runs as an in-process background task, so a host restart/OOM mid-ingest strands
-        the document in `uploaded`/`processing` with nothing to resume it. Since this endpoint is
-        polled anyway, it doubles as the recovery loop: documents that haven't moved within the
-        stale window are re-claimed here (bumping `updated_at` so concurrent polls don't double
-        -requeue) and returned for the router to reschedule; documents that already burned
-        `MAX_DOC_INGEST_ATTEMPTS` are marked failed so the UI stops showing them as in-progress.
+        the document in `uploaded`/`processing` with nothing to resume it. Documents that haven't
+        moved within the stale window are marked failed here so the UI stops showing them as
+        in-progress — but nothing is EVER restarted automatically: an interrupted ingest could be
+        what killed the host (OOM), and auto-requeue turns one crash into a crash loop. Recovery
+        is the admin-facing retry endpoint, on purpose.
         """
         if not await self.pack_dao.exists_for_org(org_id, pack_id):
             raise NotFoundError(f"Doc pack {pack_id} not found")
@@ -364,24 +367,40 @@ class DocPackService:
             if row.status in (DocumentStatus.uploaded, DocumentStatus.processing) and row.updated_at < cutoff
         ]
         if not stale:
-            return rows, []
+            return rows
 
-        requeue_ids: list[str] = []
         for row in stale:
-            if row.ingest_attempts >= MAX_DOC_INGEST_ATTEMPTS:
-                await self.document_dao.update(
-                    row.id,
-                    status=DocumentStatus.failed,
-                    error_message="Ingestion was interrupted repeatedly — delete this document and re-upload it.",
-                )
-                logger.warning("doc_ingest_gave_up document_id=%s attempts=%s", row.id, row.ingest_attempts)
-            else:
-                await self.document_dao.update(row.id, status=DocumentStatus.processing)
-                requeue_ids.append(row.id)
-                logger.info("doc_ingest_requeued document_id=%s attempts=%s", row.id, row.ingest_attempts)
+            await self.document_dao.update(
+                row.id,
+                status=DocumentStatus.failed,
+                error_message="Ingestion was interrupted (likely a server restart) — use Retry to run it again.",
+            )
+            logger.warning("doc_ingest_marked_stale_failed document_id=%s attempts=%s", row.id, row.ingest_attempts)
 
-        rows = await self.document_dao.list_status_for_pack(org_id, pack_id)
-        return rows, requeue_ids
+        return await self.document_dao.list_status_for_pack(org_id, pack_id)
+
+    async def retry_document(self, org_id: str, pack_id: str, document_id: str) -> DocPackDocument:
+        """Re-queue a failed document for ingestion (extract → chunk → embed).
+
+        This is the ONLY way a failed document runs again — stale/failed docs are never
+        auto-restarted (see `get_ingest_status`). Resets the attempt counter and flips the status
+        to `processing` immediately so a poll between this call and the background task starting
+        doesn't show the document as failed. Caller schedules `ingest_document_background`.
+        """
+        pack = await self.get_pack(org_id, pack_id)
+        document = await self.document_dao.get_by_id_for_pack(pack.id, document_id)
+        if document is None:
+            raise NotFoundError(f"Document {document_id} not found")
+        if document.status != DocumentStatus.failed:
+            raise ValidationError("Only failed documents can be retried")
+        updated = await self.document_dao.update(
+            document.id,
+            status=DocumentStatus.processing,
+            error_message=None,
+            ingest_attempts=0,
+        )
+        assert updated is not None
+        return updated
 
     async def delete_document(self, org_id: str, pack_id: str, document_id: str) -> None:
         pack = await self.get_pack(org_id, pack_id)
@@ -401,11 +420,18 @@ class DocPackService:
         return await self.rag.ingest_doc_pack_document(org_id, document_id)
 
 
+# One document at a time: extraction + embedding of a single 5MB PDF can briefly use a large
+# fraction of the 512MB / 0.1-CPU host, so concurrent ingests (multi-file batch, two admins,
+# stale-requeue overlap) OOM the instance — which kills every in-flight ingest and makes the
+# requeue loop reschedule them, repeating the crash. Queued tasks wait here holding no session.
+_ingest_semaphore = asyncio.Semaphore(1)
+
+
 async def ingest_document_background(org_id: str, document_id: str) -> None:
     """Background entrypoint: opens its own DB session (request session is already closed)."""
     factory = get_session_factory()
     error: str | None = None
-    async with factory() as session:
+    async with _ingest_semaphore, factory() as session:
         service = DocPackService(session)
         try:
             count = await service.ingest_document(org_id, document_id)

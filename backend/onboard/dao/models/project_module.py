@@ -59,9 +59,11 @@ class ProjectModule(AuditBase):
     created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     project: Mapped["Project"] = relationship(back_populates="modules")
-    type_links: Mapped[list["ProjectModuleType"]] = relationship(back_populates="module", cascade="all, delete-orphan")
+    type_links: Mapped[list["ProjectModuleType"]] = relationship(
+        back_populates="module", cascade="all, delete-orphan", passive_deletes=True
+    )
     assignments: Mapped[list["ProjectModuleAssignment"]] = relationship(
-        back_populates="module", cascade="all, delete-orphan"
+        back_populates="module", cascade="all, delete-orphan", passive_deletes=True
     )
 
 

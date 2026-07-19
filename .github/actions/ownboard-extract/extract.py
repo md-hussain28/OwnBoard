@@ -34,9 +34,12 @@ CODE_EXTENSIONS = {
 }
 CHUNK_LINES = 120
 CHUNK_OVERLAP = 20
+# Keep the worst-case snapshot comfortably inside the backend's request-body cap
+# (MAX_REQUEST_BODY_BYTES, 30MB) and its INGEST_MAX_CHUNKS reject-cap (3000) — the API runs on a
+# 512MB host and parses the whole payload in memory.
 MAX_FILES = 1500
-MAX_CHUNKS = 6000
-MAX_CHUNK_CHARS = 12000
+MAX_CHUNKS = 2500
+MAX_CHUNK_CHARS = 8000
 
 
 def _git(*args: str) -> str:

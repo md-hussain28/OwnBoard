@@ -44,37 +44,20 @@ import {
   AskCommandsBlock,
   AskFaqBlock,
   AskFileTreeBlock,
-  AskFlashcardsBlock,
   AskKeyValueBlock,
   AskPeopleBlock,
-  AskQuizBlock,
-  AskResourcesBlock,
-  AskTabsBlock,
 } from "./ask-blocks";
 import { AskChart } from "./ask-chart";
 import { AskCitationsBlock } from "./ask-citations";
-import {
-  AskAccordionBlock,
-  AskActionsBlock,
-  AskBadgesBlock,
-  AskFlowBlock,
-  AskGlossaryBlock,
-  AskKeyTakeawaysBlock,
-  AskProgressBlock,
-  AskQuoteBlock,
-  AskRatingBlock,
-  AskStepsBlock,
-  AskTableBlock,
-  AskTreeBlock,
-} from "./ask-extras";
+import { AskProgressBlock, AskRatingBlock, AskStepsBlock, AskTableBlock } from "./ask-extras";
+import { AskFlowBlock, AskTreeBlock } from "./ask-graphs";
+import { AskConfidenceCheckBlock, AskDecisionTreeBlock, AskProsConsBlock } from "./ask-interactive";
+import { AskFlashcardsBlock, AskQuizBlock, AskResourcesBlock, AskTabsBlock } from "./ask-learning";
 import {
   AskAnnotatedCodeBlock,
   AskApiEndpointBlock,
-  AskConfidenceCheckBlock,
-  AskDecisionTreeBlock,
   AskDiffBlock,
   AskEnvVarsBlock,
-  AskProsConsBlock,
 } from "./ask-more";
 import {
   AskCalloutBlock,
@@ -84,6 +67,14 @@ import {
   AskMetricsBlock,
   AskTimelineBlock,
 } from "./ask-visuals";
+import {
+  AskAccordionBlock,
+  AskActionsBlock,
+  AskBadgesBlock,
+  AskGlossaryBlock,
+  AskKeyTakeawaysBlock,
+  AskQuoteBlock,
+} from "./ask-widgets";
 
 const LABEL: Record<AskToolName, string> = {
   showMetrics: "Summarizing the numbers…",

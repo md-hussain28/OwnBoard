@@ -1,6 +1,7 @@
 import asyncio
 from dataclasses import dataclass
 
+from pgvector import Vector
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from onboard.config.constants import EMBEDDING_BATCH_SIZE
@@ -63,7 +64,7 @@ class RAGService:
             # Prefix with the path so retrieval can match on filename cues, not just body text.
             vectors = await self.llm.embed_batch([f"{c.file_path}\n\n{c.content}" for c in batch])
             for chunk, vector in zip(batch, vectors, strict=True):
-                chunk.embedding = vector
+                chunk.embedding = Vector(vector)  # float32 array, ~8x smaller than the raw list
             embedded += len(batch)
         await self.session.commit()
         return embedded
@@ -89,6 +90,13 @@ class RAGService:
         if pack is None:
             raise NotFoundError(f"Doc pack {document.doc_pack_id} not found")
 
+        # Duplicate schedules happen (a stale-requeue can race an ingest that was merely queued
+        # behind the ingest semaphore, not dead). Every scheduler flips status away from
+        # `processed` first, so a processed doc here is always a duplicate — skip the
+        # download/extract/embed instead of paying for it twice.
+        if document.status == DocumentStatus.processed:
+            return await self.doc_chunk_dao.count_for_document(document.id)
+
         await self.document_dao.update(
             document.id,
             status=DocumentStatus.processing,
@@ -103,7 +111,10 @@ class RAGService:
             # the (single-worker, 0.1-CPU) host keeps answering health checks during ingestion —
             # a blocked loop gets the instance restarted, killing the ingest task mid-flight.
             extracted = await asyncio.to_thread(extract_document, raw, document.file_type)
+            del raw  # 512MB host: don't hold the file bytes through chunking + embedding
             drafts = await asyncio.to_thread(chunk_extracted_document, extracted)
+            page_count = extracted.page_count
+            del extracted  # page texts are duplicated into the drafts; free the originals
             if not drafts:
                 raise ValidationError("No chunks produced from document")
 
@@ -128,14 +139,14 @@ class RAGService:
                 }
                 for draft, embedding in zip(drafts, embeddings, strict=True)
             ]
-            chunks = await self.doc_chunk_dao.replace_for_document(document.id, rows)
+            count = await self.doc_chunk_dao.replace_for_document(document.id, rows)
             await self.document_dao.update(
                 document.id,
                 status=DocumentStatus.processed,
-                page_count=extracted.page_count,
+                page_count=page_count,
                 error_message=None,
             )
-            return len(chunks)
+            return count
         except Exception as exc:
             # If the failure was a DB error the session holds a poisoned transaction — roll it
             # back first or this status write would raise too, stranding the doc in `processing`.
@@ -187,10 +198,18 @@ class RAGService:
             lines.append(f"Context: {description.strip()}")
         return ("\n".join(lines) + "\n\n") if lines else ""
 
-    async def _embed_drafts(self, drafts: list[ChunkDraft], context: str = "") -> list[list[float]]:
-        embeddings: list[list[float]] = []
-        texts = [context + draft.content for draft in drafts]
-        for start in range(0, len(texts), EMBEDDING_BATCH_SIZE):
-            batch = texts[start : start + EMBEDDING_BATCH_SIZE]
-            embeddings.extend(await self.llm.embed_batch(batch))
+    async def _embed_drafts(self, drafts: list[ChunkDraft], context: str = "") -> list[Vector]:
+        """Batch-embed chunk texts, holding each vector as a pgvector `Vector` (float32 array).
+
+        A 1536-dim embedding as a Python list of floats is ~50KB; as `Vector` it's ~6KB. A large
+        PDF produces hundreds of chunks, so keeping the raw lists alive until the DB insert was
+        one of the bigger ingest memory spikes on the 512MB host. `Vector` passes through the
+        SQLAlchemy bind processor unchanged, so rows can carry it directly.
+        """
+        embeddings: list[Vector] = []
+        # Build each batch's texts just-in-time: materializing context+content for every chunk up
+        # front duplicates the whole document's text on top of the drafts.
+        for start in range(0, len(drafts), EMBEDDING_BATCH_SIZE):
+            batch = [context + draft.content for draft in drafts[start : start + EMBEDDING_BATCH_SIZE]]
+            embeddings.extend(Vector(vector) for vector in await self.llm.embed_batch(batch))
         return embeddings

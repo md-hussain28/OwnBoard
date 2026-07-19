@@ -36,7 +36,9 @@ class Employee(AuditBase):
 
     organization: Mapped["Organization"] = relationship(back_populates="employees")
     domain: Mapped["OrgDomain | None"] = relationship(back_populates="employees")
-    quiz_attempts: Mapped[list["QuizAttempt"]] = relationship(back_populates="employee", cascade="all, delete-orphan")
+    quiz_attempts: Mapped[list["QuizAttempt"]] = relationship(
+        back_populates="employee", cascade="all, delete-orphan", passive_deletes=True
+    )
     pack_assignments: Mapped[list["PackAssignment"]] = relationship(
-        back_populates="employee", cascade="all, delete-orphan"
+        back_populates="employee", cascade="all, delete-orphan", passive_deletes=True
     )

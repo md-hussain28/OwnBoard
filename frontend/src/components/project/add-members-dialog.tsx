@@ -9,7 +9,7 @@ import {
   useProjectFunctionTypes,
   useProjectMembers,
 } from "@/hooks/queries/project";
-import { cn, notify } from "@/lib";
+import { cn, isDraftId, notify } from "@/lib";
 import {
   Button,
   Dialog,
@@ -62,7 +62,8 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
   }
 
   function handleAdd() {
-    if (selected.size === 0 || !functionTypeId) return;
+    // A draft (`new_…`) id means the role create hasn't settled yet — the backend would 422.
+    if (selected.size === 0 || !functionTypeId || isDraftId(functionTypeId)) return;
     add.mutate(
       {
         employeeIds: Array.from(selected),
@@ -155,8 +156,9 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
             </SelectTrigger>
             <SelectContent>
               {roles.map((role) => (
-                <SelectItem key={role.id} value={role.id}>
+                <SelectItem key={role.id} value={role.id} disabled={isDraftId(role.id)}>
                   {role.name}
+                  {isDraftId(role.id) ? " (saving…)" : ""}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -191,7 +193,9 @@ export function AddMembersDialog({ projectId }: { projectId: string }) {
         <DialogFooter>
           <Button
             onClick={handleAdd}
-            disabled={add.isPending || selected.size === 0 || !functionTypeId}
+            disabled={
+              add.isPending || selected.size === 0 || !functionTypeId || isDraftId(functionTypeId)
+            }
           >
             {add.isPending && <Spinner />}
             {add.isPending

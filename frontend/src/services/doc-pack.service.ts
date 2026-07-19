@@ -9,6 +9,7 @@ import {
   type DocPackIngestStatus,
   type DocPackListItem,
   docPackDocumentListSchema,
+  docPackDocumentSchema,
   docPackIngestStatusSchema,
   docPackListSchema,
   docPackSchema,
@@ -70,7 +71,7 @@ export const docPackService = {
 
   /**
    * Upload PDFs straight to Supabase Storage via signed URLs, then register them. The bytes never
-   * transit the Next.js/Vercel proxy, so uploads up to the 20MB limit work (a proxied multipart POST
+   * transit the Next.js/Vercel proxy, so uploads up to the size limit in lib/upload.ts work (a proxied multipart POST
    * would 413 at Vercel's ~4.5MB serverless body cap).
    */
   async uploadDocuments(
@@ -95,6 +96,12 @@ export const docPackService = {
 
   async deleteDocument(id: string, documentId: string): Promise<void> {
     await getApiClient().delete(API_ENDPOINTS.docPackDocument(id, documentId));
+  },
+
+  /** Re-queue a failed document for ingestion; returns the document flipped to `processing`. */
+  async retryDocument(id: string, documentId: string): Promise<DocPackDocument> {
+    const { data } = await getApiClient().post(API_ENDPOINTS.docPackDocumentRetry(id, documentId));
+    return docPackDocumentSchema.parse(data);
   },
 
   async generateQuiz(

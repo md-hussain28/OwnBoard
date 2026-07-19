@@ -162,8 +162,8 @@ export const projectService = {
 
   /**
    * Upload reference PDFs straight to Supabase Storage via signed URLs, then register them so the
-   * backend indexes them for "Ask project". Bytes bypass the Next.js/Vercel proxy, so the 20MB
-   * limit is real (a proxied multipart POST would 413 at Vercel's ~4.5MB body cap).
+   * backend indexes them for "Ask project". Bytes bypass the Next.js/Vercel proxy, so the size
+   * limit in lib/upload.ts is real (a proxied multipart POST would 413 at Vercel's ~4.5MB body cap).
    */
   async uploadDocs(
     id: string,
@@ -192,8 +192,29 @@ export const projectService = {
     return projectDocsSchema.parse(data);
   },
 
+  /** Edit a document's metadata in one request. Omitted fields are left unchanged. */
+  async updateDoc(
+    id: string,
+    documentId: string,
+    changes: { title?: string; description?: string; typeIds?: string[]; repoIds?: string[] },
+  ): Promise<ProjectDocs> {
+    const { data } = await getApiClient().patch(API_ENDPOINTS.projectDoc(id, documentId), {
+      title: changes.title ?? null,
+      description: changes.description ?? null,
+      type_ids: changes.typeIds ?? null,
+      repo_ids: changes.repoIds ?? null,
+    });
+    return projectDocsSchema.parse(data);
+  },
+
   async deleteDoc(id: string, documentId: string): Promise<void> {
     await getApiClient().delete(API_ENDPOINTS.projectDoc(id, documentId));
+  },
+
+  /** Re-queue a failed reference doc for ingestion; returns the refreshed docs list. */
+  async retryDoc(id: string, documentId: string): Promise<ProjectDocs> {
+    const { data } = await getApiClient().post(API_ENDPOINTS.projectDocRetry(id, documentId));
+    return projectDocsSchema.parse(data);
   },
 
   async setDocTypes(id: string, documentId: string, typeIds: string[]): Promise<ProjectDocs> {

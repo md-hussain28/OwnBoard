@@ -33,10 +33,20 @@ export function SectionCard({
   children: React.ReactNode;
   className?: string;
 }) {
+  // Blocks with edge-to-edge bodies (tables, code, diffs) pass `p-0` and pad their own
+  // content — the heading still needs its own padding so it doesn't sit on the card border.
+  const flush = className?.split(/\s+/).includes("p-0");
   return (
     <div className={cn("rounded-xl border border-border bg-card p-4 shadow-soft", className)}>
       {title && (
-        <div className="mb-3 font-heading text-sm font-semibold text-foreground">{title}</div>
+        <div
+          className={cn(
+            "mb-3 font-heading text-sm font-semibold text-foreground",
+            flush && "px-4 pt-4",
+          )}
+        >
+          {title}
+        </div>
       )}
       {children}
     </div>

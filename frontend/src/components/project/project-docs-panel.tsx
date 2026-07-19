@@ -1,13 +1,13 @@
 "use client";
 
 import {
-  CheckIcon,
   FileTextIcon,
   GitBranchIcon,
   MoreVerticalIcon,
+  PencilLineIcon,
+  RotateCcwIcon,
   ScrollTextIcon,
   SearchIcon,
-  TagIcon,
   Trash2Icon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -18,23 +18,12 @@ import {
   FilterSelect,
   QueryState,
 } from "@/components/shared";
-import {
-  useDeleteProjectDoc,
-  useProjectDocs,
-  useSetDocRepos,
-  useSetDocTypes,
-} from "@/hooks/queries/project";
-import { cn, notify } from "@/lib";
+import { useDeleteProjectDoc, useProjectDocs, useRetryProjectDoc } from "@/hooks/queries/project";
+import { notify } from "@/lib";
 import type { ProjectDoc, ProjectDocType, ProjectRepo } from "@/schemas";
 import {
   Badge,
   Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -42,6 +31,7 @@ import {
   DropdownMenuTrigger,
   Input,
 } from "@/ui";
+import { EditDocDialog } from "./edit-doc-dialog";
 import { ProjectSectionHeader } from "./project-section-header";
 import { UploadDocsDialog } from "./upload-docs-dialog";
 
@@ -219,9 +209,16 @@ function DocRow({
   repos: ProjectRepo[];
   manageable: boolean;
 }) {
-  const [typesOpen, setTypesOpen] = useState(false);
-  const [reposOpen, setReposOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const retry = useRetryProjectDoc(projectId);
+
+  function handleRetry() {
+    retry.mutate(doc.id, {
+      onSuccess: () => notify.info("Retrying document", { description: doc.title }),
+      onError: (err) => notify.apiError(err, "Retry failed"),
+    });
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3 last:border-0">
@@ -264,7 +261,10 @@ function DocRow({
       {/* Status + actions */}
       <div className="ml-auto flex shrink-0 items-center gap-2">
         {doc.status === "failed" && doc.errorMessage && (
-          <span className="hidden max-w-40 truncate text-xs text-destructive sm:inline">
+          <span
+            title={doc.errorMessage}
+            className="hidden max-w-40 truncate text-xs text-destructive sm:inline"
+          >
             {doc.errorMessage}
           </span>
         )}
@@ -278,11 +278,16 @@ function DocRow({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onSelect={() => setTypesOpen(true)}>
-                <TagIcon /> Edit types
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setReposOpen(true)}>
-                <GitBranchIcon /> Attach to repos
+              {doc.status === "failed" && (
+                <>
+                  <DropdownMenuItem onSelect={handleRetry} disabled={retry.isPending}>
+                    <RotateCcwIcon /> Retry processing
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+                <PencilLineIcon /> Edit document
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -302,19 +307,13 @@ function DocRow({
 
       {manageable && (
         <>
-          <DocTypesDialog
+          <EditDocDialog
             projectId={projectId}
             doc={doc}
             types={types}
-            open={typesOpen}
-            onOpenChange={setTypesOpen}
-          />
-          <DocReposDialog
-            projectId={projectId}
-            doc={doc}
             repos={repos}
-            open={reposOpen}
-            onOpenChange={setReposOpen}
+            open={editOpen}
+            onOpenChange={setEditOpen}
           />
           <DeleteDocConfirm
             projectId={projectId}
@@ -325,174 +324,6 @@ function DocRow({
         </>
       )}
     </div>
-  );
-}
-
-function DocTypesDialog({
-  projectId,
-  doc,
-  types,
-  open,
-  onOpenChange,
-}: {
-  projectId: string;
-  doc: ProjectDoc;
-  types: ProjectDocType[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const [selected, setSelected] = useState<Set<string>>(new Set(doc.typeIds));
-  const save = useSetDocTypes(projectId);
-
-  function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
-
-  function handleOpen(next: boolean) {
-    if (next) setSelected(new Set(doc.typeIds));
-    onOpenChange(next);
-  }
-
-  function handleSave() {
-    save.mutate(
-      { documentId: doc.id, typeIds: Array.from(selected) },
-      {
-        onSuccess: () => onOpenChange(false),
-        onError: (err) => notify.apiError(err, "Could not update types"),
-      },
-    );
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Document types</DialogTitle>
-          <DialogDescription>
-            Tag <span className="font-medium">{doc.title}</span> with one or more types.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-wrap gap-2 py-2">
-          {types.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Add types while uploading a document first.
-            </p>
-          )}
-          {types.map((t) => {
-            const isSel = selected.has(t.id);
-            return (
-              <button
-                type="button"
-                key={t.id}
-                onClick={() => toggle(t.id)}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm transition-colors",
-                  isSel ? "border-primary bg-brand-honey-soft" : "border-border hover:bg-muted",
-                )}
-              >
-                {isSel && <CheckIcon className="size-3.5 text-primary" />}
-                {t.name}
-              </button>
-            );
-          })}
-        </div>
-        <DialogFooter>
-          <Button onClick={handleSave} disabled={save.isPending}>
-            {save.isPending ? "Saving…" : "Save"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function DocReposDialog({
-  projectId,
-  doc,
-  repos,
-  open,
-  onOpenChange,
-}: {
-  projectId: string;
-  doc: ProjectDoc;
-  repos: ProjectRepo[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const [selected, setSelected] = useState<Set<string>>(new Set(doc.repoIds));
-  const save = useSetDocRepos(projectId);
-
-  function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
-
-  function handleOpen(next: boolean) {
-    if (next) setSelected(new Set(doc.repoIds));
-    onOpenChange(next);
-  }
-
-  function handleSave() {
-    save.mutate(
-      { documentId: doc.id, repoIds: Array.from(selected) },
-      {
-        onSuccess: () => onOpenChange(false),
-        onError: (err) => notify.apiError(err, "Could not update repos"),
-      },
-    );
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Attach to repos</DialogTitle>
-          <DialogDescription>
-            Link <span className="font-medium">{doc.title}</span> to the repositories it documents.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-wrap gap-2 py-2">
-          {repos.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Link a repository to this project first (Repos tab).
-            </p>
-          )}
-          {repos.map((repo) => {
-            const isSel = selected.has(repo.repoId);
-            return (
-              <button
-                type="button"
-                key={repo.repoId}
-                onClick={() => toggle(repo.repoId)}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm transition-colors",
-                  isSel ? "border-primary bg-brand-honey-soft" : "border-border hover:bg-muted",
-                )}
-              >
-                {isSel ? (
-                  <CheckIcon className="size-3.5 text-primary" />
-                ) : (
-                  <GitBranchIcon className="size-3.5 text-muted-foreground" />
-                )}
-                {repo.name ?? repo.url ?? repo.repoId}
-              </button>
-            );
-          })}
-        </div>
-        <DialogFooter>
-          <Button onClick={handleSave} disabled={save.isPending}>
-            {save.isPending ? "Saving…" : "Save"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

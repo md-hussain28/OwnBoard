@@ -197,7 +197,7 @@ async def create_document_upload_urls(
 ):
     """Direct-to-storage upload step 1: mint signed URLs so files go browser → Supabase, sidestepping
     the Vercel serverless ~4.5MB request-body cap a proxied multipart POST would hit. Validates the
-    batch (PDF-only, ≤20MB each) before handing out any URL."""
+    batch (PDF-only, per-file size cap) before handing out any URL."""
     targets = await services.doc_pack.create_upload_urls(
         org_id, pack_id, [(f.filename, f.content_type, f.size) for f in payload.files]
     )
@@ -252,17 +252,14 @@ async def get_documents_status(
     pack_id: str,
     org_id: ClerkOrgId,  # not CurrentOrgId: this is polled — skip the org get-or-create round trip
     _admin: RequireAdmin,
-    background_tasks: BackgroundTasks,
     services: ServiceContainer = Depends(get_service_container),
 ):
     """Cheap ingestion-progress poll: column-only query, no document/chunk hydration.
 
-    Also the recovery path for ingests killed by a host restart — stale documents come back
-    as `requeue_ids` and get their ingestion rescheduled here (see `get_ingest_status`).
+    Ingests killed by a host restart surface as `failed` (see `get_ingest_status`) — nothing is
+    restarted automatically; recovery is the explicit retry endpoint below.
     """
-    rows, requeue_ids = await services.doc_pack.get_ingest_status(org_id, pack_id)
-    for document_id in requeue_ids:
-        background_tasks.add_task(ingest_document_background, org_id, document_id)
+    rows = await services.doc_pack.get_ingest_status(org_id, pack_id)
     documents = [
         DocumentIngestStatusItem(
             id=row.id, title=row.title, status=row.status, page_count=row.page_count, error_message=row.error_message
@@ -281,6 +278,21 @@ async def get_documents_status(
         is_complete=pending == 0,
         documents=documents,
     )
+
+
+@router.post("/{pack_id}/documents/{document_id}/retry", response_model=DocPackDocumentResponse, status_code=202)
+async def retry_document(
+    pack_id: str,
+    document_id: str,
+    org_id: CurrentOrgId,
+    _admin: RequireAdmin,
+    background_tasks: BackgroundTasks,
+    services: ServiceContainer = Depends(get_service_container),
+):
+    """Re-run ingestion for a failed document (e.g. after a transient extraction/embedding error)."""
+    document = await services.doc_pack.retry_document(org_id, pack_id, document_id)
+    background_tasks.add_task(ingest_document_background, org_id, document.id)
+    return document
 
 
 @router.delete("/{pack_id}/documents/{document_id}", status_code=204)

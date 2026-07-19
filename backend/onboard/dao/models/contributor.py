@@ -24,12 +24,14 @@ class Contributor(AuditBase):
 
     repo: Mapped["Repo"] = relationship(back_populates="contributors")
     file_expertise_entries: Mapped[list["FileExpertise"]] = relationship(
-        back_populates="contributor", cascade="all, delete-orphan"
+        back_populates="contributor", cascade="all, delete-orphan", passive_deletes=True
     )
-    commit_records: Mapped[list["CommitRecord"]] = relationship(back_populates="author", cascade="all, delete-orphan")
+    commit_records: Mapped[list["CommitRecord"]] = relationship(
+        back_populates="author", cascade="all, delete-orphan", passive_deletes=True
+    )
     availability: Mapped["ExpertiseAvailability | None"] = relationship(
-        back_populates="contributor", cascade="all, delete-orphan", uselist=False
+        back_populates="contributor", cascade="all, delete-orphan", uselist=False, passive_deletes=True
     )
     institutional_memory_notes: Mapped[list["InstitutionalMemoryNote"]] = relationship(
-        back_populates="contributor", cascade="all, delete-orphan"
+        back_populates="contributor", cascade="all, delete-orphan", passive_deletes=True
     )

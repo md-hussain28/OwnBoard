@@ -32,6 +32,58 @@ export function useUploadProjectDocs(id: string) {
   });
 }
 
+export function useUpdateProjectDoc(id: string) {
+  const queryClient = useQueryClient();
+  const invalidate = useInvalidateDocs(id);
+  return useMutation({
+    mutationFn: (vars: {
+      documentId: string;
+      title?: string;
+      description?: string;
+      typeIds?: string[];
+      repoIds?: string[];
+    }) => projectService.updateDoc(id, vars.documentId, vars),
+    onMutate: (vars) => {
+      const docs = queryClient.getQueryData<ProjectDocs>(projectKeys.docs(id));
+      const typeNames = (vars.typeIds ?? [])
+        .map((tid) => docs?.types.find((t) => t.id === tid)?.name)
+        .filter((n): n is string => Boolean(n));
+      const knownRepos = new Map(
+        docs?.documents.flatMap((d) => d.repos).map((r) => [r.repoId, r]) ?? [],
+      );
+      return optimisticEdits(queryClient, [
+        cacheEdit<ProjectDocs>(projectKeys.docs(id), (prev) =>
+          prev
+            ? {
+                ...prev,
+                documents: prev.documents.map((d) => {
+                  if (d.id !== vars.documentId) return d;
+                  return {
+                    ...d,
+                    ...(vars.title !== undefined && { title: vars.title }),
+                    ...(vars.description !== undefined && {
+                      description: vars.description.trim() || null,
+                    }),
+                    ...(vars.typeIds !== undefined && { typeIds: vars.typeIds, typeNames }),
+                    ...(vars.repoIds !== undefined && {
+                      repoIds: vars.repoIds,
+                      repos: vars.repoIds.map(
+                        (rid) => knownRepos.get(rid) ?? { repoId: rid, name: null, url: null },
+                      ),
+                    }),
+                  };
+                }),
+              }
+            : prev,
+        ),
+      ]);
+    },
+    onError: (_err, _vars, context) => rollbackEdits(queryClient, context),
+    onSuccess: (docs) => queryClient.setQueryData(projectKeys.docs(id), docs),
+    onSettled: invalidate,
+  });
+}
+
 export function useDeleteProjectDoc(id: string) {
   const queryClient = useQueryClient();
   const invalidate = useInvalidateDocs(id);
@@ -44,6 +96,34 @@ export function useDeleteProjectDoc(id: string) {
         ),
       ]),
     onError: (_err, _documentId, context) => rollbackEdits(queryClient, context),
+    onSettled: invalidate,
+  });
+}
+
+export function useRetryProjectDoc(id: string) {
+  const queryClient = useQueryClient();
+  const invalidate = useInvalidateDocs(id);
+  return useMutation({
+    mutationFn: (documentId: string) => projectService.retryDoc(id, documentId),
+    // Flip the doc to `processing` right away — the docs query polls while any doc is
+    // non-terminal, so this also re-arms the poll.
+    onMutate: (documentId) =>
+      optimisticEdits(queryClient, [
+        cacheEdit<ProjectDocs>(projectKeys.docs(id), (prev) =>
+          prev
+            ? {
+                ...prev,
+                documents: prev.documents.map((d) =>
+                  d.id === documentId
+                    ? { ...d, status: "processing" as const, errorMessage: null }
+                    : d,
+                ),
+              }
+            : prev,
+        ),
+      ]),
+    onError: (_err, _documentId, context) => rollbackEdits(queryClient, context),
+    onSuccess: (docs) => queryClient.setQueryData(projectKeys.docs(id), docs),
     onSettled: invalidate,
   });
 }

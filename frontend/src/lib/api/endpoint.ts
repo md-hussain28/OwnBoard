@@ -26,6 +26,8 @@ export const API_ENDPOINTS = {
   /** Register objects already uploaded to storage → creates rows + starts ingest. */
   projectDocsRegister: (id: string) => `/projects/${id}/docs/register`,
   projectDoc: (id: string, documentId: string) => `/projects/${id}/docs/${documentId}`,
+  /** Re-queue a failed reference doc for ingestion. */
+  projectDocRetry: (id: string, documentId: string) => `/projects/${id}/docs/${documentId}/retry`,
   projectDocTypesForDoc: (id: string, documentId: string) =>
     `/projects/${id}/docs/${documentId}/types`,
   projectDocReposForDoc: (id: string, documentId: string) =>
@@ -66,6 +68,9 @@ export const API_ENDPOINTS = {
   /** Register objects already uploaded to storage → creates rows + starts ingest. */
   docPackDocumentsRegister: (id: string) => `/doc-packs/${id}/documents/register`,
   docPackDocument: (id: string, documentId: string) => `/doc-packs/${id}/documents/${documentId}`,
+  /** Re-queue a failed document for ingestion (extract → chunk → embed). */
+  docPackDocumentRetry: (id: string, documentId: string) =>
+    `/doc-packs/${id}/documents/${documentId}/retry`,
   docPackDocumentsStatus: (id: string) => `/doc-packs/${id}/documents/status`,
   docPackGenerateQuiz: (id: string) => `/doc-packs/${id}/generate-quiz`,
   docPackQuiz: (id: string) => `/doc-packs/${id}/quiz`,

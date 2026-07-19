@@ -2,7 +2,7 @@
 
 import { MailIcon } from "lucide-react";
 import { useRevokeInvitation } from "@/hooks/queries/employee";
-import { cn, notify } from "@/lib";
+import { cn, isDraftId, notify } from "@/lib";
 import type { EmployeeInvitation } from "@/schemas";
 import { Badge, Button, Spinner } from "@/ui";
 import { displayJobTitle, initials, ROLE_META } from "./team-constants";
@@ -18,6 +18,8 @@ function inviteSubtitle(invitation: EmployeeInvitation): string {
 export function PendingInvitationRow({ invitation }: { invitation: EmployeeInvitation }) {
   const revoke = useRevokeInvitation();
   const roleMeta = ROLE_META[invitation.appRole];
+  // Optimistic invite: its `new_…` id has no backend record yet, so revoking would 404.
+  const isDraft = isDraftId(invitation.id);
 
   function handleRevoke() {
     revoke.mutate(invitation.id, {
@@ -37,10 +39,12 @@ export function PendingInvitationRow({ invitation }: { invitation: EmployeeInvit
 
   return (
     <li
+      aria-busy={isDraft || undefined}
       className={cn(
         "flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl px-2 py-2.5",
         "transition-colors duration-150 sm:gap-x-3 sm:px-3 sm:py-3",
         "hover:bg-muted/60",
+        isDraft && "animate-pulse opacity-70",
       )}
     >
       <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
@@ -83,7 +87,8 @@ export function PendingInvitationRow({ invitation }: { invitation: EmployeeInvit
           variant="ghost"
           size="sm"
           onClick={handleRevoke}
-          disabled={revoke.isPending}
+          disabled={isDraft || revoke.isPending}
+          title={isDraft ? "Sending…" : undefined}
           className="text-muted-foreground hover:text-destructive"
         >
           {revoke.isPending && <Spinner className="size-3.5" />}

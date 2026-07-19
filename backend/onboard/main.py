@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from onboard.api.dependency.auth import require_org, require_user
 from onboard.api.exception_handlers import register_exception_handlers
+from onboard.api.middleware.body_limit import BodySizeLimitMiddleware
 from onboard.api.middleware.logging import RequestLoggingMiddleware
 from onboard.api.routes import (
     admin_assistant_router,
@@ -70,6 +71,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.add_middleware(RequestLoggingMiddleware)
+    # Outermost on purpose: oversized bodies are rejected from the Content-Length header alone,
+    # before logging, auth, or routing ever see the request (see body_limit.py for why).
+    app.add_middleware(BodySizeLimitMiddleware)
 
     register_exception_handlers(app)
 

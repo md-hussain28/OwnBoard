@@ -19,6 +19,10 @@ const config: StorybookConfig = {
           { find: /^@clerk\/ui\/themes$/, replacement: mockPath("clerk-themes.ts") },
         ],
       },
+      // The `ai` SDK pulls in Next's compiled @opentelemetry shim, which reads
+      // `__dirname` — undefined in Vite's browser bundle. Stub it so ask/chat
+      // components (which import from `ai`) can render in stories.
+      define: { __dirname: JSON.stringify("/") },
     });
   },
 };

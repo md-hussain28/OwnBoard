@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { isDraftId } from "@/lib";
 import { expertService } from "@/services";
 
 export const expertKeys = {
@@ -18,7 +19,8 @@ export function useExpertForFile(repoId: string, filePath: string) {
   return useQuery({
     queryKey: expertKeys.forFile(repoId, filePath),
     queryFn: () => expertService.routeToExpert(repoId, filePath),
-    enabled: Boolean(repoId && filePath),
+    // `!isDraftId`: the repos cache can briefly hold an optimistic `new_…` row.
+    enabled: Boolean(repoId && filePath) && !isDraftId(repoId),
     retry: false,
   });
 }

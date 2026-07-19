@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -138,7 +139,7 @@ class PackAssignmentService:
             )
 
         raw = await storage.download(document.storage_path)
-        extracted = extract_document(raw, document.file_type)
+        extracted = await asyncio.to_thread(extract_document, raw, document.file_type)
         return DocumentContent(
             document_id=document.id,
             title=document.title,

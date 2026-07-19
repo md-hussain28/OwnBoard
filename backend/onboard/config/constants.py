@@ -11,22 +11,35 @@ QUIZ_LLM_CONCURRENCY = 8
 ALLOWED_DOC_PACK_EXTENSIONS = frozenset({"pdf"})
 
 # Ingestion runs as an in-process background task, so a host restart mid-ingest strands the
-# document in `uploaded`/`processing` forever. The status poll self-heals: any document that
-# hasn't moved within the stale window is requeued, up to the attempt cap, then marked failed.
-DOC_INGEST_STALE_AFTER_SECONDS = 10 * 60
+# document in `uploaded`/`processing` forever. The status poll marks such documents failed after
+# the stale window — it never restarts them (an ingest may be what OOM'd the host; auto-requeue
+# would loop the crash). Recovery is the manual retry endpoint only. The window is generous
+# because ingests run one-at-a-time and a large batch legitimately queues for a while.
+DOC_INGEST_STALE_AFTER_SECONDS = 30 * 60
 MAX_DOC_INGEST_ATTEMPTS = 3
 
 # Uploads are buffered in memory before hitting Supabase Storage — keep this conservative,
 # the API runs on a 512MB instance.
 MAX_DOC_PACK_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB per file
 MAX_DOC_PACK_FILES_PER_UPLOAD = 10
+# The size cap alone doesn't bound extraction memory: a compressed/generated PDF can pack
+# thousands of pages into 5MB and OOM the parser on the 512MB host. Real 5MB docs are far smaller.
+MAX_PDF_PAGES = 800
+
+# Hard cap on any request body, enforced from Content-Length before a byte is buffered
+# (api/middleware/body_limit.py). FastAPI has no default limit, so without this one big POST
+# (a git-snapshot push) gets fully read + JSON-parsed and can OOM the 512MB host by itself.
+# Sized to the worst-case Action snapshot (~20MB of chunk text) with headroom.
+MAX_REQUEST_BODY_BYTES = 30 * 1024 * 1024
 
 # Push-model ingest (GitHub Action → POST /ingest). These caps bound how much a single request can
 # allocate on the 512MB host — the request is rejected (422) before any DB work if exceeded.
+# INGEST_MAX_CHUNKS × INGEST_MAX_CHUNK_CHARS is the payload's dominant term; keep the product well
+# under MAX_REQUEST_BODY_BYTES (the Action's own caps in .github/actions/ownboard-extract are lower).
 INGEST_MAX_CONTRIBUTORS = 5_000
 INGEST_MAX_COMMITS = 20_000
 INGEST_MAX_FILES = 20_000
-INGEST_MAX_CHUNKS = 20_000
+INGEST_MAX_CHUNKS = 3_000
 INGEST_MAX_CHUNK_CHARS = 12_000  # per code chunk; longer content is truncated before embedding
 
 # Skill-graph expertise scoring (PRD §6.2): commit weight decays with a 180-day half-life so recent

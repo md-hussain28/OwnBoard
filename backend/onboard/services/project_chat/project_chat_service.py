@@ -1270,7 +1270,7 @@ class ProjectChatService:
         if document is None:
             raise NotFoundError(f"Document {document_id} not found")
 
-        chunks = await self.doc_chunk_dao.list_for_document(org_id, document_id)
+        chunks = await self.doc_chunk_dao.list_content_for_document(org_id, document_id)
         return {
             "document_id": document.id,
             "title": document.title,

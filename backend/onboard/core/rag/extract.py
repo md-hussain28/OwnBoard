@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from docx import Document as DocxDocument
 from pypdf import PdfReader
 
+from onboard.config.constants import MAX_PDF_PAGES
 from onboard.core.common.exceptions import ValidationError
 
 
@@ -46,6 +47,7 @@ def _extract_pdf(content: bytes) -> ExtractedDocument:
     try:
         reader = PdfReader(BytesIO(content))
         page_count = len(reader.pages)
+        _check_page_cap(page_count)
         for index, page in enumerate(reader.pages, start=1):
             text = (page.extract_text() or "").strip()
             if text:
@@ -80,13 +82,21 @@ def _extract_pdf_pdfminer(content: bytes) -> tuple[list[ExtractedPage], int]:
     page_count = 0
     try:
         for index, layout in enumerate(extract_pages(BytesIO(content)), start=1):
+            _check_page_cap(index)
             page_count = index
             text = "".join(el.get_text() for el in layout if isinstance(el, LTTextContainer)).strip()
             if text:
                 pages.append(ExtractedPage(page_number=index, text=text))
+    except ValidationError:
+        raise
     except Exception:
         return [], page_count
     return pages, page_count
+
+
+def _check_page_cap(page_count: int) -> None:
+    if page_count > MAX_PDF_PAGES:
+        raise ValidationError(f"PDF has more than {MAX_PDF_PAGES} pages — split it into smaller documents and retry.")
 
 
 def _extract_docx(content: bytes) -> ExtractedDocument:

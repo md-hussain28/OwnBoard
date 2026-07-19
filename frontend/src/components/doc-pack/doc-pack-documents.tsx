@@ -138,8 +138,8 @@ export function DocPackDocuments({
           each)
         </Button>
         <p className="text-xs text-muted-foreground">
-          PDF only, max {MAX_UPLOAD_FILE_SIZE_MB} MB per file. Uploads run in the background — you
-          can keep working while documents process.
+          PDF only, max {MAX_UPLOAD_FILE_SIZE_MB} MB per file — small server, big dreams. Uploads
+          run in the background — you can keep working while documents process.
         </p>
 
         {rows.length === 0 && (

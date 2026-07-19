@@ -22,7 +22,7 @@ export function fileError(file: File): string | null {
   }
   if (file.size === 0) return `${file.name} is empty.`;
   if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
-    return `${file.name} is larger than ${MAX_UPLOAD_FILE_SIZE_MB} MB.`;
+    return `${file.name} is over ${MAX_UPLOAD_FILE_SIZE_MB} MB — our server runs on a shoestring budget, and that file just snapped the shoestring. Keep it under ${MAX_UPLOAD_FILE_SIZE_MB} MB.`;
   }
   return null;
 }

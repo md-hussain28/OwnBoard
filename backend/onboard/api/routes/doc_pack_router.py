@@ -252,17 +252,14 @@ async def get_documents_status(
     pack_id: str,
     org_id: ClerkOrgId,  # not CurrentOrgId: this is polled — skip the org get-or-create round trip
     _admin: RequireAdmin,
-    background_tasks: BackgroundTasks,
     services: ServiceContainer = Depends(get_service_container),
 ):
     """Cheap ingestion-progress poll: column-only query, no document/chunk hydration.
 
-    Also the recovery path for ingests killed by a host restart — stale documents come back
-    as `requeue_ids` and get their ingestion rescheduled here (see `get_ingest_status`).
+    Ingests killed by a host restart surface as `failed` (see `get_ingest_status`) — nothing is
+    restarted automatically; recovery is the explicit retry endpoint below.
     """
-    rows, requeue_ids = await services.doc_pack.get_ingest_status(org_id, pack_id)
-    for document_id in requeue_ids:
-        background_tasks.add_task(ingest_document_background, org_id, document_id)
+    rows = await services.doc_pack.get_ingest_status(org_id, pack_id)
     documents = [
         DocumentIngestStatusItem(
             id=row.id, title=row.title, status=row.status, page_count=row.page_count, error_message=row.error_message

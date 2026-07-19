@@ -4,17 +4,20 @@ import {
   CheckCircle2Icon,
   GitBranchIcon,
   Link2Icon,
+  MoreVerticalIcon,
+  PanelRightOpenIcon,
   PlugZapIcon,
+  SearchIcon,
   StarIcon,
+  Trash2Icon,
   UsersIcon,
-  XIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { repoSlug } from "@/components/repo";
-import { DraftLink, EmptyState } from "@/components/shared";
+import { ConfirmDialog, EmptyState, FilteredEmpty, FilterSelect } from "@/components/shared";
 import { useAddProjectRepo, useRemoveProjectRepo } from "@/hooks/queries/project";
 import { useRepos } from "@/hooks/queries/repo";
-import { appPath, notify } from "@/lib";
+import { notify } from "@/lib";
 import type { ProjectDetail, ProjectRepo } from "@/schemas";
 import {
   Badge,
@@ -26,20 +29,30 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Spinner,
 } from "@/ui";
 import { ProjectSectionHeader } from "./project-section-header";
+import { RepoDetailSheet } from "./repo-detail-sheet";
 import { RepoMembersDialog } from "./repo-members-dialog";
+
+type SyncFilter = "all" | "synced" | "unsynced";
+
+const SYNC_OPTIONS: { value: SyncFilter; label: string }[] = [
+  { value: "all", label: "All repos" },
+  { value: "synced", label: "Synced" },
+  { value: "unsynced", label: "Not synced" },
+];
 
 /**
  * The project's git repositories and who works on each. Commit history from linked repos feeds
- * per-member skills and the project's Ask answers.
+ * per-member skills and the project's Ask answers. A row opens a right-hand detail sheet — the
+ * single detail surface (there's no separate detail page for a repo inside a project anymore).
  */
 export function ProjectRepositoriesTab({
   project,
@@ -49,7 +62,37 @@ export function ProjectRepositoriesTab({
   manageable: boolean;
 }) {
   const { data: repos } = useRepos();
-  const syncedById = new Map((repos ?? []).map((r) => [r.id, Boolean(r.ingestedAt)]));
+  const syncedById = useMemo(
+    () => new Map((repos ?? []).map((r) => [r.id, Boolean(r.ingestedAt)])),
+    [repos],
+  );
+
+  const [query, setQuery] = useState("");
+  const [syncFilter, setSyncFilter] = useState<SyncFilter>("all");
+  const [detailRepo, setDetailRepo] = useState<ProjectRepo | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const hasRepos = project.repos.length > 0;
+  const hasFilters = query.trim().length > 0 || syncFilter !== "all";
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return project.repos.filter((r) => {
+      if (q) {
+        const hay = `${r.name ?? ""} ${r.url ?? ""} ${repoSlug(r.url) ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      const synced = Boolean(syncedById.get(r.repoId));
+      if (syncFilter === "synced" && !synced) return false;
+      if (syncFilter === "unsynced" && synced) return false;
+      return true;
+    });
+  }, [project.repos, query, syncFilter, syncedById]);
+
+  function openDetail(repo: ProjectRepo) {
+    setDetailRepo(repo);
+    setSheetOpen(true);
+  }
 
   return (
     <div className="space-y-4">
@@ -60,9 +103,28 @@ export function ProjectRepositoriesTab({
         action={manageable ? <LinkRepoDialog project={project} /> : undefined}
       />
 
-      <HowItWorks />
+      {hasRepos && (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-56 flex-1">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              aria-label="Search repositories"
+              placeholder="Search repos by name or URL…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <FilterSelect
+            aria-label="Filter by sync status"
+            value={syncFilter}
+            onChange={setSyncFilter}
+            options={SYNC_OPTIONS}
+          />
+        </div>
+      )}
 
-      {project.repos.length === 0 ? (
+      {!hasRepos ? (
         <EmptyState
           icon={GitBranchIcon}
           tone={manageable ? "honey" : "mist"}
@@ -74,99 +136,87 @@ export function ProjectRepositoriesTab({
           }
           action={manageable ? <LinkRepoDialog project={project} /> : undefined}
         />
+      ) : visible.length === 0 ? (
+        <FilteredEmpty
+          noun="repositories"
+          onClear={
+            hasFilters
+              ? () => {
+                  setQuery("");
+                  setSyncFilter("all");
+                }
+              : undefined
+          }
+        />
       ) : (
-        <ul className="overflow-hidden rounded-xl border border-border bg-card">
-          {project.repos.map((r) => (
+        <div role="list" className="overflow-hidden rounded-xl border border-border bg-card">
+          {visible.map((r) => (
             <RepoRow
               key={r.repoId}
               projectId={project.id}
               repo={r}
               synced={Boolean(syncedById.get(r.repoId))}
               manageable={manageable}
+              onOpen={() => openDetail(r)}
             />
           ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/** The three-step pipeline, spelled out so a manager knows what this page is for and in what order. */
-function HowItWorks() {
-  const steps = [
-    {
-      icon: Link2Icon,
-      title: "Link",
-      body: "Point this project at each repo it ships.",
-    },
-    {
-      icon: PlugZapIcon,
-      title: "Sync",
-      body: "A one-time GitHub Action imports commit history.",
-    },
-    {
-      icon: UsersIcon,
-      title: "Assign",
-      body: "Tag who works on each repo to keep skills accurate.",
-    },
-  ];
-  return (
-    <div className="grid gap-2 rounded-xl border border-border bg-muted/40 p-3 sm:grid-cols-3">
-      {steps.map((s, i) => (
-        <div key={s.title} className="flex items-start gap-2.5">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-honey-soft text-brand-honey">
-            <s.icon className="size-3.5" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-medium">
-              <span className="text-muted-foreground">{i + 1}.</span> {s.title}
-            </p>
-            <p className="text-xs text-muted-foreground">{s.body}</p>
-          </div>
         </div>
-      ))}
+      )}
+
+      <RepoDetailSheet
+        projectId={project.id}
+        repo={detailRepo}
+        manageable={manageable}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
     </div>
   );
 }
 
-/** One repo as a scannable table row: identity · assignees · sync state + actions. */
+/** One repo as a scannable, clickable table row: identity · assignees · sync state + a `⋯` menu. */
 function RepoRow({
   projectId,
   repo,
   synced,
   manageable,
+  onOpen,
 }: {
   projectId: string;
   repo: ProjectRepo;
   synced: boolean;
   manageable: boolean;
+  onOpen: () => void;
 }) {
-  const detailHref = appPath("projects", projectId, "repositories", repo.repoId);
+  const removeRepo = useRemoveProjectRepo(projectId);
+  const [peopleOpen, setPeopleOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  // Getting a repo synced is the whole point of linking it — surface the next action, not just a status.
-  let syncControl: React.ReactNode;
-  if (synced) {
-    syncControl = (
-      <Button asChild size="sm" variant="ghost">
-        <DraftLink entityId={repo.repoId} href={detailHref}>
-          <CheckCircle2Icon className="size-3.5 text-brand-moss" /> Synced
-        </DraftLink>
-      </Button>
-    );
-  } else if (manageable) {
-    syncControl = (
-      <Button asChild size="sm" variant="outline">
-        <DraftLink entityId={repo.repoId} href={detailHref}>
-          <PlugZapIcon className="size-4" /> Set up sync
-        </DraftLink>
-      </Button>
-    );
-  } else {
-    syncControl = <Badge variant="outline">Not synced</Badge>;
+  const label = repo.name ?? repoSlug(repo.url) ?? repo.repoId;
+
+  function handleRemove() {
+    removeRepo.mutate(repo.repoId, {
+      onSuccess: () => {
+        setConfirmOpen(false);
+        notify.success("Repo removed", { description: label });
+      },
+      onError: (err) => notify.apiError(err, "Could not remove repo"),
+    });
   }
 
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3 last:border-0">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3 transition-colors last:border-0 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
+    >
       {/* Identity */}
       <div className="flex min-w-0 flex-[2] items-center gap-3">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-teal-soft text-brand-teal">
@@ -174,7 +224,7 @@ function RepoRow({
         </span>
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-sm font-medium">
-            <span className="truncate">{repo.name ?? repoSlug(repo.url) ?? repo.repoId}</span>
+            <span className="truncate">{label}</span>
             {repo.isPrimary && (
               <Badge variant="outline" className="shrink-0 gap-1">
                 <StarIcon className="size-3" /> Primary
@@ -202,53 +252,98 @@ function RepoRow({
 
       {/* Sync state + actions */}
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        {syncControl}
-        {manageable && <RepoMembersDialog projectId={projectId} repo={repo} />}
-        {manageable && <RemoveRepoButton projectId={projectId} repoId={repo.repoId} />}
-      </div>
-    </li>
-  );
-}
+        {synced ? (
+          <Badge variant="success" className="gap-1">
+            <CheckCircle2Icon className="size-3" /> Synced
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="gap-1 text-muted-foreground">
+            <PlugZapIcon className="size-3" /> Not synced
+          </Badge>
+        )}
 
-function RemoveRepoButton({ projectId, repoId }: { projectId: string; repoId: string }) {
-  const removeRepo = useRemoveProjectRepo(projectId);
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      aria-label="Remove repo"
-      onClick={() =>
-        removeRepo.mutate(repoId, {
-          onError: (err) => notify.apiError(err, "Could not remove repo"),
-        })
-      }
-    >
-      <XIcon className="size-4" />
-    </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Actions for ${label}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVerticalIcon className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onSelect={() => onOpen()}>
+              <PanelRightOpenIcon /> View details
+            </DropdownMenuItem>
+            {manageable && (
+              <DropdownMenuItem onSelect={() => setPeopleOpen(true)}>
+                <UsersIcon /> Manage people
+              </DropdownMenuItem>
+            )}
+            {manageable && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={(e) => {
+                    // Keep the confirm modal from racing the menu's close/focus handoff.
+                    e.preventDefault();
+                    setConfirmOpen(true);
+                  }}
+                >
+                  <Trash2Icon /> Remove from project
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Manager-only affordances, driven by the menu (rendered here so row clicks don't reach them) */}
+      {manageable && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <RepoMembersDialog
+            projectId={projectId}
+            repo={repo}
+            open={peopleOpen}
+            onOpenChange={setPeopleOpen}
+          />
+          <ConfirmDialog
+            open={confirmOpen}
+            onOpenChange={setConfirmOpen}
+            title="Remove this repository?"
+            description={
+              <>
+                <span className="font-medium text-foreground">{label}</span> will be unlinked from
+                this project. Its imported commit history and any skills already derived from it are
+                kept — you can link it again later.
+              </>
+            }
+            confirmLabel="Remove repo"
+            pending={removeRepo.isPending}
+            onConfirm={handleRemove}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
 /**
- * Link a repo without cluttering the tab: a button in the section header opens this modal, which
- * offers the two ways to link, each spelled out instead of hidden behind a mode-switching dropdown
- * — pick one your org already connected, or paste a new URL. Either way you set up sync afterward.
- * Selecting an existing repo and typing a URL are mutually exclusive, so the single footer action
- * is never ambiguous.
+ * Link a repo by pasting its URL. (Choosing from an existing org-connected repo used to live here
+ * too, but it added a second, rarely-used path — linking by URL de-dupes on the backend anyway.)
  */
 function LinkRepoDialog({ project }: { project: ProjectDetail }) {
-  const { data: repos } = useRepos();
   const addRepo = useAddProjectRepo(project.id);
   const [open, setOpen] = useState(false);
-  const [choice, setChoice] = useState<string>("");
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");
 
-  const linkedIds = new Set(project.repos.map((r) => r.repoId));
-  const available = (repos ?? []).filter((r) => !linkedIds.has(r.id));
   const firstRepo = project.repos.length === 0;
 
   function reset() {
-    setChoice("");
     setUrl("");
     setName("");
   }
@@ -258,32 +353,21 @@ function LinkRepoDialog({ project }: { project: ProjectDetail }) {
     setOpen(next);
   }
 
-  // Picking an existing repo and typing a new URL are two different intents — keep only one live.
-  function pickExisting(id: string) {
-    setChoice(id);
-    setUrl("");
-    setName("");
-  }
-  function typeUrl(value: string) {
-    setUrl(value);
-    if (value) setChoice("");
-  }
-
-  const canSubmit = Boolean(choice) || url.trim().length > 0;
+  const canSubmit = url.trim().length > 0;
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!canSubmit) return;
-    const payload = choice
-      ? { repoId: choice, isPrimary: firstRepo }
-      : { url: url.trim(), name: name.trim() || null, isPrimary: firstRepo };
-    addRepo.mutate(payload, {
-      onSuccess: () => {
-        handleOpen(false);
-        notify.success("Repo linked");
+    addRepo.mutate(
+      { url: url.trim(), name: name.trim() || null, isPrimary: firstRepo },
+      {
+        onSuccess: () => {
+          handleOpen(false);
+          notify.success("Repo linked");
+        },
+        onError: (err) => notify.apiError(err, "Could not link repo"),
       },
-      onError: (err) => notify.apiError(err, "Could not link repo"),
-    });
+    );
   }
 
   return (
@@ -304,34 +388,6 @@ function LinkRepoDialog({ project }: { project: ProjectDetail }) {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {/* Path 1 — an existing org repo. Hidden entirely when there are none left to link. */}
-            {available.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Already connected to your org</label>
-                <Select value={choice} onValueChange={pickExisting}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a repo…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {available.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {available.length > 0 && (
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="h-px flex-1 bg-border" />
-                or add a new one
-                <span className="h-px flex-1 bg-border" />
-              </div>
-            )}
-
-            {/* Path 2 — a brand-new repo by URL. */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium" htmlFor="repo-url">
                 Repo URL
@@ -340,7 +396,8 @@ function LinkRepoDialog({ project }: { project: ProjectDetail }) {
                 id="repo-url"
                 placeholder="https://github.com/org/repo"
                 value={url}
-                onChange={(e) => typeUrl(e.target.value)}
+                onChange={(e) => setUrl(e.target.value)}
+                autoFocus
               />
             </div>
             <div className="space-y-1.5">
@@ -352,7 +409,6 @@ function LinkRepoDialog({ project }: { project: ProjectDetail }) {
                 placeholder="repo"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                disabled={Boolean(choice)}
               />
             </div>
 

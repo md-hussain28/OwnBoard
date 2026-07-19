@@ -74,9 +74,11 @@ export function PageTourNudge({ featureId, className }: { featureId: string; cla
     <div
       style={{ animationDelay: "220ms" }}
       className={cn(
-        "flex items-center gap-3 rounded-xl border border-primary/15 bg-primary/[0.06] px-3 py-2.5",
+        // Floats above the page instead of sitting in the flow, so it never pushes content down.
+        "fixed top-3 left-1/2 z-40 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2",
+        "flex items-center gap-3 rounded-xl border border-primary/20 bg-background/95 px-3 py-2.5 shadow-lg backdrop-blur",
         "ring-1 ring-primary/10 ring-inset",
-        "duration-500 ease-out animate-in fade-in-0 slide-in-from-top-1 fill-mode-backwards",
+        "duration-500 ease-out animate-in fade-in-0 slide-in-from-top-2 fill-mode-backwards",
         className,
       )}
     >

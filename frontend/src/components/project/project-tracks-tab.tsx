@@ -6,7 +6,9 @@ import {
   FileStackIcon,
   GitBranchIcon,
   ListChecksIcon,
+  PencilIcon,
   SearchIcon,
+  UserPlusIcon,
   UsersIcon,
   UsersRoundIcon,
 } from "lucide-react";

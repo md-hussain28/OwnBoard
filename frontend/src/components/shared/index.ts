@@ -3,6 +3,7 @@
 export * from "./assignment-roster";
 export * from "./assignment-status";
 export * from "./code-snippet";
+export * from "./confirm-dialog";
 export * from "./draft-link";
 export * from "./empty-state";
 export * from "./filter-select";

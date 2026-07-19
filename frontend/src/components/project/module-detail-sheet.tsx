@@ -57,6 +57,7 @@ export function ModuleDetailSheet({
   repos,
   manageable,
   open,
+  startEditing = false,
   onOpenChange,
 }: {
   projectId: string;
@@ -65,16 +66,19 @@ export function ModuleDetailSheet({
   repos: ProjectRepo[];
   manageable: boolean;
   open: boolean;
+  /** Open straight into the targeting editor (the "Assign" action) rather than the calm view. */
+  startEditing?: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const { data: members } = useProjectMembers(projectId, open);
   const save = useSetTrackAssignment(projectId);
 
-  // Every time the sheet opens (or the track changes) drop back to the calm view state.
+  // Each time the sheet opens (or the track changes) reset to the requested state:
+  // the calm view by default, or the targeting editor when opened via "Assign".
   useEffect(() => {
-    if (open) setEditing(false);
-  }, [open]);
+    if (open) setEditing(startEditing && manageable);
+  }, [open, startEditing, manageable]);
 
   if (!track) return null;
 
@@ -132,17 +136,17 @@ export function ModuleDetailSheet({
           <TargetingView track={track} members={members ?? []} />
         )}
 
-        <SheetFooter className="gap-2 border-t bg-muted/30">
+        <SheetFooter className="flex-row gap-2 border-t bg-muted/30">
           {!editing && (
             <>
               {manageable && (
-                <Button variant="outline" onClick={() => setEditing(true)}>
-                  <PencilIcon className="size-4" /> Edit
+                <Button variant="outline" className="flex-1" onClick={() => setEditing(true)}>
+                  <PencilIcon className="size-4" /> Edit audience
                 </Button>
               )}
-              <Button asChild variant="ghost">
+              <Button asChild variant="ghost" className="flex-1">
                 <a href={appPath("projects", projectId, "onboarding", track.id)}>
-                  <ExternalLinkIcon className="size-4" /> Open authoring (quiz &amp; docs)
+                  <ExternalLinkIcon className="size-4" /> Authoring
                 </a>
               </Button>
             </>

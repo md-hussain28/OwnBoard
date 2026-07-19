@@ -13,6 +13,15 @@ import {
   askTableSchema,
   askTreeSchema,
 } from "./ask-extra.schema";
+import {
+  askAnnotatedCodeSchema,
+  askApiEndpointSchema,
+  askConfidenceCheckSchema,
+  askDecisionTreeSchema,
+  askDiffSchema,
+  askEnvVarsSchema,
+  askProsConsSchema,
+} from "./ask-more.schema";
 
 /**
  * Generative-UI contract for "Ask project".
@@ -383,6 +392,13 @@ export const ASK_TOOL_SCHEMAS = {
   showKeyTakeaways: askKeyTakeawaysSchema,
   showTree: askTreeSchema,
   showFlow: askFlowSchema,
+  showApiEndpoint: askApiEndpointSchema,
+  showAnnotatedCode: askAnnotatedCodeSchema,
+  showDiff: askDiffSchema,
+  showEnvVars: askEnvVarsSchema,
+  showDecisionTree: askDecisionTreeSchema,
+  showConfidenceCheck: askConfidenceCheckSchema,
+  showProsCons: askProsConsSchema,
 } as const;
 
 export type AskToolName = keyof typeof ASK_TOOL_SCHEMAS;

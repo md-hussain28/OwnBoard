@@ -2,6 +2,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from onboard.api.dependency.db import get_db
+from onboard.services.admin_assistant.admin_assistant_service import AdminAssistantService
 from onboard.services.archaeology.archaeology_service import ArchaeologyService
 from onboard.services.dashboard.dashboard_service import DashboardService
 from onboard.services.doc_pack.doc_pack_service import DocPackService
@@ -41,6 +42,7 @@ class ServiceContainer:
         self._notification: NotificationService | None = None
         self._project: ProjectService | None = None
         self._project_chat: ProjectChatService | None = None
+        self._admin_assistant: AdminAssistantService | None = None
 
     @property
     def repo_ingestion(self) -> RepoIngestionService:
@@ -137,6 +139,12 @@ class ServiceContainer:
         if self._project_chat is None:
             self._project_chat = ProjectChatService(self.session)
         return self._project_chat
+
+    @property
+    def admin_assistant(self) -> AdminAssistantService:
+        if self._admin_assistant is None:
+            self._admin_assistant = AdminAssistantService(self.session)
+        return self._admin_assistant
 
 
 def get_service_container(session: AsyncSession = Depends(get_db)) -> ServiceContainer:

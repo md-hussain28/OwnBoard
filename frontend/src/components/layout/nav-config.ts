@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BookOpenCheckIcon,
+  BotMessageSquareIcon,
   ClipboardCheckIcon,
   FolderKanbanIcon,
   GitBranchIcon,
@@ -66,6 +67,15 @@ export const WORKSPACE_NAV: NavGroup = {
       matchPrefix: true,
       roles: ["admin"],
       tourId: "projects",
+    },
+    {
+      href: appPath("assistant"),
+      label: "AI Assistant",
+      description: "Analytics & actions",
+      icon: BotMessageSquareIcon,
+      matchPrefix: true,
+      roles: ["admin"],
+      tourId: "assistant",
     },
     {
       href: appPath("onboarding", "packs"),

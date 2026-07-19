@@ -49,8 +49,9 @@ ignore = ["UP046", "UP042"]
 [tool.ruff.lint.per-file-ignores]
 "onboard/dao/models/*.py" = ["F821"]
 "alembic/versions/*.py" = ["E501", "I001", "UP035", "UP007"]
-# Prompt/spec-definition file: long natural-language tool descriptions + system prompt read best unwrapped.
+# Prompt/spec-definition files: long natural-language tool descriptions + system prompts read best unwrapped.
 "onboard/services/project_chat/project_chat_service.py" = ["E501"]
+"onboard/services/admin_assistant/admin_assistant_service.py" = ["E501"]
 
 [build-system]
 requires = ["hatchling"]

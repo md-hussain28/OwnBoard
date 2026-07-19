@@ -7,6 +7,7 @@ export * from "./ask-doc-viewer";
 export * from "./ask-extras";
 export * from "./ask-followup";
 export * from "./ask-message";
+export * from "./ask-more";
 export * from "./ask-thinking";
 export * from "./ask-thread-history";
 export * from "./ask-tool-part";

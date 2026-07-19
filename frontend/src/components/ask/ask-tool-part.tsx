@@ -9,8 +9,10 @@ import {
   ClockIcon,
   CodeIcon,
   ColumnsIcon,
+  FileCode2Icon,
   FolderTreeIcon,
   GaugeIcon,
+  GitCompareIcon,
   GraduationCapIcon,
   HelpCircleIcon,
   LayersIcon,
@@ -21,13 +23,18 @@ import {
   ListTreeIcon,
   type LucideIcon,
   MessageCircleQuestionIcon,
+  PlugIcon,
   QuoteIcon,
   Rows3Icon,
+  ScaleIcon,
+  SplitIcon,
   StarIcon,
   Table2Icon,
   TagsIcon,
+  TargetIcon,
   TerminalIcon,
   UsersRoundIcon,
+  VariableIcon,
   WandSparklesIcon,
   WorkflowIcon,
 } from "lucide-react";
@@ -60,6 +67,15 @@ import {
   AskTableBlock,
   AskTreeBlock,
 } from "./ask-extras";
+import {
+  AskAnnotatedCodeBlock,
+  AskApiEndpointBlock,
+  AskConfidenceCheckBlock,
+  AskDecisionTreeBlock,
+  AskDiffBlock,
+  AskEnvVarsBlock,
+  AskProsConsBlock,
+} from "./ask-more";
 import {
   AskCalloutBlock,
   AskChecklistBlock,
@@ -100,6 +116,13 @@ const LABEL: Record<AskToolName, string> = {
   showKeyTakeaways: "Distilling the key points…",
   showTree: "Growing the tree…",
   showFlow: "Mapping the flow…",
+  showApiEndpoint: "Documenting the endpoint…",
+  showAnnotatedCode: "Annotating the code…",
+  showDiff: "Diffing the changes…",
+  showEnvVars: "Listing the config…",
+  showDecisionTree: "Building the decision guide…",
+  showConfidenceCheck: "Preparing a self-check…",
+  showProsCons: "Weighing the trade-offs…",
 };
 
 /** Per-tool icon so the "building…" placeholder previews the shape of the component landing next. */
@@ -134,6 +157,13 @@ const ICON: Record<AskToolName, LucideIcon> = {
   showKeyTakeaways: LightbulbIcon,
   showTree: ListTreeIcon,
   showFlow: WorkflowIcon,
+  showApiEndpoint: PlugIcon,
+  showAnnotatedCode: FileCode2Icon,
+  showDiff: GitCompareIcon,
+  showEnvVars: VariableIcon,
+  showDecisionTree: SplitIcon,
+  showConfidenceCheck: TargetIcon,
+  showProsCons: ScaleIcon,
 };
 
 /**
@@ -243,6 +273,20 @@ export function AskToolPart({
       return <AskTreeBlock data={data as never} />;
     case "showFlow":
       return <AskFlowBlock data={data as never} />;
+    case "showApiEndpoint":
+      return <AskApiEndpointBlock data={data as never} />;
+    case "showAnnotatedCode":
+      return <AskAnnotatedCodeBlock data={data as never} />;
+    case "showDiff":
+      return <AskDiffBlock data={data as never} />;
+    case "showEnvVars":
+      return <AskEnvVarsBlock data={data as never} />;
+    case "showDecisionTree":
+      return <AskDecisionTreeBlock data={data as never} />;
+    case "showConfidenceCheck":
+      return <AskConfidenceCheckBlock data={data as never} />;
+    case "showProsCons":
+      return <AskProsConsBlock data={data as never} />;
     default:
       return null;
   }

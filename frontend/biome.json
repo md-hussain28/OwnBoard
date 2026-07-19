@@ -132,6 +132,7 @@
                   "@/types/**",
                   "!@/components/admin",
                   "!@/components/ask",
+                  "!@/components/assistant",
                   "!@/components/brand",
                   "!@/components/chat",
                   "!@/components/dashboard",

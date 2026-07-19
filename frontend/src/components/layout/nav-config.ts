@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BookOpenCheckIcon,
-  BotMessageSquareIcon,
   ClipboardCheckIcon,
   FolderKanbanIcon,
   GitBranchIcon,
@@ -69,15 +68,6 @@ export const WORKSPACE_NAV: NavGroup = {
       tourId: "projects",
     },
     {
-      href: appPath("assistant"),
-      label: "AI Assistant",
-      description: "Analytics & actions",
-      icon: BotMessageSquareIcon,
-      matchPrefix: true,
-      roles: ["admin"],
-      tourId: "assistant",
-    },
-    {
       href: appPath("onboarding", "packs"),
       label: "My modules",
       description: "Assigned onboarding",
@@ -96,6 +86,21 @@ export const WORKSPACE_NAV: NavGroup = {
       tourId: "projects",
     },
   ],
+};
+
+/**
+ * Admin AI Assistant — deliberately NOT in the main nav list. It's pinned in the sidebar footer,
+ * directly above "Manage Team", so it reads as an always-on personal co-pilot rather than one more
+ * page. Rendered by `SidebarAccountFooter` (admin-only, same gate as Manage Team).
+ */
+export const ASSISTANT_NAV_ITEM: NavItem = {
+  href: appPath("assistant"),
+  label: "AI Assistant",
+  description: "Your onboarding co-pilot",
+  icon: SparklesIcon,
+  matchPrefix: true,
+  roles: ["admin"],
+  tourId: "assistant",
 };
 
 /**

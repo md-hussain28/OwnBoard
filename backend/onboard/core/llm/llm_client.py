@@ -14,12 +14,21 @@ TModel = TypeVar("TModel", bound=BaseModel)
 class LLMClient:
     """Thin wrapper around the OpenAI SDK for embeddings and chat completions."""
 
-    def __init__(self, api_key: str, embedding_model: str, chat_model: str, chat_model_complex: str | None = None):
+    def __init__(
+        self,
+        api_key: str,
+        embedding_model: str,
+        chat_model: str,
+        chat_model_complex: str | None = None,
+        assistant_model: str | None = None,
+    ):
         self._client = AsyncOpenAI(api_key=api_key)
         self.embedding_model = embedding_model
         self.chat_model = chat_model
         # Stronger model for complex requests; falls back to the default when unset.
         self.chat_model_complex = chat_model_complex or chat_model
+        # Model for the agentic admin assistant; falls back to the complex model when unset.
+        self.assistant_model = assistant_model or self.chat_model_complex
 
     async def embed(self, text: str) -> list[float]:
         response = await self._client.embeddings.create(model=self.embedding_model, input=text)
@@ -134,4 +143,5 @@ def get_llm_client() -> LLMClient:
         embedding_model=settings.OPENAI_EMBEDDING_MODEL,
         chat_model=settings.OPENAI_CHAT_MODEL,
         chat_model_complex=settings.OPENAI_CHAT_MODEL_COMPLEX,
+        assistant_model=settings.OPENAI_ASSISTANT_MODEL,
     )

@@ -68,7 +68,9 @@ const SAMPLE_PROMPTS = [
   },
 ];
 
-const EMPTY_STATE_PROMPTS = SAMPLE_PROMPTS.slice(0, 4);
+// Split the starters to make the agent's dual nature legible: it answers questions AND does work.
+const ASK_PROMPTS = SAMPLE_PROMPTS.slice(0, 3);
+const ACT_PROMPTS = SAMPLE_PROMPTS.slice(3);
 
 function textOf(message: UIMessage): string {
   return message.parts
@@ -88,19 +90,38 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
           Your onboarding co-pilot
         </p>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Ask about progress across your org — who's passed, failed, or stalled — and get answers as
-          live charts and tables. Or just tell it to add a member, create a hire, or assign a track,
-          and it does the work.
+          Tell me what you need in plain English. I read your org's live onboarding data and take
+          real actions on your behalf — no forms, no clicking around.
         </p>
       </div>
-      <Suggestions className="max-w-xl justify-center">
-        {EMPTY_STATE_PROMPTS.map((s) => (
-          <Suggestion key={s.label} suggestion={s.prompt} onClick={onPick}>
-            <s.icon className="size-4 shrink-0 text-brand-teal" />
-            {s.label}
-          </Suggestion>
-        ))}
-      </Suggestions>
+      <div className="w-full max-w-xl space-y-4">
+        <div className="space-y-2">
+          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            Ask about
+          </p>
+          <Suggestions className="justify-center">
+            {ASK_PROMPTS.map((s) => (
+              <Suggestion key={s.label} suggestion={s.prompt} onClick={onPick}>
+                <s.icon className="size-4 shrink-0 text-brand-teal" />
+                {s.label}
+              </Suggestion>
+            ))}
+          </Suggestions>
+        </div>
+        <div className="space-y-2">
+          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            Or have me do it
+          </p>
+          <Suggestions className="justify-center">
+            {ACT_PROMPTS.map((s) => (
+              <Suggestion key={s.label} suggestion={s.prompt} onClick={onPick}>
+                <s.icon className="size-4 shrink-0 text-brand-honey" />
+                {s.label}
+              </Suggestion>
+            ))}
+          </Suggestions>
+        </div>
+      </div>
     </ConversationEmptyState>
   );
 }
@@ -158,17 +179,23 @@ function AssistantChat() {
             <SparklesIcon className="size-4.5" />
           </span>
           <div className="min-w-0">
-            <h1 className="font-heading text-sm font-semibold leading-tight text-foreground">
-              AI Assistant
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-heading text-sm font-semibold leading-tight text-foreground">
+                AI Assistant
+              </h1>
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-teal-soft px-1.5 py-0.5 text-[0.625rem] font-medium text-brand-teal">
+                <span aria-hidden className="size-1.5 rounded-full bg-brand-teal" />
+                {busy ? "Working" : "Ready"}
+              </span>
+            </div>
             <p className="truncate text-xs text-muted-foreground">
-              Onboarding analytics &amp; admin actions across your org
+              Reads your onboarding data &amp; takes action on your behalf
             </p>
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={newChat} disabled={messages.length === 0}>
           <MessageSquarePlusIcon />
-          New
+          New session
         </Button>
       </div>
 

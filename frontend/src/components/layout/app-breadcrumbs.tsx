@@ -42,6 +42,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   projects: "Projects",
   repos: "Repos",
   tracks: "Modules",
+  assistant: "AI Assistant",
   // Project sub-nav sections (kept in sync with PROJECT_SECTIONS)
   ...Object.fromEntries(PROJECT_SECTIONS.filter((s) => s.key).map((s) => [s.key, s.label])),
 };

@@ -25,6 +25,13 @@ type Crumb = {
   href?: string;
 };
 
+// Labels for sections under /app/projects/:id — resolved only inside projectCrumbs so a
+// section key that collides with a top-level segment (e.g. "onboarding") can't leak its
+// project-scoped label ("Project Onboarding") into workspace-level trails.
+const PROJECT_SECTION_LABELS: Record<string, string> = Object.fromEntries(
+  PROJECT_SECTIONS.filter((s) => s.key).map((s) => [s.key, s.label]),
+);
+
 const SEGMENT_LABELS: Record<string, string> = {
   "doc-packs": "Quizzes",
   new: "Create",
@@ -34,18 +41,20 @@ const SEGMENT_LABELS: Record<string, string> = {
   "codebase-quiz": "Codebase quiz",
   unlocked: "Unlocked",
   chat: "Archaeology",
-  dashboard: "Skill map",
+  dashboard: "Skill graph",
+  "skill-graph": "Skill graph",
   admin: "Admin",
   settings: "Settings",
   organization: "Organization",
   team: "Team",
   projects: "Projects",
   repos: "Repos",
-  tracks: "Modules",
+  tracks: "Onboarding",
   assistant: "AI Assistant",
-  // Project sub-nav sections (kept in sync with PROJECT_SECTIONS)
-  ...Object.fromEntries(PROJECT_SECTIONS.filter((s) => s.key).map((s) => [s.key, s.label])),
 };
+
+// Root segments with no index page — their crumb must not render as a link.
+const SEGMENTS_WITHOUT_INDEX = new Set(["settings"]);
 
 function navMatchForPath(
   pathname: string,
@@ -146,7 +155,8 @@ function projectCrumbs(
   if (sectionKey) {
     const sectionHref = `${projectHref}/${sectionKey}`;
     crumbs.push({
-      label: SEGMENT_LABELS[sectionKey] ?? titleCase(sectionKey),
+      label:
+        PROJECT_SECTION_LABELS[sectionKey] ?? SEGMENT_LABELS[sectionKey] ?? titleCase(sectionKey),
       // Keep the section clickable once there's a deeper crumb (e.g. a specific repo) after it.
       href: hasSub ? sectionHref : undefined,
     });
@@ -162,17 +172,17 @@ function projectCrumbs(
   return crumbs;
 }
 
+/** Full trail: Home → section trail. Every console page anchors back to the app home. */
 function buildCrumbs(pathname: string, role?: AppRole | null): Crumb[] {
-  if (pathname === APP_HOME || pathname === `${APP_HOME}/`) {
-    return [{ label: "Codebases" }];
-  }
-
   const parts = pathname.split("/").filter(Boolean);
   const consoleParts = parts[0] === "app" ? parts.slice(1) : parts;
-  if (consoleParts.length === 0) {
-    return [{ label: "Codebases" }];
+  if (pathname === APP_HOME || pathname === `${APP_HOME}/` || consoleParts.length === 0) {
+    return [{ label: "Home" }];
   }
+  return [{ label: "Home", href: APP_HOME }, ...sectionCrumbs(pathname, consoleParts, role)];
+}
 
+function sectionCrumbs(pathname: string, consoleParts: string[], role?: AppRole | null): Crumb[] {
   const nav = navMatchForPath(pathname, role);
   const rootHref = nav?.href ?? `${APP_HOME}/${consoleParts[0]}`;
   const rootLabel = nav?.label ?? SEGMENT_LABELS[consoleParts[0]] ?? titleCase(consoleParts[0]);
@@ -210,7 +220,13 @@ function buildCrumbs(pathname: string, role?: AppRole | null): Crumb[] {
     return [{ label: rootLabel }];
   }
 
-  const crumbs: Crumb[] = [{ label: rootLabel, href: rootHref }];
+  return genericTrail(rootLabel, rootHref, consoleParts);
+}
+
+/** Fallback trail: root section followed by one crumb per remaining path segment. */
+function genericTrail(rootLabel: string, rootHref: string, consoleParts: string[]): Crumb[] {
+  const rootIsLinkable = !SEGMENTS_WITHOUT_INDEX.has(consoleParts[0] ?? "");
+  const crumbs: Crumb[] = [{ label: rootLabel, href: rootIsLinkable ? rootHref : undefined }];
   const rootSegments = rootHref.replace(APP_HOME, "").split("/").filter(Boolean);
   let path = rootHref;
   for (let i = rootSegments.length; i < consoleParts.length; i++) {

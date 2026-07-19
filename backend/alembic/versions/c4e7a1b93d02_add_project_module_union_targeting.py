@@ -32,8 +32,7 @@ def upgrade() -> None:
     )
     # Seed from the legacy assign_scope: manually-scoped project modules default to "not everyone".
     op.execute(
-        "UPDATE doc_pack SET target_all_members = false "
-        "WHERE project_id IS NOT NULL AND assign_scope = 'manual'"
+        "UPDATE doc_pack SET target_all_members = false WHERE project_id IS NOT NULL AND assign_scope = 'manual'"
     )
 
     op.create_table(
@@ -72,9 +71,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["project_function_type_id"], ["project_function_type.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["project_repo_id"], ["project_repo.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "doc_pack_id", "project_repo_id", "project_function_type_id", name="uq_pack_target_repo"
-        ),
+        sa.UniqueConstraint("doc_pack_id", "project_repo_id", "project_function_type_id", name="uq_pack_target_repo"),
     )
     op.create_index(op.f("ix_doc_pack_target_repo_doc_pack_id"), "doc_pack_target_repo", ["doc_pack_id"])
     op.create_index(op.f("ix_doc_pack_target_repo_org_id"), "doc_pack_target_repo", ["org_id"])
@@ -83,24 +80,18 @@ def upgrade() -> None:
         "doc_pack_target_repo",
         ["project_function_type_id"],
     )
-    op.create_index(
-        op.f("ix_doc_pack_target_repo_project_repo_id"), "doc_pack_target_repo", ["project_repo_id"]
-    )
+    op.create_index(op.f("ix_doc_pack_target_repo_project_repo_id"), "doc_pack_target_repo", ["project_repo_id"])
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     op.drop_index(op.f("ix_doc_pack_target_repo_project_repo_id"), table_name="doc_pack_target_repo")
-    op.drop_index(
-        op.f("ix_doc_pack_target_repo_project_function_type_id"), table_name="doc_pack_target_repo"
-    )
+    op.drop_index(op.f("ix_doc_pack_target_repo_project_function_type_id"), table_name="doc_pack_target_repo")
     op.drop_index(op.f("ix_doc_pack_target_repo_org_id"), table_name="doc_pack_target_repo")
     op.drop_index(op.f("ix_doc_pack_target_repo_doc_pack_id"), table_name="doc_pack_target_repo")
     op.drop_table("doc_pack_target_repo")
 
-    op.drop_index(
-        op.f("ix_doc_pack_target_domain_project_function_type_id"), table_name="doc_pack_target_domain"
-    )
+    op.drop_index(op.f("ix_doc_pack_target_domain_project_function_type_id"), table_name="doc_pack_target_domain")
     op.drop_index(op.f("ix_doc_pack_target_domain_org_id"), table_name="doc_pack_target_domain")
     op.drop_index(op.f("ix_doc_pack_target_domain_doc_pack_id"), table_name="doc_pack_target_domain")
     op.drop_table("doc_pack_target_domain")

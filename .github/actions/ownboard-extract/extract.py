@@ -21,6 +21,7 @@ import os
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 US = "\x1f"  # unit separator — safe field delimiter inside git --pretty formats
@@ -169,6 +170,13 @@ def main() -> None:
     endpoint = os.environ.get("OWNBOARD_ENDPOINT", "").strip()
     if not api_key or not endpoint:
         sys.exit("OWNBOARD_API_KEY and OWNBOARD_ENDPOINT are required")
+    host = urllib.parse.urlsplit(endpoint).hostname or ""
+    if host in ("localhost", "127.0.0.1", "0.0.0.0", "::1"):
+        sys.exit(
+            f"OWNBOARD_ENDPOINT is {endpoint}, but a GitHub-hosted runner cannot reach your "
+            "localhost. Set `endpoint` in the workflow to your public OwnBoard API URL, e.g. "
+            "https://your-api.onrender.com/api/v1/ingest"
+        )
 
     max_commits = int(os.environ.get("OWNBOARD_MAX_COMMITS", "1000") or "1000")
     prefixes = [p.strip() for p in os.environ.get("OWNBOARD_PATHS", "").split(",") if p.strip()]

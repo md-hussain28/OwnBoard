@@ -13,7 +13,7 @@ import { Button } from "@/ui";
 import { useSidebar } from "@/ui/sidebar";
 
 /** Bumped when the tour content changes materially, so returning users see it once more. */
-const TOUR_VERSION = "v5";
+const TOUR_VERSION = "v6";
 const SEEN_KEY = `ownboard:tour:${TOUR_VERSION}:seen`;
 
 /** Gap between the spotlit element and the card, and padding around the cutout. */

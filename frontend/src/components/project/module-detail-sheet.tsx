@@ -84,8 +84,8 @@ export function ModuleDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full gap-0 overflow-y-auto sm:max-w-md">
-        <SheetHeader className="gap-2 pr-10">
+      <SheetContent className="flex w-full flex-col gap-0 sm:max-w-md">
+        <SheetHeader className="shrink-0 gap-2 pr-10">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <SheetTitle className="min-w-0 flex-1 truncate">{track.name}</SheetTitle>
             <Badge variant={statusVariant(track.status)}>{statusLabel(track.status)}</Badge>
@@ -133,25 +133,14 @@ export function ModuleDetailSheet({
             }
           />
         ) : (
-          <TargetingView track={track} members={members ?? []} />
+          <TargetingView
+            track={track}
+            members={members ?? []}
+            manageable={manageable}
+            authoringHref={appPath("projects", projectId, "onboarding", track.id)}
+            onEdit={() => setEditing(true)}
+          />
         )}
-
-        <SheetFooter className="flex-row gap-2 border-t bg-muted/30">
-          {!editing && (
-            <>
-              {manageable && (
-                <Button variant="outline" className="flex-1" onClick={() => setEditing(true)}>
-                  <PencilIcon className="size-4" /> Edit audience
-                </Button>
-              )}
-              <Button asChild variant="ghost" className="flex-1">
-                <a href={appPath("projects", projectId, "onboarding", track.id)}>
-                  <ExternalLinkIcon className="size-4" /> Authoring
-                </a>
-              </Button>
-            </>
-          )}
-        </SheetFooter>
       </SheetContent>
     </Sheet>
   );
@@ -161,9 +150,15 @@ export function ModuleDetailSheet({
 function TargetingView({
   track,
   members,
+  manageable,
+  authoringHref,
+  onEdit,
 }: {
   track: ProjectTrack;
   members: { employeeId: string; name: string }[];
+  manageable: boolean;
+  authoringHref: string;
+  onEdit: () => void;
 }) {
   const nameById = new Map(members.map((m) => [m.employeeId, m.name]));
   const manualNames = track.manualEmployeeIds.map((id) => nameById.get(id) ?? "Someone");
@@ -174,59 +169,74 @@ function TargetingView({
     track.manualEmployeeIds.length === 0;
 
   return (
-    <div className="space-y-5 px-4 py-4">
-      <SectionLabel>Who it&apos;s for</SectionLabel>
-      {empty && (
-        <p className="text-sm text-muted-foreground">
-          No one yet. Press <span className="font-medium">Edit</span> to choose an audience.
-        </p>
-      )}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
+        <SectionLabel>Who it&apos;s for</SectionLabel>
+        {empty && (
+          <p className="text-sm text-muted-foreground">
+            No one yet. Press <span className="font-medium">Edit</span> to choose an audience.
+          </p>
+        )}
 
-      {track.targetAllMembers && <Row icon={UsersRoundIcon}>Everyone on this project</Row>}
+        {track.targetAllMembers && <Row icon={UsersRoundIcon}>Everyone on this project</Row>}
 
-      {track.domainNames.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-sm">Members in these domains</p>
-          <div className="flex flex-wrap gap-1.5">
-            {track.domainNames.map((d) => (
-              <Badge key={d} variant="secondary">
-                {d}
-              </Badge>
-            ))}
+        {track.domainNames.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-sm">Members in these domains</p>
+            <div className="flex flex-wrap gap-1.5">
+              {track.domainNames.map((d) => (
+                <Badge key={d} variant="secondary">
+                  {d}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {track.repoRules.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-sm">People working on</p>
-          <ul className="space-y-1">
-            {track.repoRules.map((r) => (
-              <li
-                key={`${r.repoId}:${r.domainId ?? ""}`}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
-              >
-                <GitBranchIcon className="size-3.5 shrink-0" />
-                <span className="truncate">{r.repoName ?? r.repoId}</span>
-                <span className="text-xs">· {r.domainName ?? "anyone on the repo"}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {manualNames.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-sm">Also assigned</p>
-          <div className="flex flex-wrap gap-1.5">
-            {manualNames.map((n, i) => (
-              <Badge key={`${n}-${i}`} variant="outline">
-                {n}
-              </Badge>
-            ))}
+        {track.repoRules.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-sm">People working on</p>
+            <ul className="space-y-1">
+              {track.repoRules.map((r) => (
+                <li
+                  key={`${r.repoId}:${r.domainId ?? ""}`}
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
+                >
+                  <GitBranchIcon className="size-3.5 shrink-0" />
+                  <span className="truncate">{r.repoName ?? r.repoId}</span>
+                  <span className="text-xs">· {r.domainName ?? "anyone on the repo"}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-      )}
+        )}
+
+        {manualNames.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-sm">Also assigned</p>
+            <div className="flex flex-wrap gap-1.5">
+              {manualNames.map((n, i) => (
+                <Badge key={`${n}-${i}`} variant="outline">
+                  {n}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <SheetFooter className="shrink-0 flex-row gap-2 border-t bg-muted/30">
+        {manageable && (
+          <Button variant="outline" className="flex-1" onClick={onEdit}>
+            <PencilIcon className="size-4" /> Edit audience
+          </Button>
+        )}
+        <Button asChild variant="ghost" className="flex-1">
+          <a href={authoringHref}>
+            <ExternalLinkIcon className="size-4" /> Authoring
+          </a>
+        </Button>
+      </SheetFooter>
     </div>
   );
 }
@@ -317,167 +327,173 @@ function TargetingEditor({
   }
 
   return (
-    <div className="space-y-5 px-4 py-4">
-      <p className="text-xs text-muted-foreground">
-        The audience is everyone matched by <span className="font-medium">any</span> of the rules
-        below — combine as many as you need.
-      </p>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
+        <p className="text-xs text-muted-foreground">
+          The audience is everyone matched by <span className="font-medium">any</span> of the rules
+          below — combine as many as you need.
+        </p>
 
-      {/* Everyone */}
-      <button
-        type="button"
-        onClick={() => setTargetAll((v) => !v)}
-        className={cn(
-          "flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors",
-          targetAll ? "border-primary bg-brand-honey-soft" : "border-border hover:bg-muted",
-        )}
-      >
-        <span className="flex items-center gap-2 text-sm font-medium">
-          <UsersRoundIcon className="size-4" /> Everyone on this project
-        </span>
-        {targetAll && <CheckIcon className="size-4 text-primary" />}
-      </button>
+        {/* Everyone */}
+        <button
+          type="button"
+          onClick={() => setTargetAll((v) => !v)}
+          className={cn(
+            "flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors",
+            targetAll ? "border-primary bg-brand-honey-soft" : "border-border hover:bg-muted",
+          )}
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <UsersRoundIcon className="size-4" /> Everyone on this project
+          </span>
+          {targetAll && <CheckIcon className="size-4 text-primary" />}
+        </button>
 
-      <Separator />
+        <Separator />
 
-      {/* Domains */}
-      <div className="space-y-2">
-        <SectionLabel>Needed for domains</SectionLabel>
-        {functionTypes.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No domains defined for this project yet.</p>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {functionTypes.map((t) => {
-              const on = domainIds.has(t.id);
+        {/* Domains */}
+        <div className="space-y-2">
+          <SectionLabel>Needed for domains</SectionLabel>
+          {functionTypes.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              No domains defined for this project yet.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {functionTypes.map((t) => {
+                const on = domainIds.has(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => toggleDomain(t.id)}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors",
+                      on
+                        ? "border-primary bg-brand-honey-soft text-foreground"
+                        : "border-border text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    {on && <CheckIcon className="size-3" />}
+                    {t.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Repo rules */}
+        <div className="space-y-2">
+          <SectionLabel>People working on a repo</SectionLabel>
+          {repoRules.length > 0 && (
+            <ul className="space-y-1">
+              {repoRules.map((r) => (
+                <li
+                  key={`${r.repoId}:${r.domainId ?? ""}`}
+                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm"
+                >
+                  <GitBranchIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 truncate">
+                    {repoName.get(r.repoId) ?? r.repoId}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {r.domainId ? domainName.get(r.domainId) : "anyone"}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Remove rule"
+                    onClick={() => setRepoRules((prev) => prev.filter((x) => x !== r))}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <XIcon className="size-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {repos.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Link a repo to this project to use this.
+            </p>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={newRepoId} onValueChange={setNewRepoId}>
+                <SelectTrigger className="min-w-36 flex-1">
+                  <SelectValue placeholder="Repo…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {repos.map((r) => (
+                    <SelectItem key={r.repoId} value={r.repoId}>
+                      {r.name ?? r.repoId}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={newRepoDomain} onValueChange={setNewRepoDomain}>
+                <SelectTrigger className="min-w-32 flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_DOMAIN}>Anyone</SelectItem>
+                  {functionTypes.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={addRepoRule}
+                disabled={!newRepoId}
+              >
+                <PlusIcon className="size-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Manual people */}
+        <div className="space-y-2">
+          <SectionLabel>Also assign specific people ({manualIds.size})</SectionLabel>
+          <div className="max-h-56 space-y-1 overflow-y-auto">
+            {members.length === 0 && (
+              <p className="py-4 text-center text-sm text-muted-foreground">No members yet.</p>
+            )}
+            {members.map((m) => {
+              const on = manualIds.has(m.employeeId);
               return (
                 <button
-                  key={t.id}
                   type="button"
-                  onClick={() => toggleDomain(t.id)}
+                  key={m.employeeId}
+                  onClick={() => toggleManual(m.employeeId)}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors",
-                    on
-                      ? "border-primary bg-brand-honey-soft text-foreground"
-                      : "border-border text-muted-foreground hover:bg-muted",
+                    "flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left transition-colors",
+                    on ? "border-primary bg-brand-honey-soft" : "border-border hover:bg-muted",
                   )}
                 >
-                  {on && <CheckIcon className="size-3" />}
-                  {t.name}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{m.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {m.functionTypeName ?? m.role ?? "Member"}
+                    </p>
+                  </div>
+                  {on && <CheckIcon className="size-4 shrink-0 text-primary" />}
                 </button>
               );
             })}
           </div>
-        )}
-      </div>
-
-      <Separator />
-
-      {/* Repo rules */}
-      <div className="space-y-2">
-        <SectionLabel>People working on a repo</SectionLabel>
-        {repoRules.length > 0 && (
-          <ul className="space-y-1">
-            {repoRules.map((r) => (
-              <li
-                key={`${r.repoId}:${r.domainId ?? ""}`}
-                className="flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm"
-              >
-                <GitBranchIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 flex-1 truncate">
-                  {repoName.get(r.repoId) ?? r.repoId}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {r.domainId ? domainName.get(r.domainId) : "anyone"}
-                </span>
-                <button
-                  type="button"
-                  aria-label="Remove rule"
-                  onClick={() => setRepoRules((prev) => prev.filter((x) => x !== r))}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <XIcon className="size-4" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {repos.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Link a repo to this project to use this.</p>
-        ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={newRepoId} onValueChange={setNewRepoId}>
-              <SelectTrigger className="min-w-36 flex-1">
-                <SelectValue placeholder="Repo…" />
-              </SelectTrigger>
-              <SelectContent>
-                {repos.map((r) => (
-                  <SelectItem key={r.repoId} value={r.repoId}>
-                    {r.name ?? r.repoId}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={newRepoDomain} onValueChange={setNewRepoDomain}>
-              <SelectTrigger className="min-w-32 flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_DOMAIN}>Anyone</SelectItem>
-                {functionTypes.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={addRepoRule}
-              disabled={!newRepoId}
-            >
-              <PlusIcon className="size-4" />
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <Separator />
-
-      {/* Manual people */}
-      <div className="space-y-2">
-        <SectionLabel>Also assign specific people ({manualIds.size})</SectionLabel>
-        <div className="max-h-56 space-y-1 overflow-y-auto">
-          {members.length === 0 && (
-            <p className="py-4 text-center text-sm text-muted-foreground">No members yet.</p>
-          )}
-          {members.map((m) => {
-            const on = manualIds.has(m.employeeId);
-            return (
-              <button
-                type="button"
-                key={m.employeeId}
-                onClick={() => toggleManual(m.employeeId)}
-                className={cn(
-                  "flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left transition-colors",
-                  on ? "border-primary bg-brand-honey-soft" : "border-border hover:bg-muted",
-                )}
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{m.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {m.functionTypeName ?? m.role ?? "Member"}
-                  </p>
-                </div>
-                {on && <CheckIcon className="size-4 shrink-0 text-primary" />}
-              </button>
-            );
-          })}
         </div>
       </div>
 
-      <div className="flex gap-2 pt-1">
+      <SheetFooter className="shrink-0 flex-row gap-2 border-t bg-muted/30">
         <Button className="flex-1" onClick={handleSave} disabled={saving}>
           {saving && <Spinner />}
           {saving ? "Saving..." : "Save targeting"}
@@ -485,7 +501,7 @@ function TargetingEditor({
         <Button variant="outline" onClick={onCancel} disabled={saving}>
           Cancel
         </Button>
-      </div>
+      </SheetFooter>
     </div>
   );
 }

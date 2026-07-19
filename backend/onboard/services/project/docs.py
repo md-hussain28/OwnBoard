@@ -152,6 +152,7 @@ class ProjectDocsMixin(ProjectServiceBase):
         viewer: Employee,
         items: list[tuple[str, str, str, int]],
         created_by: str | None,
+        title: str | None = None,
         type_ids: list[str] | None = None,
         repo_ids: list[str] | None = None,
         description: str | None = None,
@@ -159,16 +160,16 @@ class ProjectDocsMixin(ProjectServiceBase):
         """Step 2: register the objects the browser uploaded and return the created DocPackDocuments
         so the router can schedule ingest. See `DocPackService.register_uploaded_documents`.
 
-        The batch-level metadata (`type_ids`, `repo_ids`, `description`) captured in the upload modal
-        is applied to every registered document here — before the router schedules ingest — so the
-        context feeds the embeddings and the doc shows up tagged/attached immediately."""
+        The batch-level metadata (`title`, `type_ids`, `repo_ids`, `description`) captured in the upload
+        modal is applied to every registered document here — before the router schedules ingest — so the
+        context feeds the embeddings and the doc shows up named/tagged/attached immediately."""
         project = await self._get_project(org_id, project_id)
         await self._assert_can_manage(project, viewer)
         pack = await self._ensure_kb_pack(org_id, project_id)
         documents = await DocPackService(self.session).register_uploaded_documents(
             org_id, pack.id, items, created_by=created_by
         )
-        await self._apply_upload_metadata(org_id, project_id, documents, type_ids, repo_ids, description)
+        await self._apply_upload_metadata(org_id, project_id, documents, title, type_ids, repo_ids, description)
         return documents
 
     async def _apply_upload_metadata(
@@ -176,6 +177,7 @@ class ProjectDocsMixin(ProjectServiceBase):
         org_id: str,
         project_id: str,
         documents: list,
+        title: str | None,
         type_ids: list[str] | None,
         repo_ids: list[str] | None,
         description: str | None,
@@ -187,6 +189,7 @@ class ProjectDocsMixin(ProjectServiceBase):
         links here — no reconciliation needed."""
         document_dao = DocPackDocumentDAO(self.session)
         cleaned_description = (description or "").strip() or None
+        cleaned_title = (title or "").strip() or None
 
         valid_type_ids: set[str] = set()
         if type_ids:
@@ -201,8 +204,13 @@ class ProjectDocsMixin(ProjectServiceBase):
         type_link_dao = ProjectDocumentTypeDAO(self.session)
         repo_link_dao = ProjectDocumentRepoDAO(self.session)
         for document in documents:
+            updates: dict = {}
+            if cleaned_title is not None:
+                updates["title"] = cleaned_title
             if cleaned_description is not None:
-                await document_dao.update(document.id, description=cleaned_description)
+                updates["description"] = cleaned_description
+            if updates:
+                await document_dao.update(document.id, **updates)
             for type_id in target_types:
                 await type_link_dao.create(org_id=org_id, document_id=document.id, doc_type_id=type_id)
             for repo_id in target_repos:

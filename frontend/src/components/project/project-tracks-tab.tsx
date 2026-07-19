@@ -12,6 +12,7 @@ import {
   UsersIcon,
   UsersRoundIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { EmptyState, FilteredEmpty, FilterSelect, QueryState } from "@/components/shared";
@@ -260,9 +261,9 @@ function ModuleRow({
             <UserPlusIcon className="size-4" /> Assign
           </Button>
           <Button asChild variant="ghost" size="sm">
-            <a href={appPath("projects", projectId, "onboarding", track.id)}>
+            <Link href={appPath("projects", projectId, "onboarding", track.id)}>
               <PencilIcon className="size-4" /> Edit
-            </a>
+            </Link>
           </Button>
         </div>
       )}
@@ -277,6 +278,7 @@ export function ProjectTracksTab({ project }: { project: ProjectDetail }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<ProjectTrack | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [startEditing, setStartEditing] = useState(false);
 
   const hasFilters = query.trim() !== "" || statusFilter !== "all";
 
@@ -285,8 +287,9 @@ export function ProjectTracksTab({ project }: { project: ProjectDetail }) {
     setStatusFilter("all");
   }
 
-  function openTrack(track: ProjectTrack) {
+  function openTrack(track: ProjectTrack, edit = false) {
     setSelected(track);
+    setStartEditing(edit);
     setSheetOpen(true);
   }
 
@@ -352,9 +355,15 @@ export function ProjectTracksTab({ project }: { project: ProjectDetail }) {
         {filtered.length === 0 ? (
           <FilteredEmpty noun="modules" onClear={hasFilters ? clearFilters : undefined} />
         ) : (
-          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+          <ul className="space-y-2">
             {filtered.map((track) => (
-              <ModuleRow key={track.id} track={track} onOpen={openTrack} />
+              <ModuleRow
+                key={track.id}
+                track={track}
+                projectId={projectId}
+                manageable={project.canManage}
+                onOpen={openTrack}
+              />
             ))}
           </ul>
         )}
@@ -367,6 +376,7 @@ export function ProjectTracksTab({ project }: { project: ProjectDetail }) {
         repos={project.repos}
         manageable={project.canManage}
         open={sheetOpen}
+        startEditing={startEditing}
         onOpenChange={setSheetOpen}
       />
     </div>

@@ -2,6 +2,8 @@
 
 import {
   CheckCircle2Icon,
+  CheckIcon,
+  CircleAlertIcon,
   GitBranchIcon,
   Link2Icon,
   MoreVerticalIcon,
@@ -17,7 +19,7 @@ import { repoSlug } from "@/components/repo";
 import { ConfirmDialog, EmptyState, FilteredEmpty, FilterSelect } from "@/components/shared";
 import { useAddProjectRepo, useRemoveProjectRepo } from "@/hooks/queries/project";
 import { useRepos } from "@/hooks/queries/repo";
-import { notify } from "@/lib";
+import { cn, notify } from "@/lib";
 import type { ProjectDetail, ProjectRepo } from "@/schemas";
 import {
   Badge,
@@ -42,6 +44,8 @@ import { RepoDetailSheet } from "./repo-detail-sheet";
 import { RepoMembersDialog } from "./repo-members-dialog";
 
 type SyncFilter = "all" | "synced" | "unsynced";
+type PeopleFilter = "all" | "assigned" | "unassigned";
+type SortKey = "name" | "people" | "primary" | "sync";
 
 const SYNC_OPTIONS: { value: SyncFilter; label: string }[] = [
   { value: "all", label: "All repos" },
@@ -49,10 +53,23 @@ const SYNC_OPTIONS: { value: SyncFilter; label: string }[] = [
   { value: "unsynced", label: "Not synced" },
 ];
 
+const PEOPLE_OPTIONS: { value: PeopleFilter; label: string }[] = [
+  { value: "all", label: "Anyone assigned" },
+  { value: "assigned", label: "Has assignees" },
+  { value: "unassigned", label: "No one assigned" },
+];
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "name", label: "Sort: Name" },
+  { value: "people", label: "Sort: Most people" },
+  { value: "primary", label: "Sort: Primary first" },
+  { value: "sync", label: "Sort: Synced first" },
+];
+
 /**
  * The project's git repositories and who works on each. Commit history from linked repos feeds
- * per-member skills and the project's Ask answers. A row opens a right-hand detail sheet — the
- * single detail surface (there's no separate detail page for a repo inside a project anymore).
+ * per-member skills and the project's Ask answers. A row opens a right-hand detail sheet; the
+ * heavy sync setup (ingest keys + workflow) lives on the repo's own page, linked from the sheet.
  */
 export function ProjectRepositoriesTab({
   project,
@@ -69,15 +86,23 @@ export function ProjectRepositoriesTab({
 
   const [query, setQuery] = useState("");
   const [syncFilter, setSyncFilter] = useState<SyncFilter>("all");
+  const [peopleFilter, setPeopleFilter] = useState<PeopleFilter>("all");
+  const [sort, setSort] = useState<SortKey>("name");
   const [detailRepo, setDetailRepo] = useState<ProjectRepo | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const hasRepos = project.repos.length > 0;
-  const hasFilters = query.trim().length > 0 || syncFilter !== "all";
+  const hasFilters = query.trim().length > 0 || syncFilter !== "all" || peopleFilter !== "all";
+
+  function clearFilters() {
+    setQuery("");
+    setSyncFilter("all");
+    setPeopleFilter("all");
+  }
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return project.repos.filter((r) => {
+    const filtered = project.repos.filter((r) => {
       if (q) {
         const hay = `${r.name ?? ""} ${r.url ?? ""} ${repoSlug(r.url) ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -85,9 +110,29 @@ export function ProjectRepositoriesTab({
       const synced = Boolean(syncedById.get(r.repoId));
       if (syncFilter === "synced" && !synced) return false;
       if (syncFilter === "unsynced" && synced) return false;
+      const assigned = r.assignees.length > 0;
+      if (peopleFilter === "assigned" && !assigned) return false;
+      if (peopleFilter === "unassigned" && assigned) return false;
       return true;
     });
-  }, [project.repos, query, syncFilter, syncedById]);
+
+    const label = (r: ProjectRepo) => (r.name ?? repoSlug(r.url) ?? r.repoId).toLowerCase();
+    return [...filtered].sort((a, b) => {
+      switch (sort) {
+        case "people":
+          return b.assignees.length - a.assignees.length || label(a).localeCompare(label(b));
+        case "primary":
+          return Number(b.isPrimary) - Number(a.isPrimary) || label(a).localeCompare(label(b));
+        case "sync": {
+          const av = Number(Boolean(syncedById.get(a.repoId)));
+          const bv = Number(Boolean(syncedById.get(b.repoId)));
+          return bv - av || label(a).localeCompare(label(b));
+        }
+        default:
+          return label(a).localeCompare(label(b));
+      }
+    });
+  }, [project.repos, query, syncFilter, peopleFilter, sort, syncedById]);
 
   function openDetail(repo: ProjectRepo) {
     setDetailRepo(repo);
@@ -121,6 +166,21 @@ export function ProjectRepositoriesTab({
             onChange={setSyncFilter}
             options={SYNC_OPTIONS}
           />
+          <FilterSelect
+            aria-label="Filter by assignees"
+            value={peopleFilter}
+            onChange={setPeopleFilter}
+            options={PEOPLE_OPTIONS}
+          />
+          <FilterSelect
+            aria-label="Sort repositories"
+            value={sort}
+            onChange={setSort}
+            options={SORT_OPTIONS}
+          />
+          <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
+            {visible.length} of {project.repos.length}
+          </span>
         </div>
       )}
 
@@ -137,17 +197,7 @@ export function ProjectRepositoriesTab({
           action={manageable ? <LinkRepoDialog project={project} /> : undefined}
         />
       ) : visible.length === 0 ? (
-        <FilteredEmpty
-          noun="repositories"
-          onClear={
-            hasFilters
-              ? () => {
-                  setQuery("");
-                  setSyncFilter("all");
-                }
-              : undefined
-          }
-        />
+        <FilteredEmpty noun="repositories" onClear={hasFilters ? clearFilters : undefined} />
       ) : (
         <div role="list" className="overflow-hidden rounded-xl border border-border bg-card">
           {visible.map((r) => (
@@ -342,10 +392,23 @@ function LinkRepoDialog({ project }: { project: ProjectDetail }) {
   const [name, setName] = useState("");
 
   const firstRepo = project.repos.length === 0;
+  // First repo is the project's primary by definition; after that it's the linker's call.
+  const [isPrimary, setIsPrimary] = useState(false);
+
+  const trimmedUrl = url.trim();
+  const slug = repoSlug(trimmedUrl);
+  // A usable git URL: recognisable host + an org/repo slug. We stay lenient (self-hosted
+  // GitLab/Bitbucket are fine) but flag input that clearly isn't a repo URL yet.
+  const looksLikeUrl =
+    /^(https?:\/\/|git@)/i.test(trimmedUrl) || /[^/\s]+\/[^/\s]+/.test(trimmedUrl);
+  const showUrlWarning = trimmedUrl.length > 0 && !looksLikeUrl;
+  // The repo half of "org/repo" makes a good default name when the linker leaves it blank.
+  const suggestedName = slug?.split("/").pop() ?? "";
 
   function reset() {
     setUrl("");
     setName("");
+    setIsPrimary(false);
   }
 
   function handleOpen(next: boolean) {
@@ -353,13 +416,17 @@ function LinkRepoDialog({ project }: { project: ProjectDetail }) {
     setOpen(next);
   }
 
-  const canSubmit = url.trim().length > 0;
+  const canSubmit = trimmedUrl.length > 0 && looksLikeUrl;
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!canSubmit) return;
     addRepo.mutate(
-      { url: url.trim(), name: name.trim() || null, isPrimary: firstRepo },
+      {
+        url: trimmedUrl,
+        name: name.trim() || suggestedName || null,
+        isPrimary: firstRepo || isPrimary,
+      },
       {
         onSuccess: () => {
           handleOpen(false);
@@ -397,20 +464,82 @@ function LinkRepoDialog({ project }: { project: ProjectDetail }) {
                 placeholder="https://github.com/org/repo"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
+                aria-invalid={showUrlWarning}
                 autoFocus
               />
+              {showUrlWarning ? (
+                <p className="flex items-center gap-1.5 text-xs text-brand-coral">
+                  <CircleAlertIcon className="size-3.5 shrink-0" />
+                  That doesn't look like a repository URL yet.
+                </p>
+              ) : slug ? (
+                <p className="flex items-center gap-1.5 text-xs text-brand-teal">
+                  <CheckIcon className="size-3.5 shrink-0" />
+                  Detected <span className="font-medium">{slug}</span>
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Paste an HTTPS or SSH URL from GitHub, GitLab, or Bitbucket.
+                </p>
+              )}
             </div>
+
             <div className="space-y-1.5">
               <label className="text-sm font-medium" htmlFor="repo-name">
-                Name (optional)
+                Display name <span className="font-normal text-muted-foreground">(optional)</span>
               </label>
               <Input
                 id="repo-name"
-                placeholder="repo"
+                placeholder={suggestedName || "repo"}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                {suggestedName
+                  ? `Leave blank to use “${suggestedName}”.`
+                  : "How this repo shows up across the project."}
+              </p>
             </div>
+
+            {/* Primary repo — a real backend field (is_primary). The first linked repo is
+                always primary; after that the linker opts in. */}
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={firstRepo || isPrimary}
+              disabled={firstRepo}
+              onClick={() => setIsPrimary((v) => !v)}
+              className={cn(
+                "flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                firstRepo || isPrimary
+                  ? "border-primary/40 bg-primary/5"
+                  : "border-border hover:bg-muted/50",
+                firstRepo && "cursor-default opacity-90",
+              )}
+            >
+              <span
+                className={cn(
+                  "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors",
+                  firstRepo || isPrimary
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-input",
+                )}
+              >
+                {(firstRepo || isPrimary) && <CheckIcon className="size-3" strokeWidth={3} />}
+              </span>
+              <span className="min-w-0">
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  <StarIcon className="size-3.5 text-brand-honey" />
+                  Set as primary repo
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {firstRepo
+                    ? "Your first repo is the project's primary automatically."
+                    : "The default repo for this project's codebase quizzes and Ask answers."}
+                </span>
+              </span>
+            </button>
 
             <p className="text-xs text-muted-foreground">You'll set up sync after linking.</p>
           </div>

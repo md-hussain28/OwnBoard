@@ -171,6 +171,7 @@ export const projectService = {
     options?: {
       onProgress?: (percent: number) => void;
       /** Metadata captured in the upload modal, applied to every file in the batch. */
+      title?: string;
       typeIds?: string[];
       repoIds?: string[];
       description?: string;
@@ -182,6 +183,7 @@ export const projectService = {
       files,
       onProgress: options?.onProgress,
       registerExtra: {
+        title: options?.title?.trim() || null,
         type_ids: options?.typeIds ?? [],
         repo_ids: options?.repoIds ?? [],
         description: options?.description?.trim() || null,

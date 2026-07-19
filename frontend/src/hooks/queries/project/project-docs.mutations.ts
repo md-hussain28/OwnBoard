@@ -17,11 +17,13 @@ export function useUploadProjectDocs(id: string) {
   return useMutation({
     mutationFn: (vars: {
       files: File[];
+      name?: string;
       typeIds?: string[];
       repoIds?: string[];
       description?: string;
     }) =>
       projectService.uploadDocs(id, vars.files, {
+        title: vars.name,
         typeIds: vars.typeIds,
         repoIds: vars.repoIds,
         description: vars.description,

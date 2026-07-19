@@ -84,6 +84,7 @@ async def register_project_docs(
         employee,
         [(f.document_id, f.filename, f.storage_path, f.size) for f in payload.files],
         created_by=user_id,
+        title=payload.title,
         type_ids=payload.type_ids,
         repo_ids=payload.repo_ids,
         description=payload.description,

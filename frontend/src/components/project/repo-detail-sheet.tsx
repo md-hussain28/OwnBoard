@@ -8,11 +8,12 @@ import {
   Layers2Icon,
   MessagesSquareIcon,
   PlugZapIcon,
+  SettingsIcon,
   StarIcon,
   UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { RepoAttachedDocs, RepoConnectPanel, repoSlug } from "@/components/repo";
+import { RepoAttachedDocs, repoSlug } from "@/components/repo";
 import { useRepo } from "@/hooks/queries/repo";
 import { appPath, cn } from "@/lib";
 import type { ProjectRepo } from "@/schemas";
@@ -62,10 +63,11 @@ function Section({
 }
 
 /**
- * Right-hand detail sidebar for one linked repo. Since the panel no longer navigates to a
- * separate detail page, this is the single surface for a repo's facts: sync state, who's
- * assigned, its reference docs, and (for managers) the one-time sync setup. Everything shown
- * is real API data — per-repo tech stack isn't exposed yet, so we say so rather than fake it.
+ * Right-hand detail sidebar for one linked repo: a quick surface for a repo's facts — sync state,
+ * who's assigned, its reference docs, and Explore links. The heavy one-time sync setup (ingest
+ * keys + workflow YAML) lives on its own page at `/app/projects/:id/repositories/:repoId`; managers
+ * reach it via the "Sync setup" link here. Everything shown is real API data — per-repo tech stack
+ * isn't exposed yet, so we say so rather than fake it.
  */
 export function RepoDetailSheet({
   projectId,
@@ -192,10 +194,31 @@ function RepoDetailBody({
 
         <Separator />
 
-        {/* Sync setup — the heavy connect panel, kept here now that there's no detail page */}
-        {manageable && !isLoading && fullRepo ? (
+        {/* Sync setup lives on its own page (ingest keys + workflow); link there from the sheet
+            rather than embedding the heavy connect panel. Surfaced prominently until synced. */}
+        {manageable ? (
           <Section icon={PlugZapIcon} title="Sync setup">
-            <RepoConnectPanel repo={fullRepo} />
+            {synced ? (
+              <Button asChild variant="outline" className="w-full justify-start">
+                <Link href={appPath("projects", projectId, "repositories", repo.repoId)}>
+                  <SettingsIcon className="size-4 text-muted-foreground" />
+                  Sync settings &amp; ingest keys
+                </Link>
+              </Button>
+            ) : (
+              <div className="space-y-3 rounded-lg border border-brand-honey/40 bg-brand-honey-soft/40 p-3">
+                <p className="text-sm text-muted-foreground">
+                  This repo isn&apos;t synced yet. Set up the GitHub sync to start building each
+                  member&apos;s skills and the project&apos;s Ask answers.
+                </p>
+                <Button asChild size="sm">
+                  <Link href={appPath("projects", projectId, "repositories", repo.repoId)}>
+                    <PlugZapIcon className="size-4" />
+                    Set up sync
+                  </Link>
+                </Button>
+              </div>
+            )}
           </Section>
         ) : null}
 

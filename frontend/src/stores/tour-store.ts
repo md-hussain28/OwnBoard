@@ -20,20 +20,35 @@ interface TourState {
   startId: string | null;
   /** Whether the launcher's feature menu is expanded. */
   menuOpen: boolean;
+  /**
+   * The current page's contextual tour stop, if it wants to nudge. Set by the
+   * per-page registrar (`page-tour-nudge.tsx`) and rendered as a callout that
+   * expands out of the launcher FAB (`tour-trigger.tsx`) — one floating surface
+   * for tour affordances instead of a separate top-of-page banner.
+   */
+  pageFeatureId: string | null;
   /** Launch / relaunch the guided tour, optionally jumping to a specific feature. */
   start: (featureId?: string) => void;
   openMenu: () => void;
   closeMenu: () => void;
   toggleMenu: () => void;
+  /** Offer this page's nudge from the launcher. */
+  showPageNudge: (featureId: string) => void;
+  /** Retract a page nudge — only if `featureId` still owns it (guards unmount races). */
+  clearPageNudge: (featureId: string) => void;
 }
 
 export const useTourStore = create<TourState>((set) => ({
   runNonce: 0,
   startId: null,
   menuOpen: false,
+  pageFeatureId: null,
   start: (featureId) =>
     set((s) => ({ runNonce: s.runNonce + 1, startId: featureId ?? null, menuOpen: false })),
   openMenu: () => set({ menuOpen: true }),
   closeMenu: () => set({ menuOpen: false }),
   toggleMenu: () => set((s) => ({ menuOpen: !s.menuOpen })),
+  showPageNudge: (featureId) => set({ pageFeatureId: featureId }),
+  clearPageNudge: (featureId) =>
+    set((s) => (s.pageFeatureId === featureId ? { pageFeatureId: null } : s)),
 }));

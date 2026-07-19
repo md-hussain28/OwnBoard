@@ -101,8 +101,9 @@ function UploadField({
 }
 
 /**
- * Batch PDF upload for a project's reference docs. Metadata (type, repos, context) applies to
- * every file in the batch and is laid out as four numbered steps so the flow reads top-to-bottom.
+ * Batch PDF upload for a project's reference docs. Metadata (name, type, repos, context) applies to
+ * every file in the batch and is laid out as numbered steps — name + type share the top row — so the
+ * flow reads top-to-bottom.
  */
 export function UploadDocsDialog({
   projectId,
@@ -115,6 +116,7 @@ export function UploadDocsDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [name, setName] = useState("");
   const [typeIds, setTypeIds] = useState<Set<string>>(new Set());
   const [repoIds, setRepoIds] = useState<Set<string>>(new Set());
   const [description, setDescription] = useState("");
@@ -127,6 +129,7 @@ export function UploadDocsDialog({
 
   function reset() {
     setFiles([]);
+    setName("");
     setTypeIds(new Set());
     setRepoIds(new Set());
     setDescription("");
@@ -187,6 +190,7 @@ export function UploadDocsDialog({
     upload.mutate(
       {
         files,
+        name: name.trim() || undefined,
         typeIds: Array.from(typeIds),
         repoIds: Array.from(repoIds),
         description: description.trim() || undefined,
@@ -209,7 +213,7 @@ export function UploadDocsDialog({
           Upload docs
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+      <DialogContent className="flex max-h-[88dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
         <DialogHeader className="shrink-0 border-b border-border p-5 pr-12">
           <DialogTitle>Upload reference documents</DialogTitle>
           <DialogDescription>
@@ -218,119 +222,74 @@ export function UploadDocsDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".pdf,application/pdf"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            addFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
+
         <div className="flex-1 space-y-6 overflow-y-auto p-5">
-          {/* 1 · Files */}
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".pdf,application/pdf"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              addFiles(e.target.files);
-              e.target.value = "";
-            }}
-          />
-          <UploadField
-            step={1}
-            icon={UploadIcon}
-            title="Files"
-            hint={`PDF only · up to ${MAX_UPLOAD_FILE_SIZE_MB} MB each · ${MAX_UPLOAD_FILES_PER_BATCH} files max`}
-          >
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragging(false);
-                addFiles(e.dataTransfer.files);
-              }}
-              className={cn(
-                "flex w-full flex-col items-center gap-1.5 rounded-xl border border-dashed px-4 py-8 text-center transition-colors",
-                dragging
-                  ? "border-primary bg-brand-honey-soft"
-                  : "border-border hover:border-primary/40 hover:bg-muted/60",
-              )}
+          {/* 1 · Name + 2 · Type — paired on one row so the header reads compactly. */}
+          <div className="grid gap-6 sm:grid-cols-2">
+            <UploadField
+              step={1}
+              icon={FileTextIcon}
+              title="Name"
+              hint="A short title for this document."
             >
-              <span className="flex size-10 items-center justify-center rounded-full bg-brand-honey-soft text-brand-honey">
-                <UploadIcon className="size-5" />
-              </span>
-              <span className="text-sm font-medium">
-                {files.length > 0 ? "Add more, or drop them here" : "Choose PDFs or drop them here"}
-              </span>
-              <span className="text-xs text-muted-foreground">Click to browse your device</span>
-            </button>
+              <Input
+                aria-label="Document name"
+                placeholder="e.g. Payments Service PRD"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </UploadField>
 
-            {files.length > 0 && (
-              <ul className="space-y-1.5">
-                {files.map((file, i) => (
-                  <li
-                    key={`${file.name}-${file.size}`}
-                    className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm"
+            <UploadField step={2} icon={TagIcon} title="Type" hint="What kind of document is this?">
+              <div className="flex flex-wrap items-center gap-2">
+                {types.map((t) => (
+                  <ToggleChip
+                    key={t.id}
+                    selected={typeIds.has(t.id)}
+                    onClick={() => toggle(setTypeIds, t.id)}
                   >
-                    <FileTextIcon className="size-4 shrink-0 text-brand-coral" />
-                    <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {formatBytes(file.size)}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={`Remove ${file.name}`}
-                      onClick={() => removeFile(i)}
-                      className="shrink-0 text-muted-foreground transition-colors hover:text-destructive"
-                    >
-                      <XIcon className="size-4" />
-                    </button>
-                  </li>
+                    {t.name}
+                  </ToggleChip>
                 ))}
-              </ul>
-            )}
-          </UploadField>
-
-          {/* 2 · Type */}
-          <UploadField step={2} icon={TagIcon} title="Type" hint="What kind of document is this?">
-            <div className="flex flex-wrap gap-2">
-              {types.map((t) => (
-                <ToggleChip
-                  key={t.id}
-                  selected={typeIds.has(t.id)}
-                  onClick={() => toggle(setTypeIds, t.id)}
-                >
-                  {t.name}
-                </ToggleChip>
-              ))}
-              <div className="inline-flex items-center gap-1.5">
-                <Input
-                  aria-label="Add a new type"
-                  placeholder="Add type (e.g. PRD)"
-                  value={newType}
-                  onChange={(e) => setNewType(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddType();
-                    }
-                  }}
-                  className="h-8 w-36"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="size-8"
-                  onClick={handleAddType}
-                  disabled={createType.isPending || !newType.trim()}
-                >
-                  <PlusIcon className="size-4" />
-                </Button>
+                <div className="inline-flex items-center gap-1.5">
+                  <Input
+                    aria-label="Add a new type"
+                    placeholder="Add type (e.g. PRD)"
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddType();
+                      }
+                    }}
+                    className="h-8 w-32"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-8"
+                    onClick={handleAddType}
+                    disabled={createType.isPending || !newType.trim()}
+                  >
+                    <PlusIcon className="size-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          </UploadField>
+            </UploadField>
+          </div>
 
           {/* 3 · Repositories */}
           <UploadField
@@ -372,6 +331,74 @@ export function UploadDocsDialog({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
             />
+          </UploadField>
+
+          {/* 5 · Files */}
+          <UploadField
+            step={5}
+            icon={UploadIcon}
+            title="Files"
+            hint={`PDF only · up to ${MAX_UPLOAD_FILE_SIZE_MB} MB each · ${MAX_UPLOAD_FILES_PER_BATCH} files max`}
+          >
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                addFiles(e.dataTransfer.files);
+              }}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-xl border border-dashed px-4 py-5 text-left transition-colors",
+                dragging
+                  ? "border-primary bg-brand-honey-soft"
+                  : "border-border hover:border-primary/40 hover:bg-muted/60",
+              )}
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-honey-soft text-brand-honey">
+                <UploadIcon className="size-4.5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">
+                  {files.length > 0
+                    ? "Add more, or drop them here"
+                    : "Choose PDFs or drop them here"}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  Click to browse your device
+                </span>
+              </span>
+            </button>
+
+            {files.length > 0 && (
+              <ul className="max-h-44 space-y-1.5 overflow-y-auto">
+                {files.map((file, i) => (
+                  <li
+                    key={`${file.name}-${file.size}`}
+                    className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm"
+                  >
+                    <FileTextIcon className="size-4 shrink-0 text-brand-coral" />
+                    <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {formatBytes(file.size)}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${file.name}`}
+                      onClick={() => removeFile(i)}
+                      className="shrink-0 text-muted-foreground transition-colors hover:text-destructive"
+                    >
+                      <XIcon className="size-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </UploadField>
         </div>
 

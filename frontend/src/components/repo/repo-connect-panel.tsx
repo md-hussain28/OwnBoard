@@ -13,7 +13,20 @@ import { useCreateIngestKey, useIngestKeys, useRevokeIngestKey } from "@/hooks/q
 import { useExpertiseScores } from "@/hooks/queries/skill-graph";
 import { notify } from "@/lib";
 import type { Repo } from "@/schemas";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Separator, Spinner } from "@/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Separator,
+  Spinner,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/ui";
 
 // The customer's GitHub Action posts directly to the backend (not through the Next proxy), so this
 // must be the public API URL. Set NEXT_PUBLIC_OWNBOARD_INGEST_URL in the frontend env for deploys.
@@ -76,6 +89,53 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   );
 }
 
+/**
+ * Manual "Sync now" affordance. Since ingestion is push-model, this only ever deep-links
+ * to the repo's GitHub Actions → Run workflow page — the actual `workflow_dispatch`. It's
+ * gated until an ingest key exists (the workflow can't authenticate without one) and always
+ * carries a tooltip explaining what clicking it does / why it's disabled. Uses `aria-disabled`
+ * rather than `disabled` so the trigger stays hoverable/focusable and the tip still shows.
+ */
+function SyncNowButton({ href, ready }: { href: string | null; ready: boolean }) {
+  let tip: string;
+  if (!href) tip = "Add a repository URL to enable syncing.";
+  else if (ready) tip = "Opens GitHub → Actions → Run workflow to sync this repo now.";
+  else tip = "Finish setup first: generate an ingest key and commit the workflow below.";
+
+  const enabled = ready && Boolean(href);
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {enabled && href ? (
+            <Button size="sm" variant="outline" asChild>
+              <a href={href} target="_blank" rel="noreferrer">
+                <RefreshCwIcon />
+                Sync now
+                <ExternalLinkIcon className="text-muted-foreground" />
+              </a>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              aria-disabled
+              onClick={(e) => e.preventDefault()}
+              className="cursor-not-allowed opacity-50"
+            >
+              <RefreshCwIcon />
+              Sync now
+            </Button>
+          )}
+        </TooltipTrigger>
+        <TooltipContent side="left">{tip}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export function RepoConnectPanel({ repo }: { repo: Repo }) {
   const { data: keys } = useIngestKeys(repo.id);
   const { data: scores } = useExpertiseScores(repo.id);
@@ -86,7 +146,11 @@ export function RepoConnectPanel({ repo }: { repo: Repo }) {
   const activeKeys = (keys ?? []).filter((k) => !k.revokedAt);
   const contributorCount = new Set((scores ?? []).map((s) => s.contributorId)).size;
   const fileCount = new Set((scores ?? []).map((s) => s.filePath)).size;
-  const runUrl = githubWorkflowRunUrl(repo.url);
+  // Prefer the exact Actions → Run workflow page; fall back to the repo itself so the
+  // button is never dead. Sync only works once an ingest key exists (the workflow needs
+  // it to authenticate), so gate on that.
+  const syncHref = githubWorkflowRunUrl(repo.url) ?? (repo.url || null);
+  const setupReady = activeKeys.length > 0;
 
   function generate() {
     createKey.mutate(undefined, {
@@ -133,15 +197,7 @@ export function RepoConnectPanel({ repo }: { repo: Repo }) {
             )}
           </div>
 
-          {runUrl && (
-            <Button size="sm" variant="outline" asChild>
-              <a href={runUrl} target="_blank" rel="noreferrer">
-                <RefreshCwIcon />
-                Sync now
-                <ExternalLinkIcon className="text-muted-foreground" />
-              </a>
-            </Button>
-          )}
+          <SyncNowButton href={syncHref} ready={setupReady} />
         </div>
 
         {ingestUrlIsLocal && (

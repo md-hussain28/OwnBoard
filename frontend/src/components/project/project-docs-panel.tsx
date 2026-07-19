@@ -4,12 +4,11 @@ import {
   CheckIcon,
   FileTextIcon,
   GitBranchIcon,
-  PlusIcon,
+  MoreVerticalIcon,
   ScrollTextIcon,
   SearchIcon,
   TagIcon,
   Trash2Icon,
-  XIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -20,8 +19,6 @@ import {
   QueryState,
 } from "@/components/shared";
 import {
-  useCreateDocType,
-  useDeleteDocType,
   useDeleteProjectDoc,
   useProjectDocs,
   useSetDocRepos,
@@ -38,7 +35,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Input,
 } from "@/ui";
 import { ProjectSectionHeader } from "./project-section-header";
@@ -120,8 +121,6 @@ export function ProjectDocsPanel({
         }
       />
 
-      {manageable && <TypeManager projectId={projectId} types={types} />}
-
       {documents.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-56 flex-1">
@@ -188,111 +187,143 @@ export function ProjectDocsPanel({
             }
           />
         ) : (
-          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+          <div role="list" className="overflow-hidden rounded-xl border border-border bg-card">
             {visible.map((doc) => (
-              <li key={doc.id} className="flex items-center gap-3 px-4 py-3">
-                <FileTextIcon className="size-4 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{doc.title}</p>
-                  {doc.description && (
-                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                      {doc.description}
-                    </p>
-                  )}
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                    {doc.typeNames.map((name) => (
-                      <Badge key={name} variant="secondary">
-                        {name}
-                      </Badge>
-                    ))}
-                    {doc.repos.map((repo) => (
-                      <Badge key={repo.repoId} variant="outline" className="gap-1">
-                        <GitBranchIcon className="size-3" />
-                        {repo.name ?? repo.url ?? repo.repoId}
-                      </Badge>
-                    ))}
-                    {doc.status === "failed" && doc.errorMessage && (
-                      <span className="text-xs text-destructive">{doc.errorMessage}</span>
-                    )}
-                  </div>
-                </div>
-                {statusBadge(doc.status)}
-                {manageable && (
-                  <>
-                    <DocReposDialog projectId={projectId} doc={doc} repos={repos} />
-                    <DocTypesDialog projectId={projectId} doc={doc} types={types} />
-                    <DeleteDocButton projectId={projectId} doc={doc} />
-                  </>
-                )}
-              </li>
+              <DocRow
+                key={doc.id}
+                projectId={projectId}
+                doc={doc}
+                types={types}
+                repos={repos}
+                manageable={manageable}
+              />
             ))}
-          </ul>
+          </div>
         )}
       </QueryState>
     </section>
   );
 }
 
-function TypeManager({ projectId, types }: { projectId: string; types: ProjectDocType[] }) {
-  const [name, setName] = useState("");
-  const create = useCreateDocType(projectId);
-  const remove = useDeleteDocType(projectId);
-
-  function handleCreate() {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    create.mutate(trimmed, {
-      onSuccess: () => setName(""),
-      onError: (err) => notify.apiError(err, "Could not add type"),
-    });
-  }
+/** One document as a scannable table row: identity · type/repo tags · status + a `⋯` menu. */
+function DocRow({
+  projectId,
+  doc,
+  types,
+  repos,
+  manageable,
+}: {
+  projectId: string;
+  doc: ProjectDoc;
+  types: ProjectDocType[];
+  repos: ProjectRepo[];
+  manageable: boolean;
+}) {
+  const [typesOpen, setTypesOpen] = useState(false);
+  const [reposOpen, setReposOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border p-3">
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <TagIcon className="size-3.5" /> Types
-      </span>
-      {types.map((t) => (
-        <Badge key={t.id} variant="outline" className="gap-1">
-          {t.name}
-          <button
-            type="button"
-            aria-label={`Delete type ${t.name}`}
-            onClick={() =>
-              remove.mutate(t.id, {
-                onError: (err) => notify.apiError(err, "Could not delete type"),
-              })
-            }
-            className="text-muted-foreground hover:text-destructive"
-          >
-            <XIcon className="size-3" />
-          </button>
-        </Badge>
-      ))}
-      <div className="flex items-center gap-1.5">
-        <Input
-          aria-label="New type name"
-          placeholder="Add type (e.g. PRD)"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleCreate();
-            }
-          }}
-          className="h-8 w-40"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleCreate}
-          disabled={create.isPending || !name.trim()}
-        >
-          <PlusIcon className="size-4" />
-        </Button>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3 last:border-0">
+      {/* Identity */}
+      <div className="flex min-w-0 flex-[2] items-center gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-coral-soft text-brand-coral">
+          <FileTextIcon className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{doc.title}</p>
+          {doc.description ? (
+            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{doc.description}</p>
+          ) : (
+            <p className="mt-0.5 text-xs text-muted-foreground/70">No context added</p>
+          )}
+        </div>
       </div>
+
+      {/* Tags: types + attached repos */}
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+        {doc.typeNames.length === 0 && doc.repos.length === 0 ? (
+          <span className="text-xs text-muted-foreground">Untagged</span>
+        ) : (
+          <>
+            {doc.typeNames.map((name) => (
+              <Badge key={name} variant="secondary">
+                {name}
+              </Badge>
+            ))}
+            {doc.repos.map((repo) => (
+              <Badge key={repo.repoId} variant="outline" className="gap-1">
+                <GitBranchIcon className="size-3" />
+                {repo.name ?? repo.url ?? repo.repoId}
+              </Badge>
+            ))}
+          </>
+        )}
+      </div>
+
+      {/* Status + actions */}
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        {doc.status === "failed" && doc.errorMessage && (
+          <span className="hidden max-w-40 truncate text-xs text-destructive sm:inline">
+            {doc.errorMessage}
+          </span>
+        )}
+        {statusBadge(doc.status)}
+
+        {manageable && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label={`Actions for ${doc.title}`}>
+                <MoreVerticalIcon className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onSelect={() => setTypesOpen(true)}>
+                <TagIcon /> Edit types
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setReposOpen(true)}>
+                <GitBranchIcon /> Attach to repos
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={(e) => {
+                  // Keep the confirm modal from racing the menu's close/focus handoff.
+                  e.preventDefault();
+                  setConfirmOpen(true);
+                }}
+              >
+                <Trash2Icon /> Delete document
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+
+      {manageable && (
+        <>
+          <DocTypesDialog
+            projectId={projectId}
+            doc={doc}
+            types={types}
+            open={typesOpen}
+            onOpenChange={setTypesOpen}
+          />
+          <DocReposDialog
+            projectId={projectId}
+            doc={doc}
+            repos={repos}
+            open={reposOpen}
+            onOpenChange={setReposOpen}
+          />
+          <DeleteDocConfirm
+            projectId={projectId}
+            doc={doc}
+            open={confirmOpen}
+            onOpenChange={setConfirmOpen}
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -301,12 +332,15 @@ function DocTypesDialog({
   projectId,
   doc,
   types,
+  open,
+  onOpenChange,
 }: {
   projectId: string;
   doc: ProjectDoc;
   types: ProjectDocType[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set(doc.typeIds));
   const save = useSetDocTypes(projectId);
 
@@ -320,14 +354,14 @@ function DocTypesDialog({
 
   function handleOpen(next: boolean) {
     if (next) setSelected(new Set(doc.typeIds));
-    setOpen(next);
+    onOpenChange(next);
   }
 
   function handleSave() {
     save.mutate(
       { documentId: doc.id, typeIds: Array.from(selected) },
       {
-        onSuccess: () => setOpen(false),
+        onSuccess: () => onOpenChange(false),
         onError: (err) => notify.apiError(err, "Could not update types"),
       },
     );
@@ -335,11 +369,6 @@ function DocTypesDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Edit types">
-          <TagIcon className="size-4" />
-        </Button>
-      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Document types</DialogTitle>
@@ -349,7 +378,9 @@ function DocTypesDialog({
         </DialogHeader>
         <div className="flex flex-wrap gap-2 py-2">
           {types.length === 0 && (
-            <p className="text-sm text-muted-foreground">Add types above first.</p>
+            <p className="text-sm text-muted-foreground">
+              Add types while uploading a document first.
+            </p>
           )}
           {types.map((t) => {
             const isSel = selected.has(t.id);
@@ -383,12 +414,15 @@ function DocReposDialog({
   projectId,
   doc,
   repos,
+  open,
+  onOpenChange,
 }: {
   projectId: string;
   doc: ProjectDoc;
   repos: ProjectRepo[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set(doc.repoIds));
   const save = useSetDocRepos(projectId);
 
@@ -402,14 +436,14 @@ function DocReposDialog({
 
   function handleOpen(next: boolean) {
     if (next) setSelected(new Set(doc.repoIds));
-    setOpen(next);
+    onOpenChange(next);
   }
 
   function handleSave() {
     save.mutate(
       { documentId: doc.id, repoIds: Array.from(selected) },
       {
-        onSuccess: () => setOpen(false),
+        onSuccess: () => onOpenChange(false),
         onError: (err) => notify.apiError(err, "Could not update repos"),
       },
     );
@@ -417,11 +451,6 @@ function DocReposDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Attach to repos">
-          <GitBranchIcon className="size-4" />
-        </Button>
-      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Attach to repos</DialogTitle>
@@ -467,14 +496,23 @@ function DocReposDialog({
   );
 }
 
-function DeleteDocButton({ projectId, doc }: { projectId: string; doc: ProjectDoc }) {
+function DeleteDocConfirm({
+  projectId,
+  doc,
+  open,
+  onOpenChange,
+}: {
+  projectId: string;
+  doc: ProjectDoc;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const remove = useDeleteProjectDoc(projectId);
-  const [open, setOpen] = useState(false);
 
   function handleDelete() {
     remove.mutate(doc.id, {
       onSuccess: () => {
-        setOpen(false);
+        onOpenChange(false);
         notify.success("Document deleted");
       },
       onError: (err) => notify.apiError(err, "Could not delete"),
@@ -484,12 +522,7 @@ function DeleteDocButton({ projectId, doc }: { projectId: string; doc: ProjectDo
   return (
     <ConfirmDialog
       open={open}
-      onOpenChange={setOpen}
-      trigger={
-        <Button variant="ghost" size="icon" aria-label={`Delete ${doc.title}`}>
-          <Trash2Icon className="size-4" />
-        </Button>
-      }
+      onOpenChange={onOpenChange}
       title="Delete this document?"
       description={
         <>

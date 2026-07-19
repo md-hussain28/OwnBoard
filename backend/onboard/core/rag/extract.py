@@ -7,6 +7,15 @@ from onboard.config.constants import MAX_PDF_PAGES
 from onboard.core.common.exceptions import ValidationError
 
 
+class ScannedPDFError(ValidationError):
+    """The PDF parsed cleanly but carries no text layer (scanned / image-only).
+
+    Distinct from a generic ``ValidationError`` so the ingest pipeline can tell "there is simply
+    nothing to read here" apart from "this file is broken/encrypted" and fall back to OCR before
+    giving up, instead of failing the document outright.
+    """
+
+
 @dataclass
 class ExtractedPage:
     page_number: int
@@ -46,6 +55,19 @@ def _extract_pdf(content: bytes) -> ExtractedDocument:
     pages: list[ExtractedPage] = []
     try:
         reader = PdfReader(BytesIO(content))
+        # A "password-protected" PDF is unreadable AND un-OCRable — say so plainly instead of
+        # letting it fall through to the misleading "scanned or image-only" message below. Many
+        # PDFs are encrypted with an empty user password (readable once decrypted), so try that
+        # first and only bail if it's still locked.
+        if reader.is_encrypted:
+            try:
+                reader.decrypt("")
+            except Exception:  # noqa: BLE001 — a failed empty-password decrypt just means it's truly locked
+                pass
+            if reader.is_encrypted:
+                raise ValidationError(
+                    "PDF is password-protected — remove the password (or re-export an unprotected copy) and retry."
+                )
         page_count = len(reader.pages)
         _check_page_cap(page_count)
         for index, page in enumerate(reader.pages, start=1):
@@ -65,10 +87,9 @@ def _extract_pdf(content: bytes) -> ExtractedDocument:
         page_count = page_count or fallback_page_count
 
     if not pages:
-        raise ValidationError(
-            "PDF has no selectable text — it is likely a scanned or image-only PDF. "
-            "Re-export it as a text-based PDF and retry."
-        )
+        # No text layer from either parser. This is the OCR trigger: the ingest pipeline catches
+        # ScannedPDFError and re-reads the file with a vision model before failing the document.
+        raise ScannedPDFError("PDF has no selectable text — it is likely a scanned or image-only PDF.")
     return ExtractedDocument(pages=pages, page_count=page_count or len(pages))
 
 

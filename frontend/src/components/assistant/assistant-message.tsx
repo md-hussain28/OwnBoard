@@ -34,14 +34,19 @@ export function AssistantMessage({ message }: { message: UIMessage }) {
     }
   }
 
+  // Key every part by its ORIGINAL index in `message.parts`, not by its position in the filtered
+  // list. Parts stream in append-only, so the original index is stable; the filtered index is not
+  // (hoisting citations / dropping `data-action` shifts it), and an unstable key remounts the
+  // `<Response>` mid-stream — the flash/jump that reads as text and components "overlapping".
   const isCitation = (part: UIMessage["parts"][number]) =>
     isToolUIPart(part) && getToolName(part) === "showCitations";
-  const bodyParts = message.parts.filter((p) => p.type !== "data-action" && !isCitation(p));
-  const citationParts = message.parts.filter(isCitation);
+  const indexed = message.parts.map((part, index) => ({ part, index }));
+  const bodyParts = indexed.filter(({ part }) => part.type !== "data-action" && !isCitation(part));
+  const citationParts = indexed.filter(({ part }) => isCitation(part));
 
-  const renderPart = (part: UIMessage["parts"][number], i: number) => {
+  const renderPart = ({ part, index }: { part: UIMessage["parts"][number]; index: number }) => {
     if (part.type === "text") {
-      return part.text ? <Response key={`text-${i}`}>{part.text}</Response> : null;
+      return part.text ? <Response key={`text-${index}`}>{part.text}</Response> : null;
     }
     if (isToolUIPart(part)) {
       return (

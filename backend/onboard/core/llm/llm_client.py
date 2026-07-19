@@ -47,6 +47,45 @@ class LLMClient:
         response = await self._client.chat.completions.create(model=self.chat_model, messages=messages)
         return response.choices[0].message.content or ""
 
+    async def ocr_pdf(self, content: bytes, *, model: str | None = None) -> str:
+        """Transcribe a scanned / image-only PDF by having a vision model read the file directly.
+
+        The PDF is handed to OpenAI as a base64 file input, so the model does the rasterizing and
+        OCR server-side — nothing is rendered locally, which keeps the memory-starved ingest host
+        (512MB) safe. Returns the transcribed text, or ``""`` if the model produced nothing.
+        Defaults to the complex model since only the larger vision-capable models accept file input.
+        """
+        import base64
+
+        encoded = base64.b64encode(content).decode("ascii")
+        response = await self._client.chat.completions.create(
+            model=model or self.chat_model_complex,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "file",
+                            "file": {
+                                "filename": "document.pdf",
+                                "file_data": f"data:application/pdf;base64,{encoded}",
+                            },
+                        },
+                        {
+                            "type": "text",
+                            "text": (
+                                "Transcribe ALL text from this PDF verbatim, preserving reading order, "
+                                "headings, and list structure. This is an OCR task — output only the "
+                                "transcribed text, with no commentary, summary, or markdown fences."
+                            ),
+                        },
+                    ],
+                }
+            ],
+            temperature=0,
+        )
+        return response.choices[0].message.content or ""
+
     async def stream_chat(
         self,
         messages: list[dict[str, str]],
